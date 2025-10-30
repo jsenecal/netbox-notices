@@ -43,6 +43,27 @@ class CircuitMaintenanceDeleteView(generic.ObjectDeleteView):
     queryset = models.CircuitMaintenance.objects.all()
 
 
+# Circuit Outage Views
+class CircuitOutageListView(generic.ObjectListView):
+    queryset = models.CircuitOutage.objects.all()
+    table = tables.CircuitOutageTable
+    filterset = filtersets.CircuitOutageFilterSet
+    filterset_form = forms.CircuitOutageFilterForm
+
+
+class CircuitOutageView(generic.ObjectView):
+    queryset = models.CircuitOutage.objects.all()
+
+
+class CircuitOutageEditView(generic.ObjectEditView):
+    queryset = models.CircuitOutage.objects.all()
+    form = forms.CircuitOutageForm
+
+
+class CircuitOutageDeleteView(generic.ObjectDeleteView):
+    queryset = models.CircuitOutage.objects.all()
+
+
 # Circuit Maintenance Impact views
 class CircuitMaintenanceImpactEditView(generic.ObjectEditView):
     queryset = models.CircuitMaintenanceImpact.objects.all()
