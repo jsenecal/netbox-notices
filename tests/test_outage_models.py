@@ -266,10 +266,10 @@ class TestCircuitMaintenance(unittest.TestCase):
         fields = self._get_field_names(class_node)
 
         # These fields should NOT be in CircuitMaintenance since they're inherited
+        # Exception: provider is intentionally overridden for backward compatibility
         base_fields = [
             "name",
             "summary",
-            "provider",
             "start",
             "original_timezone",
             "internal_ticket",
