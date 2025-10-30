@@ -93,3 +93,88 @@ class TestCircuitOutageStatusChoices(unittest.TestCase):
         self.assertEqual(choices_dict.get("IDENTIFIED"), "yellow")
         self.assertEqual(choices_dict.get("MONITORING"), "blue")
         self.assertEqual(choices_dict.get("RESOLVED"), "green")
+
+
+class TestBaseCircuitEvent(unittest.TestCase):
+    """Test the BaseCircuitEvent abstract model structure"""
+
+    def _get_models_file_ast(self):
+        """Parse the models.py file and return AST"""
+        models_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "netbox_circuitmaintenance",
+            "models.py",
+        )
+        with open(models_path, "r") as f:
+            return ast.parse(f.read())
+
+    def _find_class(self, tree, class_name):
+        """Find a class definition in the AST"""
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and node.name == class_name:
+                return node
+        return None
+
+    def _is_abstract_model(self, class_node):
+        """Check if a class has Meta.abstract = True"""
+        for item in class_node.body:
+            if isinstance(item, ast.ClassDef) and item.name == "Meta":
+                for meta_item in item.body:
+                    if isinstance(meta_item, ast.Assign):
+                        for target in meta_item.targets:
+                            if isinstance(target, ast.Name) and target.id == "abstract":
+                                if isinstance(meta_item.value, ast.Constant):
+                                    return meta_item.value.value is True
+        return False
+
+    def _get_field_names(self, class_node):
+        """Extract field names from model class"""
+        fields = []
+        for item in class_node.body:
+            if isinstance(item, ast.Assign):
+                for target in item.targets:
+                    if isinstance(target, ast.Name):
+                        # Check if it's a models.Field assignment
+                        if isinstance(item.value, ast.Call):
+                            fields.append(target.id)
+        return fields
+
+    def test_base_circuit_event_exists(self):
+        """Test that BaseCircuitEvent class exists"""
+        tree = self._get_models_file_ast()
+        class_node = self._find_class(tree, "BaseCircuitEvent")
+        self.assertIsNotNone(
+            class_node, "BaseCircuitEvent class not found in models.py"
+        )
+
+    def test_base_circuit_event_is_abstract(self):
+        """Test that BaseCircuitEvent is abstract"""
+        tree = self._get_models_file_ast()
+        class_node = self._find_class(tree, "BaseCircuitEvent")
+        self.assertIsNotNone(class_node)
+        self.assertTrue(
+            self._is_abstract_model(class_node),
+            "BaseCircuitEvent should have Meta.abstract = True",
+        )
+
+    def test_base_circuit_event_fields(self):
+        """Test that BaseCircuitEvent defines expected fields"""
+        expected_fields = [
+            "name",
+            "summary",
+            "provider",
+            "start",
+            "original_timezone",
+            "internal_ticket",
+            "acknowledged",
+            "comments",
+        ]
+
+        tree = self._get_models_file_ast()
+        class_node = self._find_class(tree, "BaseCircuitEvent")
+        self.assertIsNotNone(class_node)
+
+        actual_fields = self._get_field_names(class_node)
+
+        for field_name in expected_fields:
+            self.assertIn(field_name, actual_fields, f"Missing field: {field_name}")

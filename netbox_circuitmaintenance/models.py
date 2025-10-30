@@ -204,6 +204,57 @@ class CircuitOutageStatusChoices(ChoiceSet):
     ]
 
 
+class BaseCircuitEvent(NetBoxModel):
+    """
+    Abstract base class for circuit maintenance and outage events.
+    Provides common fields and relationships shared by both event types.
+    """
+
+    name = models.CharField(
+        max_length=100,
+        verbose_name="Event ID",
+        help_text="Provider supplied event ID or ticket number",
+    )
+
+    summary = models.CharField(max_length=200, help_text="Brief summary of the event")
+
+    provider = models.ForeignKey(
+        to="circuits.provider",
+        on_delete=models.CASCADE,
+        related_name="%(class)s_events",  # Dynamic related name per subclass
+    )
+
+    start = models.DateTimeField(help_text="Start date and time of the event")
+
+    original_timezone = models.CharField(
+        max_length=63,
+        blank=True,
+        verbose_name="Original Timezone",
+        help_text="Original timezone from provider notification",
+    )
+
+    internal_ticket = models.CharField(
+        max_length=100,
+        verbose_name="Internal Ticket #",
+        help_text="Internal ticket or change reference",
+        blank=True,
+    )
+
+    acknowledged = models.BooleanField(
+        default=False,
+        null=True,
+        blank=True,
+        verbose_name="Acknowledged?",
+        help_text="Confirm if this event has been acknowledged",
+    )
+
+    comments = models.TextField(blank=True)
+
+    class Meta:
+        abstract = True
+        ordering = ("-created",)
+
+
 class CircuitMaintenance(NetBoxModel):
     name = models.CharField(
         max_length=100,
