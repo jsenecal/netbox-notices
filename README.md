@@ -11,6 +11,7 @@ The plugin does not directly provide an automated approach to ingesting provider
  - Track provider maintenance events
  - Track circuit impact from provider maintenance
  - Provides a consolidated view of active, upcoming and historical maintenance events at the provider and circuit level
+ - Track unplanned outage events with optional end times and ETR tracking
  - Consolidated notifications (coming soon)
  - Maintenance overlap detection (coming soon)
 
@@ -74,6 +75,47 @@ Restart the Netbox service to apply changes:
 
 ```
 sudo systemctl restart netbox
+```
+
+## Outage Tracking
+
+In addition to planned maintenance, this plugin supports tracking unplanned outage events:
+
+### Key Features
+
+- **Optional End Time**: Outages can be created without an end time, which becomes required when marking as resolved
+- **ETR Tracking**: Track Estimated Time to Repair with full revision history via NetBox's changelog
+- **Outage Status Workflow**:
+  - REPORTED: Initial state when outage is reported
+  - INVESTIGATING: Team is investigating root cause
+  - IDENTIFIED: Root cause identified, working on fix
+  - MONITORING: Fix applied, monitoring for stability
+  - RESOLVED: Outage fully resolved (requires end time)
+- **Shared Impact Model**: Uses the same circuit impact tracking as maintenance events
+- **Unified View**: View both maintenance and outages together in a single interface
+
+### API Endpoints
+
+```
+GET    /api/plugins/netbox-circuitmaintenance/circuitoutage/
+POST   /api/plugins/netbox-circuitmaintenance/circuitoutage/
+GET    /api/plugins/netbox-circuitmaintenance/circuitoutage/{id}/
+PATCH  /api/plugins/netbox-circuitmaintenance/circuitoutage/{id}/
+DELETE /api/plugins/netbox-circuitmaintenance/circuitoutage/{id}/
+```
+
+### Example: Creating an Outage
+
+```python
+POST /api/plugins/netbox-circuitmaintenance/circuitoutage/
+{
+    "name": "OUT-2024-001",
+    "summary": "Fiber cut on Main Street",
+    "provider": 1,
+    "start": "2024-10-29T14:30:00Z",
+    "estimated_time_to_repair": "2024-10-29T18:00:00Z",
+    "status": "INVESTIGATING"
+}
 ```
 
 ## Screenshots
