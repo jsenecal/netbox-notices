@@ -187,6 +187,23 @@ class CircuitMaintenanceImpactTypeChoices(ChoiceSet):
     ]
 
 
+class CircuitOutageStatusChoices(ChoiceSet):
+    """
+    Status choices for unplanned circuit outage events.
+    Follows incident management workflow.
+    """
+
+    key = "CircuitOutage.Status"
+
+    CHOICES = [
+        ("REPORTED", "Reported", "red"),
+        ("INVESTIGATING", "Investigating", "orange"),
+        ("IDENTIFIED", "Identified", "yellow"),
+        ("MONITORING", "Monitoring", "blue"),
+        ("RESOLVED", "Resolved", "green"),
+    ]
+
+
 class CircuitMaintenance(NetBoxModel):
     name = models.CharField(
         max_length=100,
