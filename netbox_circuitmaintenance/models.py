@@ -255,19 +255,13 @@ class BaseCircuitEvent(NetBoxModel):
         ordering = ("-created",)
 
 
-class CircuitMaintenance(NetBoxModel):
-    name = models.CharField(
-        max_length=100,
-        verbose_name="Maintenance ID",
-        help_text="The provider supplied maintenance ID / ticket number",
-    )
+class CircuitMaintenance(BaseCircuitEvent):
+    """
+    Planned maintenance events with scheduled end times.
+    Inherits common fields from BaseCircuitEvent.
+    """
 
-    summary = models.CharField(
-        max_length=200, help_text="Brief summary of the maintenance event"
-    )
-
-    status = models.CharField(max_length=30, choices=CircuitMaintenanceTypeChoices)
-
+    # Override provider to preserve backward compatibility with related_name
     provider = models.ForeignKey(
         to="circuits.provider",
         on_delete=models.CASCADE,
@@ -275,39 +269,9 @@ class CircuitMaintenance(NetBoxModel):
         default=None,
     )
 
-    start = models.DateTimeField(
-        max_length=100,
-        help_text="Start date and time of the maintenance event e.g. 2022-12-25 14:30",
-    )
+    end = models.DateTimeField(help_text="End date and time of the maintenance event")
 
-    end = models.DateTimeField(
-        max_length=100,
-        help_text="End date and time of the maintenance event e.g. 2022-12-26 14:30",
-    )
-
-    original_timezone = models.CharField(
-        max_length=63,
-        blank=True,
-        verbose_name="Original Timezone",
-        help_text="Original timezone from provider notification (e.g., America/New_York, UTC, Europe/London)",
-    )
-
-    internal_ticket = models.CharField(
-        max_length=100,
-        verbose_name="Internal Ticket #",
-        help_text="An internal ticket or change reference for this maintenance",
-        blank=True,
-    )
-
-    acknowledged = models.BooleanField(
-        default=False,
-        null=True,
-        blank=True,
-        verbose_name="Acknowledged?",
-        help_text="Confirm if this maintenance event has been acknowledged",
-    )
-
-    comments = models.TextField(blank=True)
+    status = models.CharField(max_length=30, choices=CircuitMaintenanceTypeChoices)
 
     class Meta:
         ordering = ("-created",)

@@ -178,3 +178,108 @@ class TestBaseCircuitEvent(unittest.TestCase):
 
         for field_name in expected_fields:
             self.assertIn(field_name, actual_fields, f"Missing field: {field_name}")
+
+
+class TestCircuitMaintenance(unittest.TestCase):
+    """Test CircuitMaintenance refactoring to inherit from BaseCircuitEvent"""
+
+    def _get_models_file_ast(self):
+        """Parse the models.py file and return AST"""
+        models_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "netbox_circuitmaintenance",
+            "models.py",
+        )
+        with open(models_path, "r") as f:
+            return ast.parse(f.read())
+
+    def _find_class(self, tree, class_name):
+        """Find a class definition in the AST"""
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and node.name == class_name:
+                return node
+        return None
+
+    def _get_base_class_name(self, class_node):
+        """Get the name of the base class"""
+        if class_node.bases:
+            for base in class_node.bases:
+                if isinstance(base, ast.Name):
+                    return base.id
+        return None
+
+    def _get_field_names(self, class_node):
+        """Extract field names from model class"""
+        fields = []
+        for item in class_node.body:
+            if isinstance(item, ast.Assign):
+                for target in item.targets:
+                    if isinstance(target, ast.Name):
+                        # Check if it's a models.Field assignment
+                        if isinstance(item.value, ast.Call):
+                            fields.append(target.id)
+        return fields
+
+    def test_circuit_maintenance_inherits_from_base(self):
+        """Test that CircuitMaintenance inherits from BaseCircuitEvent"""
+        tree = self._get_models_file_ast()
+        class_node = self._find_class(tree, "CircuitMaintenance")
+
+        self.assertIsNotNone(
+            class_node, "CircuitMaintenance class not found in models.py"
+        )
+
+        base_class = self._get_base_class_name(class_node)
+        self.assertEqual(
+            base_class,
+            "BaseCircuitEvent",
+            f"CircuitMaintenance should inherit from BaseCircuitEvent, got {base_class}",
+        )
+
+    def test_circuit_maintenance_has_required_end_time(self):
+        """Test that CircuitMaintenance end field exists in the class"""
+        tree = self._get_models_file_ast()
+        class_node = self._find_class(tree, "CircuitMaintenance")
+
+        self.assertIsNotNone(class_node)
+
+        fields = self._get_field_names(class_node)
+        self.assertIn("end", fields, "CircuitMaintenance should define 'end' field")
+
+    def test_circuit_maintenance_has_status_field(self):
+        """Test that CircuitMaintenance has status field"""
+        tree = self._get_models_file_ast()
+        class_node = self._find_class(tree, "CircuitMaintenance")
+
+        self.assertIsNotNone(class_node)
+
+        fields = self._get_field_names(class_node)
+        self.assertIn("status", fields, "CircuitMaintenance should define 'status' field")
+
+    def test_circuit_maintenance_does_not_redefine_base_fields(self):
+        """Test that CircuitMaintenance doesn't redefine fields from BaseCircuitEvent"""
+        tree = self._get_models_file_ast()
+        class_node = self._find_class(tree, "CircuitMaintenance")
+
+        self.assertIsNotNone(class_node)
+
+        fields = self._get_field_names(class_node)
+
+        # These fields should NOT be in CircuitMaintenance since they're inherited
+        base_fields = [
+            "name",
+            "summary",
+            "provider",
+            "start",
+            "original_timezone",
+            "internal_ticket",
+            "acknowledged",
+            "comments",
+        ]
+
+        for field_name in base_fields:
+            self.assertNotIn(
+                field_name,
+                fields,
+                f"CircuitMaintenance should not redefine '{field_name}' (inherited from BaseCircuitEvent)",
+            )
