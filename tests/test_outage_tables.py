@@ -51,8 +51,14 @@ class TestCircuitOutageTable(unittest.TestCase):
                     if isinstance(target, ast.Name):
                         column_names.append(target.id)
 
-        expected_columns = ['name', 'provider', 'status', 'start', 'end',
-                           'estimated_time_to_repair']
+        expected_columns = [
+            "name",
+            "provider",
+            "status",
+            "start",
+            "end",
+            "estimated_time_to_repair",
+        ]
 
         for col in expected_columns:
             self.assertIn(col, column_names, f"Missing column definition: {col}")

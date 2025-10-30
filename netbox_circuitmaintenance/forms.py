@@ -7,10 +7,15 @@ from netbox.forms import NetBoxModelFilterSetForm, NetBoxModelForm
 from utilities.forms.fields import DynamicModelChoiceField
 from utilities.forms.widgets import DateTimePicker
 
-from .models import (CircuitMaintenance, CircuitMaintenanceImpact,
-                     CircuitMaintenanceNotifications,
-                     CircuitMaintenanceTypeChoices, CircuitOutage,
-                     CircuitOutageStatusChoices, TimeZoneChoices)
+from .models import (
+    CircuitMaintenance,
+    CircuitMaintenanceImpact,
+    CircuitMaintenanceNotifications,
+    CircuitMaintenanceTypeChoices,
+    CircuitOutage,
+    CircuitOutageStatusChoices,
+    TimeZoneChoices,
+)
 
 
 class CircuitMaintenanceForm(NetBoxModelForm):

@@ -254,7 +254,9 @@ class TestCircuitMaintenance(unittest.TestCase):
         self.assertIsNotNone(class_node)
 
         fields = self._get_field_names(class_node)
-        self.assertIn("status", fields, "CircuitMaintenance should define 'status' field")
+        self.assertIn(
+            "status", fields, "CircuitMaintenance should define 'status' field"
+        )
 
     def test_circuit_maintenance_does_not_redefine_base_fields(self):
         """Test that CircuitMaintenance doesn't redefine fields from BaseCircuitEvent"""

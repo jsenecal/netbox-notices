@@ -1,10 +1,12 @@
 from netbox.api.viewsets import NetBoxModelViewSet
 
 from .. import filtersets, models
-from .serializers import (CircuitMaintenanceImpactSerializer,
-                          CircuitMaintenanceNotificationsSerializer,
-                          CircuitMaintenanceSerializer,
-                          CircuitOutageSerializer)
+from .serializers import (
+    CircuitMaintenanceImpactSerializer,
+    CircuitMaintenanceNotificationsSerializer,
+    CircuitMaintenanceSerializer,
+    CircuitOutageSerializer,
+)
 
 
 class CircuitMaintenanceViewSet(NetBoxModelViewSet):

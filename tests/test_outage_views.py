@@ -42,9 +42,7 @@ class TestCircuitOutageViews(unittest.TestCase):
 
         for view_class in view_classes:
             class_node = self._find_class(tree, view_class)
-            self.assertIsNotNone(
-                class_node, f"{view_class} class not found"
-            )
+            self.assertIsNotNone(class_node, f"{view_class} class not found")
 
     def test_circuit_outage_list_view_has_queryset(self):
         """Test that list view defines queryset attribute"""
@@ -63,7 +61,9 @@ class TestCircuitOutageViews(unittest.TestCase):
                         has_queryset = True
                         break
 
-        self.assertTrue(has_queryset, "CircuitOutageListView missing queryset attribute")
+        self.assertTrue(
+            has_queryset, "CircuitOutageListView missing queryset attribute"
+        )
 
     def test_circuit_outage_list_view_has_table(self):
         """Test that list view defines table attribute"""

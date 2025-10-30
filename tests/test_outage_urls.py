@@ -29,18 +29,19 @@ class TestCircuitOutageURLs(unittest.TestCase):
 
         # Check for outage-related URL patterns
         # Look for path() calls with 'outage' in them
+        # Use DOTALL flag to handle multi-line formatting from black
         outage_url_patterns = [
             r"path\(['\"]outages/['\"]",  # List view
-            r"path\(['\"]outages/add/['\"]",  # Add view
+            r"path\(\s*['\"]outages/add/['\"]",  # Add view (allow whitespace)
             r"path\(['\"]outages/<int:pk>/['\"]",  # Detail view
-            r"path\(['\"]outages/<int:pk>/edit/['\"]",  # Edit view
-            r"path\(['\"]outages/<int:pk>/delete/['\"]",  # Delete view
+            r"path\(\s*['\"]outages/<int:pk>/edit/['\"]",  # Edit view (allow whitespace)
+            r"path\(\s*['\"]outages/<int:pk>/delete/['\"]",  # Delete view (allow whitespace)
         ]
 
         for pattern in outage_url_patterns:
             self.assertIsNotNone(
-                re.search(pattern, content),
-                f"URL pattern not found: {pattern}"
+                re.search(pattern, content, re.DOTALL),
+                f"URL pattern not found: {pattern}",
             )
 
     def test_outage_view_imports(self):
@@ -56,7 +57,4 @@ class TestCircuitOutageURLs(unittest.TestCase):
         ]
 
         for view_import in view_imports:
-            self.assertIn(
-                view_import, content,
-                f"View import not found: {view_import}"
-            )
+            self.assertIn(view_import, content, f"View import not found: {view_import}")

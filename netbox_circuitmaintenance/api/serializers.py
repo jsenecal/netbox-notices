@@ -1,10 +1,13 @@
 from circuits.api.serializers import CircuitSerializer, ProviderSerializer
-from netbox.api.serializers import (NetBoxModelSerializer,
-                                    WritableNestedSerializer)
+from netbox.api.serializers import NetBoxModelSerializer, WritableNestedSerializer
 from rest_framework import serializers
 
-from ..models import (CircuitMaintenance, CircuitMaintenanceImpact,
-                      CircuitMaintenanceNotifications, CircuitOutage)
+from ..models import (
+    CircuitMaintenance,
+    CircuitMaintenanceImpact,
+    CircuitMaintenanceNotifications,
+    CircuitOutage,
+)
 
 
 class NestedCircuitMaintenanceImpactSerializer(WritableNestedSerializer):

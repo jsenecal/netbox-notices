@@ -2,10 +2,7 @@
 Tests for CircuitOutage forms.
 """
 
-from netbox_circuitmaintenance.forms import (
-    CircuitOutageFilterForm,
-    CircuitOutageForm,
-)
+from netbox_circuitmaintenance.forms import CircuitOutageFilterForm, CircuitOutageForm
 
 
 def test_circuit_outage_form_exists():
