@@ -106,3 +106,6 @@ venv.bak/
 
 # MacOS FS
 .DS_Store
+
+# Git worktrees
+.worktrees/
