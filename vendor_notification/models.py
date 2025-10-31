@@ -317,7 +317,7 @@ class Maintenance(BaseEvent):
         )
 
 
-class CircuitOutage(BaseEvent):
+class Outage(BaseEvent):
     """
     Unplanned outage events with optional end times and ETR tracking.
     Inherits common fields from BaseEvent.
@@ -339,8 +339,8 @@ class CircuitOutage(BaseEvent):
     status = models.CharField(max_length=30, choices=OutageStatusChoices)
 
     class Meta:
-        verbose_name = "Circuit Outage"
-        verbose_name_plural = "Circuit Outages"
+        verbose_name = "Outage"
+        verbose_name_plural = "Outages"
         ordering = ("-created",)
 
     def __str__(self):
@@ -359,7 +359,7 @@ class CircuitOutage(BaseEvent):
 
     def get_absolute_url(self):
         return reverse(
-            "plugins:netbox_circuitmaintenance:circuitoutage", args=[self.pk]
+            "plugins:vendor_notification:outage", args=[self.pk]
         )
 
 
