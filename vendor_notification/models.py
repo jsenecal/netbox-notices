@@ -250,7 +250,7 @@ class BaseEvent(NetBoxModel):
         ordering = ("-created",)
 
 
-class CircuitMaintenance(BaseEvent):
+class Maintenance(BaseEvent):
     """
     Planned maintenance events with scheduled end times.
     Inherits common fields from BaseEvent.
@@ -270,8 +270,8 @@ class CircuitMaintenance(BaseEvent):
 
     class Meta:
         ordering = ("-created",)
-        verbose_name = "Circuit Maintenance"
-        verbose_name_plural = "Circuit Maintenances"
+        verbose_name = "Maintenance"
+        verbose_name_plural = "Maintenances"
 
     def __str__(self):
         return self.name
@@ -313,7 +313,7 @@ class CircuitMaintenance(BaseEvent):
 
     def get_absolute_url(self):
         return reverse(
-            "plugins:netbox_circuitmaintenance:circuitmaintenance", args=[self.pk]
+            "plugins:vendor_notification:maintenance", args=[self.pk]
         )
 
 
