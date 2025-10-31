@@ -6,6 +6,7 @@ __version__ = "0.0.1"
 
 
 from netbox.plugins import PluginConfig
+
 from .constants import DEFAULT_ALLOWED_CONTENT_TYPES
 
 
