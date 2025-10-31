@@ -393,3 +393,108 @@ class TestCircuitOutage(unittest.TestCase):
             self._has_clean_method(class_node),
             "CircuitOutage should define clean() method for validation",
         )
+
+
+class TestOutageModel(unittest.TestCase):
+    """Test renamed Outage model structure (Task 6)"""
+
+    def _get_models_file_ast(self):
+        """Parse the models.py file and return AST"""
+        models_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "vendor_notification",
+            "models.py",
+        )
+        with open(models_path, "r") as f:
+            return ast.parse(f.read())
+
+    def _find_class(self, tree, class_name):
+        """Find a class definition in the AST"""
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and node.name == class_name:
+                return node
+        return None
+
+    def _get_meta_attribute(self, class_node, attr_name):
+        """Get a Meta class attribute value"""
+        for item in class_node.body:
+            if isinstance(item, ast.ClassDef) and item.name == "Meta":
+                for meta_item in item.body:
+                    if isinstance(meta_item, ast.Assign):
+                        for target in meta_item.targets:
+                            if isinstance(target, ast.Name) and target.id == attr_name:
+                                if isinstance(meta_item.value, ast.Constant):
+                                    return meta_item.value.value
+        return None
+
+    def _get_method(self, class_node, method_name):
+        """Find a method in a class"""
+        for item in class_node.body:
+            if isinstance(item, ast.FunctionDef) and item.name == method_name:
+                return item
+        return None
+
+    def _get_url_pattern_from_method(self, method_node):
+        """Extract URL pattern from get_absolute_url method"""
+        for node in ast.walk(method_node):
+            if isinstance(node, ast.Call):
+                # Look for reverse() call
+                if isinstance(node.func, ast.Name) and node.func.id == "reverse":
+                    if node.args and isinstance(node.args[0], ast.Constant):
+                        return node.args[0].value
+        return None
+
+    def test_outage_class_exists(self):
+        """Test that Outage class exists (renamed from CircuitOutage)"""
+        tree = self._get_models_file_ast()
+        class_node = self._find_class(tree, "Outage")
+
+        self.assertIsNotNone(
+            class_node,
+            "Outage class not found in models.py. Should be renamed from CircuitOutage"
+        )
+
+    def test_outage_verbose_name(self):
+        """Test that Outage has correct verbose_name without 'Circuit' prefix"""
+        tree = self._get_models_file_ast()
+        class_node = self._find_class(tree, "Outage")
+
+        self.assertIsNotNone(class_node)
+
+        verbose_name = self._get_meta_attribute(class_node, "verbose_name")
+        self.assertEqual(
+            verbose_name,
+            "Outage",
+            "verbose_name should be 'Outage' (not 'Circuit Outage')"
+        )
+
+    def test_outage_verbose_name_plural(self):
+        """Test that Outage has correct verbose_name_plural without 'Circuit' prefix"""
+        tree = self._get_models_file_ast()
+        class_node = self._find_class(tree, "Outage")
+
+        self.assertIsNotNone(class_node)
+
+        verbose_name_plural = self._get_meta_attribute(class_node, "verbose_name_plural")
+        self.assertEqual(
+            verbose_name_plural,
+            "Outages",
+            "verbose_name_plural should be 'Outages' (not 'Circuit Outages')"
+        )
+
+    def test_outage_url_pattern(self):
+        """Test that get_absolute_url uses correct URL pattern"""
+        tree = self._get_models_file_ast()
+        class_node = self._find_class(tree, "Outage")
+
+        self.assertIsNotNone(class_node)
+
+        method_node = self._get_method(class_node, "get_absolute_url")
+        self.assertIsNotNone(method_node, "get_absolute_url method not found")
+
+        url_pattern = self._get_url_pattern_from_method(method_node)
+        self.assertEqual(
+            url_pattern,
+            "plugins:vendor_notification:outage",
+            "URL pattern should be 'plugins:vendor_notification:outage' (not 'plugins:netbox_circuitmaintenance:circuitoutage')"
+        )
