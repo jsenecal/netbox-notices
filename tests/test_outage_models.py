@@ -16,7 +16,7 @@ class TestCircuitOutageStatusChoices(unittest.TestCase):
         """Parse the models.py file and return AST"""
         models_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
-            "netbox_circuitmaintenance",
+            "vendor_notification",
             "models.py",
         )
         with open(models_path, "r") as f:
@@ -95,14 +95,14 @@ class TestCircuitOutageStatusChoices(unittest.TestCase):
         self.assertEqual(choices_dict.get("RESOLVED"), "green")
 
 
-class TestBaseCircuitEvent(unittest.TestCase):
-    """Test the BaseCircuitEvent abstract model structure"""
+class TestBaseEvent(unittest.TestCase):
+    """Test the BaseEvent abstract model structure"""
 
     def _get_models_file_ast(self):
         """Parse the models.py file and return AST"""
         models_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
-            "netbox_circuitmaintenance",
+            "vendor_notification",
             "models.py",
         )
         with open(models_path, "r") as f:
@@ -140,25 +140,25 @@ class TestBaseCircuitEvent(unittest.TestCase):
         return fields
 
     def test_base_circuit_event_exists(self):
-        """Test that BaseCircuitEvent class exists"""
+        """Test that BaseEvent class exists"""
         tree = self._get_models_file_ast()
-        class_node = self._find_class(tree, "BaseCircuitEvent")
+        class_node = self._find_class(tree, "BaseEvent")
         self.assertIsNotNone(
-            class_node, "BaseCircuitEvent class not found in models.py"
+            class_node, "BaseEvent class not found in models.py"
         )
 
     def test_base_circuit_event_is_abstract(self):
-        """Test that BaseCircuitEvent is abstract"""
+        """Test that BaseEvent is abstract"""
         tree = self._get_models_file_ast()
-        class_node = self._find_class(tree, "BaseCircuitEvent")
+        class_node = self._find_class(tree, "BaseEvent")
         self.assertIsNotNone(class_node)
         self.assertTrue(
             self._is_abstract_model(class_node),
-            "BaseCircuitEvent should have Meta.abstract = True",
+            "BaseEvent should have Meta.abstract = True",
         )
 
     def test_base_circuit_event_fields(self):
-        """Test that BaseCircuitEvent defines expected fields"""
+        """Test that BaseEvent defines expected fields"""
         expected_fields = [
             "name",
             "summary",
@@ -171,7 +171,7 @@ class TestBaseCircuitEvent(unittest.TestCase):
         ]
 
         tree = self._get_models_file_ast()
-        class_node = self._find_class(tree, "BaseCircuitEvent")
+        class_node = self._find_class(tree, "BaseEvent")
         self.assertIsNotNone(class_node)
 
         actual_fields = self._get_field_names(class_node)
@@ -181,13 +181,13 @@ class TestBaseCircuitEvent(unittest.TestCase):
 
 
 class TestCircuitMaintenance(unittest.TestCase):
-    """Test CircuitMaintenance refactoring to inherit from BaseCircuitEvent"""
+    """Test CircuitMaintenance refactoring to inherit from BaseEvent"""
 
     def _get_models_file_ast(self):
         """Parse the models.py file and return AST"""
         models_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
-            "netbox_circuitmaintenance",
+            "vendor_notification",
             "models.py",
         )
         with open(models_path, "r") as f:
@@ -221,7 +221,7 @@ class TestCircuitMaintenance(unittest.TestCase):
         return fields
 
     def test_circuit_maintenance_inherits_from_base(self):
-        """Test that CircuitMaintenance inherits from BaseCircuitEvent"""
+        """Test that CircuitMaintenance inherits from BaseEvent"""
         tree = self._get_models_file_ast()
         class_node = self._find_class(tree, "CircuitMaintenance")
 
@@ -232,8 +232,8 @@ class TestCircuitMaintenance(unittest.TestCase):
         base_class = self._get_base_class_name(class_node)
         self.assertEqual(
             base_class,
-            "BaseCircuitEvent",
-            f"CircuitMaintenance should inherit from BaseCircuitEvent, got {base_class}",
+            "BaseEvent",
+            f"CircuitMaintenance should inherit from BaseEvent, got {base_class}",
         )
 
     def test_circuit_maintenance_has_required_end_time(self):
@@ -259,7 +259,7 @@ class TestCircuitMaintenance(unittest.TestCase):
         )
 
     def test_circuit_maintenance_does_not_redefine_base_fields(self):
-        """Test that CircuitMaintenance doesn't redefine fields from BaseCircuitEvent"""
+        """Test that CircuitMaintenance doesn't redefine fields from BaseEvent"""
         tree = self._get_models_file_ast()
         class_node = self._find_class(tree, "CircuitMaintenance")
 
@@ -283,7 +283,7 @@ class TestCircuitMaintenance(unittest.TestCase):
             self.assertNotIn(
                 field_name,
                 fields,
-                f"CircuitMaintenance should not redefine '{field_name}' (inherited from BaseCircuitEvent)",
+                f"CircuitMaintenance should not redefine '{field_name}' (inherited from BaseEvent)",
             )
 
 
@@ -294,7 +294,7 @@ class TestCircuitOutage(unittest.TestCase):
         """Parse the models.py file and return AST"""
         models_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
-            "netbox_circuitmaintenance",
+            "vendor_notification",
             "models.py",
         )
         with open(models_path, "r") as f:
@@ -335,7 +335,7 @@ class TestCircuitOutage(unittest.TestCase):
         return False
 
     def test_circuit_outage_inherits_from_base(self):
-        """Test that CircuitOutage inherits from BaseCircuitEvent"""
+        """Test that CircuitOutage inherits from BaseEvent"""
         tree = self._get_models_file_ast()
         class_node = self._find_class(tree, "CircuitOutage")
 
@@ -344,8 +344,8 @@ class TestCircuitOutage(unittest.TestCase):
         base_class = self._get_base_class_name(class_node)
         self.assertEqual(
             base_class,
-            "BaseCircuitEvent",
-            f"CircuitOutage should inherit from BaseCircuitEvent, got {base_class}",
+            "BaseEvent",
+            f"CircuitOutage should inherit from BaseEvent, got {base_class}",
         )
 
     def test_circuit_outage_end_field_exists(self):
