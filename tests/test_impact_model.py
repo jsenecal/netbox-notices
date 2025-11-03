@@ -209,3 +209,49 @@ class TestImpactModel(unittest.TestCase):
             class_node,
             "CircuitMaintenanceImpact should be removed (replaced by Impact)"
         )
+
+    def test_impact_clean_validates_allowed_content_types(self):
+        """Test that Impact.clean() validates target_content_type against allowed types"""
+        tree = self._get_models_file_ast()
+        class_node = self._find_class(tree, "Impact")
+        self.assertIsNotNone(class_node)
+
+        # Find the clean method
+        clean_method = None
+        for item in class_node.body:
+            if isinstance(item, ast.FunctionDef) and item.name == "clean":
+                clean_method = item
+                break
+
+        self.assertIsNotNone(clean_method, "Impact should have clean() method")
+
+        # Convert clean method to source code string for validation
+        method_source = ast.unparse(clean_method)
+
+        # Check that clean() imports/calls get_allowed_content_types
+        self.assertIn(
+            "get_allowed_content_types",
+            method_source,
+            "Impact.clean() should call get_allowed_content_types() to validate target"
+        )
+
+        # Check that clean() validates target_content_type
+        self.assertIn(
+            "target_content_type",
+            method_source,
+            "Impact.clean() should validate target_content_type"
+        )
+
+        # Check that clean() raises ValidationError for disallowed types
+        self.assertIn(
+            "ValidationError",
+            method_source,
+            "Impact.clean() should raise ValidationError for disallowed content types"
+        )
+
+        # Check that the validation compares against allowed_types
+        self.assertIn(
+            "not in",
+            method_source,
+            "Impact.clean() should check if type is not in allowed_types"
+        )
