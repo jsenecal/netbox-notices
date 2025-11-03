@@ -381,7 +381,7 @@ class Impact(NetBoxModel):
             model__in=['maintenance', 'outage']
         )
     )
-    event_object_id = models.PositiveIntegerField()
+    event_object_id = models.PositiveIntegerField(db_index=True)
     event = GenericForeignKey('event_content_type', 'event_object_id')
 
     # Link to target NetBox object (Circuit, Device, Site, etc.)
@@ -390,7 +390,7 @@ class Impact(NetBoxModel):
         on_delete=models.CASCADE,
         related_name='impacts_as_target'
     )
-    target_object_id = models.PositiveIntegerField()
+    target_object_id = models.PositiveIntegerField(db_index=True)
     target = GenericForeignKey('target_content_type', 'target_object_id')
 
     # Impact level
