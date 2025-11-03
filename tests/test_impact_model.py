@@ -9,8 +9,8 @@ import os
 import unittest
 
 
-class TestImpactModel(unittest.TestCase):
-    """Test Impact model with generic foreign keys"""
+class TestImpactModelStructure(unittest.TestCase):
+    """AST-based tests for Impact model structure (works without Django/NetBox)"""
 
     def _get_models_file_ast(self):
         """Parse the models.py file and return AST"""
@@ -255,3 +255,65 @@ class TestImpactModel(unittest.TestCase):
             method_source,
             "Impact.clean() should check if type is not in allowed_types"
         )
+
+
+# Functional tests using Django TestCase
+# These tests require Django/NetBox to be available and properly configured
+# NOTE: These tests require a full NetBox environment (e.g., DevContainer or runserver)
+# to run successfully. They will fail in basic pytest environments.
+try:
+    import pytest
+    from django.test import TestCase, override_settings
+
+    @pytest.mark.django_db
+    class TestImpactValidation(TestCase):
+        """Functional tests for Impact validation (requires full NetBox environment)"""
+
+        @classmethod
+        def setUpTestData(cls):
+            from django.utils import timezone
+            from datetime import timedelta
+            from circuits.models import Provider, Circuit, CircuitType
+            from dcim.models import Site
+            from vendor_notification.models import Maintenance
+
+            cls.provider = Provider.objects.create(name="Test Provider", slug="test-provider")
+            cls.circuit_type = CircuitType.objects.create(name="Test Type", slug="test-type")
+            cls.circuit = Circuit.objects.create(cid="TEST-001", provider=cls.provider, type=cls.circuit_type)
+            cls.site = Site.objects.create(name="Test Site", slug="test-site")
+            cls.maintenance = Maintenance.objects.create(
+                name="MAINT-001",
+                summary="Test",
+                provider=cls.provider,
+                start=timezone.now(),
+                end=timezone.now() + timedelta(hours=4),
+                status="CONFIRMED"
+            )
+
+        @override_settings(
+            PLUGINS_CONFIG={
+                'vendor_notification': {
+                    'allowed_content_types': ['circuits.Circuit']
+                }
+            }
+        )
+        def test_validation_disallowed_content_type(self):
+            """Test that non-configured content types are rejected"""
+            from django.core.exceptions import ValidationError
+            from vendor_notification.models import Impact
+
+            impact = Impact(
+                event=self.maintenance,
+                target=self.site,
+                impact="OUTAGE"
+            )
+
+            with self.assertRaises(ValidationError) as cm:
+                impact.full_clean()
+
+            self.assertIn('target_content_type', cm.exception.message_dict)
+            self.assertIn('not allowed', str(cm.exception))
+
+except ImportError:
+    # Django/NetBox not available - skip functional tests
+    pass
