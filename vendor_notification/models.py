@@ -478,7 +478,7 @@ class EventNotification(NetBoxModel):
             model__in=['maintenance', 'outage']
         )
     )
-    event_object_id = models.PositiveIntegerField()
+    event_object_id = models.PositiveIntegerField(db_index=True)
     event = GenericForeignKey('event_content_type', 'event_object_id')
 
     email = models.BinaryField()
