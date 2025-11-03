@@ -463,36 +463,39 @@ class Impact(NetBoxModel):
                 )
 
 
-class CircuitMaintenanceNotifications(NetBoxModel):
+class EventNotification(NetBoxModel):
+    """
+    Stores raw email notifications for maintenance or outage events.
+    Uses GenericForeignKey to link to either event type.
+    """
 
-    circuitmaintenance = models.ForeignKey(
-        to=Maintenance,
+    # Link to event (Maintenance or Outage)
+    event_content_type = models.ForeignKey(
+        ContentType,
         on_delete=models.CASCADE,
-        related_name="notification",
-        verbose_name="Circuit Maintenance ID",
+        limit_choices_to=models.Q(
+            app_label='vendor_notification',
+            model__in=['maintenance', 'outage']
+        )
     )
+    event_object_id = models.PositiveIntegerField()
+    event = GenericForeignKey('event_content_type', 'event_object_id')
 
     email = models.BinaryField()
-
     email_body = models.TextField(verbose_name="Email Body")
-
     subject = models.CharField(max_length=100)
-
-    email_from = models.EmailField(
-        verbose_name="Email From",
-    )
-
-    email_recieved = models.DateTimeField(verbose_name="Email Recieved")
+    email_from = models.EmailField(verbose_name="Email From")
+    email_received = models.DateTimeField(verbose_name="Email Received")  # Fixed typo
 
     class Meta:
-        ordering = ("email_recieved",)
-        verbose_name = "Circuit Maintenance Notification"
-        verbose_name_plural = "Circuit Maintenance Notification"
+        ordering = ("email_received",)
+        verbose_name = "Event Notification"
+        verbose_name_plural = "Event Notifications"
 
     def __str__(self):
         return self.subject
 
     def get_absolute_url(self):
         return reverse(
-            "plugins:netbox_circuitmaintenance:circuitnotification", args=[self.pk]
+            "plugins:vendor_notification:eventnotification", args=[self.pk]
         )
