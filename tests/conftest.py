@@ -37,3 +37,7 @@ def pytest_configure(config):
 
     # Set Django settings module
     os.environ['DJANGO_SETTINGS_MODULE'] = 'netbox.configuration_testing'
+
+    # Initialize Django
+    import django
+    django.setup()
