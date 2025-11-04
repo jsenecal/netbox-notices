@@ -121,7 +121,7 @@
         </div>
         {% if object.status != 'RESOLVED' %}
         <div class="card-footer text-end noprint">
-            <a href="{% url 'plugins:vendor_notification:impact_add' %}?event={{ object.pk }}&event_type=outage&return_url={% url 'plugins:vendor_notification:outage' pk=object.pk %}" class="btn btn-primary btn-sm">
+            <a href="{% url 'plugins:vendor_notification:impact_add' %}?event_content_type={{ object|content_type_id }}&event_object_id={{ object.pk }}&return_url={% url 'plugins:vendor_notification:outage' pk=object.pk %}" class="btn btn-primary btn-sm">
               <i class="mdi mdi-plus-thick" aria-hidden="true"></i> Associate an Impact
             </a>
           </div>
