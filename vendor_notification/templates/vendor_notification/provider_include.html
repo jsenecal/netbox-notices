@@ -1,0 +1,40 @@
+{% load helpers %}
+
+<div class="card">
+<h5 class="card-header">
+    Active / Upcoming Maintenances
+</h5>
+
+{% if maintenances %}
+<div class="table-responsive">
+    <table class="table table-hover object-list">
+        <thead>
+        <tr>
+            <th class="orderable">Maintenance ID</th>
+            <th class="orderable">Start</th>
+            <th class="orderable">End</th>
+            <th class="orderable">Status</th>
+            <th class="orderable">Target</th>
+            <th class="orderable">Impact</th>
+        </tr>
+    </thead>
+        {% for maintenance in maintenances %}
+        <tr>
+            <td>{{maintenance.event|linkify}}</td>
+            <td>{{maintenance.event.start}}</td>
+            <td>{{maintenance.event.end}}</td>
+            <td>{% badge maintenance.event.get_status_display bg_color=maintenance.event.get_status_color %}</td>
+            <td>{{maintenance.target|linkify}}</td>
+            <td>{% badge maintenance.get_impact_display bg_color=maintenance.get_impact_color %}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+    {% else %}
+    <div class="card-body">
+        <div class="text-muted">
+            None
+        </div>
+    </div>
+    {% endif %}
+    </div>

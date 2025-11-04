@@ -1,23 +1,23 @@
 """
-Tests for CircuitOutage forms.
+Tests for Outage forms.
 """
 
-from netbox_circuitmaintenance.forms import CircuitOutageFilterForm, CircuitOutageForm
+from vendor_notification.forms import OutageFilterForm, OutageForm
 
 
-def test_circuit_outage_form_exists():
-    """Test that CircuitOutageForm is defined"""
-    assert CircuitOutageForm is not None
+def test_outage_form_exists():
+    """Test that OutageForm is defined"""
+    assert OutageForm is not None
 
 
-def test_circuit_outage_form_model():
-    """Test that form targets CircuitOutage model"""
-    from netbox_circuitmaintenance.models import CircuitOutage
+def test_outage_form_model():
+    """Test that form targets Outage model"""
+    from vendor_notification.models import Outage
 
-    assert CircuitOutageForm.Meta.model == CircuitOutage
+    assert OutageForm.Meta.model == Outage
 
 
-def test_circuit_outage_form_fields():
+def test_outage_form_fields():
     """Test that form includes all required fields"""
     expected_fields = (
         "name",
@@ -34,9 +34,9 @@ def test_circuit_outage_form_fields():
         "tags",
     )
 
-    assert CircuitOutageForm.Meta.fields == expected_fields
+    assert OutageForm.Meta.fields == expected_fields
 
 
-def test_circuit_outage_filter_form_exists():
-    """Test that CircuitOutageFilterForm is defined"""
-    assert CircuitOutageFilterForm is not None
+def test_outage_filter_form_exists():
+    """Test that OutageFilterForm is defined"""
+    assert OutageFilterForm is not None

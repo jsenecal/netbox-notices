@@ -60,9 +60,7 @@ class TestMaintenanceModel(unittest.TestCase):
         """Test that Maintenance class exists"""
         tree = self._get_models_file_ast()
         class_node = self._find_class(tree, "Maintenance")
-        self.assertIsNotNone(
-            class_node, "Maintenance class not found in models.py"
-        )
+        self.assertIsNotNone(class_node, "Maintenance class not found in models.py")
 
     def test_maintenance_inherits_from_base_event(self):
         """Test that Maintenance inherits from BaseEvent"""

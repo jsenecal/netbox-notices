@@ -1,1 +1,1 @@
-"""Unit test package for netbox_circuitmaintenance."""
+"""Unit test package for vendor_notification."""

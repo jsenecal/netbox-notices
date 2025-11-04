@@ -1,0 +1,188 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col col-md-6">
+        <div class="card">
+            <h5 class="card-header">Outage Details</h5>
+            <div class="card-body">
+                <table class="table table-hover attr-table">
+                    <tr>
+                        <th scope="row">Event ID</th>
+                        <td>{{ object.name }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Provider</th>
+                        <td>{{ object.provider|linkify }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Status</th>
+                        <td>{% badge object.get_status_display bg_color=object.get_status_color %}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Summary</th>
+                        <td>{{ object.summary }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Start</th>
+                        <td>{{ object.start|annotated_date }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">End</th>
+                        <td>
+                            {% if object.end %}
+                                {{ object.end|annotated_date }}
+                            {% else %}
+                                <span class="text-muted">Not yet resolved</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Estimated Time to Repair</th>
+                        <td>
+                            {% if object.estimated_time_to_repair %}
+                                {{ object.estimated_time_to_repair|annotated_date }}
+                            {% else %}
+                                <span class="text-muted">No estimate provided</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if object.original_timezone %}
+                    <tr>
+                        <th scope="row">Original Timezone</th>
+                        <td>{{ object.original_timezone }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <th scope="row">Internal Ticket</th>
+                        <td>{{ object.internal_ticket|placeholder }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Acknowledged</th>
+                        <td>{% checkmark object.acknowledged %}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        {% include 'inc/panels/custom_fields.html' %}
+    </div>
+    <div class="col col-md-6">
+        {% include 'inc/panels/tags.html' %}
+        {% include 'inc/panels/comments.html' %}
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col col-md-12">
+      <div class="card">
+        <h5 class="card-header">Outage Impact</h5>
+            {% if impacts %}
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th>Target Type</th>
+                        <th>Target Object</th>
+                        <th>Impact</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                    {% for impact in impacts %}
+                    <tr>
+                        <td>{{ impact.target_content_type }}</td>
+                        <td>
+                            {% if impact.target %}
+                                {{ impact.target|linkify }}
+                            {% else %}
+                                <span class="text-muted">Unknown</span>
+                            {% endif %}
+                        </td>
+                        <td>{% badge impact.get_impact_display bg_color=impact.get_impact_color %}</td>
+                        <td class="text-end noprint">
+                            {% if object.status != 'RESOLVED' %}
+                              <a href="{% url 'plugins:vendor_notification:impact_edit' pk=impact.pk %}?return_url={% url 'plugins:vendor_notification:outage' pk=object.pk %}" class="btn btn-warning btn-sm lh-1" title="Edit Impact">
+                                <i class="mdi mdi-pencil" aria-hidden="true"></i>
+                              </a>
+                              <a href="{% url 'plugins:vendor_notification:impact_delete' pk=impact.pk %}?return_url={% url 'plugins:vendor_notification:outage' pk=object.pk %}" class="btn btn-danger btn-sm lh-1" title="Delete Impact">
+                                <i class="mdi mdi-trash-can-outline" aria-hidden="true"></i>
+                              </a>
+                            {% endif %}
+                          </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+            <div class="card-body">
+                <div class="text-muted">
+                    None
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% if object.status != 'RESOLVED' %}
+        <div class="card-footer text-end noprint">
+            <a href="{% url 'plugins:vendor_notification:impact_add' %}?event={{ object.pk }}&event_type=outage&return_url={% url 'plugins:vendor_notification:outage' pk=object.pk %}" class="btn btn-primary btn-sm">
+              <i class="mdi mdi-plus-thick" aria-hidden="true"></i> Associate an Impact
+            </a>
+          </div>
+        {% else %}
+        <div class="card-footer text-end noprint">
+            This outage is resolved, the impact can no longer be modified.
+          </div>
+        {% endif %}
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      <div class="card">
+        <h5 class="card-header">Received Outage Notifications</h5>
+            {% if notifications %}
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th>Subject</th>
+                        <th>From</th>
+                        <th>Date Received</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                    {% for email in notifications %}
+                    <tr>
+                        <td>{{email.subject}}</td>
+                        <td>{{email.email_from}}</td>
+                        <td>{{email.email_received}}</td>
+                        <td class="text-end noprint">
+                            <a href="{% url 'plugins:vendor_notification:eventnotification' pk=email.pk %}" class="btn btn-primary btn-sm lh-1" title="View Notification" target="_blank">
+                                <i class="mdi mdi-book" aria-hidden="true"></i>
+                              </a>
+                              <a href="{% url 'plugins:vendor_notification:eventnotification_delete' pk=email.pk %}?return_url={% url 'plugins:vendor_notification:outage' pk=object.pk %}" class="btn btn-danger btn-sm lh-1" title="Delete Notification">
+                                <i class="mdi mdi-trash-can-outline" aria-hidden="true"></i>
+                              </a>
+                          </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+            <div class="card-body">
+                <div class="text-muted">
+                    No outage notifications have been received for this outage event
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% if object.status != 'RESOLVED' %}
+        <div class="card-footer text-end noprint">
+            <a href="{% url 'plugins:vendor_notification:eventnotification_add' %}?event={{ object.pk }}&event_type=outage&return_url={% url 'plugins:vendor_notification:outage' pk=object.pk %}" class="btn btn-primary btn-sm">
+              <i class="mdi mdi-plus-thick" aria-hidden="true"></i> Add an Outage Notification
+            </a>
+          </div>
+        {% else %}
+        <div class="card-footer text-end noprint">
+            This outage is resolved, notifications can no longer be modified.
+          </div>
+        {% endif %}
+    </div>
+  </div>
+
+{% endblock content %}

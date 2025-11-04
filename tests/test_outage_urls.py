@@ -4,7 +4,6 @@ These tests validate the code structure by reading the source file directly.
 This approach works without requiring NetBox installation.
 """
 
-import ast
 import os
 import re
 import unittest
@@ -17,7 +16,7 @@ class TestCircuitOutageURLs(unittest.TestCase):
         """Read the urls.py file and return content"""
         urls_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
-            "netbox_circuitmaintenance",
+            "vendor_notification",
             "urls.py",
         )
         with open(urls_path, "r") as f:

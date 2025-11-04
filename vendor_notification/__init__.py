@@ -20,9 +20,7 @@ class VendorNotificationConfig(PluginConfig):
     min_version = "4.4.0"
     base_url = "vendor-notification"
 
-    default_settings = {
-        'allowed_content_types': DEFAULT_ALLOWED_CONTENT_TYPES
-    }
+    default_settings = {"allowed_content_types": DEFAULT_ALLOWED_CONTENT_TYPES}
 
     def ready(self):
         super().ready()

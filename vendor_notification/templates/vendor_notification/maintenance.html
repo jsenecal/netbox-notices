@@ -1,0 +1,184 @@
+{% extends 'generic/object.html' %}
+{% load render_table from django_tables2 %}
+
+{% block content %}
+  <div class="row mb-3">
+    <div class="col col-md-6">
+      <div class="card">
+
+        <h5 class="card-header">Maintenance Details</h5>
+
+        <div class="card-body">
+          <table class="table table-hover attr-table">
+            <tr>
+              <th scope="row">Maintenance ID</th>
+              <td>{{ object.name }}</td>
+            </tr>
+            <tr>
+                <th scope="row">Summary</th>
+                <td>{{ object.summary }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Status</th>
+                <td>{% badge object.get_status_display bg_color=object.get_status_color %}</td>
+              </tr>
+              <tr>
+                <th scope="row">Provider</th>
+                <td><a href="{% url 'circuits:provider' pk=object.provider.pk %}">{{ object.provider }}</a></td>
+              </tr>
+              <tr>
+                <th scope="row">Start Date/Time</th>
+                <td>
+                  {{ object.start }}
+                  {% if object.has_timezone_difference %}
+                    <br><small class="text-muted">({{ object.get_start_in_original_tz }} {{ object.original_timezone }})</small>
+                  {% endif %}
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">End Date/Time</th>
+                <td>
+                  {{ object.end }}
+                  {% if object.has_timezone_difference %}
+                    <br><small class="text-muted">({{ object.get_end_in_original_tz }} {{ object.original_timezone }})</small>
+                  {% endif %}
+                </td>
+              </tr>
+              {% if object.original_timezone %}
+              <tr>
+                <th scope="row">Original Timezone</th>
+                <td>{{ object.original_timezone }}</td>
+              </tr>
+              {% endif %}
+              <tr>
+                <th scope="row">Internal Ticket #</th>
+                <td>{{ object.internal_ticket|placeholder }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Acknowledged</th>
+                <td>{{ object.acknowledged }}</td>
+              </tr>
+          </table>
+        </div>
+      </div>
+      {% include 'inc/panels/custom_fields.html' %}
+    </div>
+    <div class="col col-md-6">
+      {% include 'inc/panels/tags.html' %}
+      {% include 'inc/panels/comments.html' %}
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      <div class="card">
+        <h5 class="card-header">Maintenance Impact</h5>
+            {% if impacts %}
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th>Target Type</th>
+                        <th>Target Object</th>
+                        <th>Impact</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                    {% for impact in impacts %}
+                    <tr>
+                        <td>{{ impact.target_content_type }}</td>
+                        <td>
+                            {% if impact.target %}
+                                {{ impact.target|linkify }}
+                            {% else %}
+                                <span class="text-muted">Unknown</span>
+                            {% endif %}
+                        </td>
+                        <td>{% badge impact.get_impact_display bg_color=impact.get_impact_color %}</td>
+                        <td class="text-end noprint">
+                            {% if object.status != 'COMPLETED' and  object.status != 'CANCELLED' %}
+                              <a href="{% url 'plugins:vendor_notification:impact_edit' pk=impact.pk %}?return_url={% url 'plugins:vendor_notification:maintenance' pk=object.pk %}" class="btn btn-warning btn-sm lh-1" title="Edit Impact">
+                                <i class="mdi mdi-pencil" aria-hidden="true"></i>
+                              </a>
+                              <a href="{% url 'plugins:vendor_notification:impact_delete' pk=impact.pk %}?return_url={% url 'plugins:vendor_notification:maintenance' pk=object.pk %}" class="btn btn-danger btn-sm lh-1" title="Delete Impact">
+                                <i class="mdi mdi-trash-can-outline" aria-hidden="true"></i>
+                              </a>
+                            {% endif %}
+                          </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+            <div class="card-body">
+                <div class="text-muted">
+                    None
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% if object.status != 'COMPLETED' and  object.status != 'CANCELLED' %}
+        <div class="card-footer text-end noprint">
+            <a href="{% url 'plugins:vendor_notification:impact_add' %}?event={{ object.pk }}&event_type=maintenance&return_url={% url 'plugins:vendor_notification:maintenance' pk=object.pk %}" class="btn btn-primary btn-sm">
+              <i class="mdi mdi-plus-thick" aria-hidden="true"></i> Associate an Impact
+            </a>
+          </div>
+        {% else %}
+        <div class="card-footer text-end noprint">
+            This maintenance is Completed or Cancelled, the maintenance impact can no longer be modified.
+          </div>
+        {% endif %}
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      <div class="card">
+        <h5 class="card-header">Received Maintenance Notifications</h5>
+            {% if notifications %}
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th>Subject</th>
+                        <th>From</th>
+                        <th>Date Received</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                    {% for email in notifications %}
+                    <tr>
+                        <td>{{email.subject}}</td>
+                        <td>{{email.email_from}}</td>
+                        <td>{{email.email_received}}</td>
+                        <td class="text-end noprint">
+                            <a href="{% url 'plugins:vendor_notification:eventnotification' pk=email.pk %}" class="btn btn-primary btn-sm lh-1" title="View Notification" target="_blank">
+                                <i class="mdi mdi-book" aria-hidden="true"></i>
+                              </a>
+                              <a href="{% url 'plugins:vendor_notification:eventnotification_delete' pk=email.pk %}?return_url={% url 'plugins:vendor_notification:maintenance' pk=object.pk %}" class="btn btn-danger btn-sm lh-1" title="Delete Notification">
+                                <i class="mdi mdi-trash-can-outline" aria-hidden="true"></i>
+                              </a>
+                          </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+            <div class="card-body">
+                <div class="text-muted">
+                    No maintenance notifications have been received for this maintenance event
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% if object.status != 'COMPLETED' and  object.status != 'CANCELLED' %}
+        <div class="card-footer text-end noprint">
+            <a href="{% url 'plugins:vendor_notification:eventnotification_add' %}?event={{ object.pk }}&event_type=maintenance&return_url={% url 'plugins:vendor_notification:maintenance' pk=object.pk %}" class="btn btn-primary btn-sm">
+              <i class="mdi mdi-plus-thick" aria-hidden="true"></i> Add a Maintenance Notification
+            </a>
+          </div>
+        {% else %}
+        <div class="card-footer text-end noprint">
+            This maintenance is Completed or Cancelled, maintenance notifications can no longer be modified.
+          </div>
+        {% endif %}
+    </div>
+  </div>
+
+{% endblock content %}

@@ -16,7 +16,7 @@ class TestCircuitOutageViewSetStructure(unittest.TestCase):
         """Parse the views.py file and return AST"""
         views_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
-            "netbox_circuitmaintenance",
+            "vendor_notification",
             "api",
             "views.py",
         )
@@ -75,9 +75,7 @@ class TestCircuitOutageViewSetStructure(unittest.TestCase):
 
         # Look for queryset attribute
         queryset_attr = self._find_class_attr(viewset_class, "queryset")
-        self.assertIsNotNone(
-            queryset_attr, "CircuitOutageViewSet should have a queryset attribute"
-        )
+        self.assertIsNotNone(queryset_attr, "CircuitOutageViewSet should have a queryset attribute")
 
     def test_circuit_outage_viewset_has_serializer_class(self):
         """Test that CircuitOutageViewSet has serializer_class attribute"""
@@ -108,7 +106,7 @@ class TestCircuitOutageURLRouting(unittest.TestCase):
         """Read the urls.py file"""
         urls_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
-            "netbox_circuitmaintenance",
+            "vendor_notification",
             "api",
             "urls.py",
         )

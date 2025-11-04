@@ -1,6 +1,6 @@
 import zoneinfo
 
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -84,12 +84,7 @@ class TimeZoneChoices(ChoiceSet):
         )
     ]
 
-    ATLANTIC_CHOICES = [
-        (tz, tz)
-        for tz in sorted(
-            ["Atlantic/Azores", "Atlantic/Cape_Verde", "Atlantic/Reykjavik"]
-        )
-    ]
+    ATLANTIC_CHOICES = [(tz, tz) for tz in sorted(["Atlantic/Azores", "Atlantic/Cape_Verde", "Atlantic/Reykjavik"])]
 
     AUSTRALIA_CHOICES = [
         (tz, tz)
@@ -270,6 +265,14 @@ class Maintenance(BaseEvent):
 
     status = models.CharField(max_length=30, choices=MaintenanceTypeChoices)
 
+    # Reverse relation for GenericForeignKey in Impact model
+    impacts = GenericRelation(
+        to="vendor_notification.Impact",
+        content_type_field="event_content_type",
+        object_id_field="event_object_id",
+        related_query_name="maintenance",
+    )
+
     class Meta:
         ordering = ("-created",)
         verbose_name = "Maintenance"
@@ -314,9 +317,7 @@ class Maintenance(BaseEvent):
             return False
 
     def get_absolute_url(self):
-        return reverse(
-            "plugins:vendor_notification:maintenance", args=[self.pk]
-        )
+        return reverse("plugins:vendor_notification:maintenance", args=[self.pk])
 
 
 class Outage(BaseEvent):
@@ -340,6 +341,14 @@ class Outage(BaseEvent):
 
     status = models.CharField(max_length=30, choices=OutageStatusChoices)
 
+    # Reverse relation for GenericForeignKey in Impact model
+    impacts = GenericRelation(
+        to="vendor_notification.Impact",
+        content_type_field="event_content_type",
+        object_id_field="event_object_id",
+        related_query_name="outage",
+    )
+
     class Meta:
         verbose_name = "Outage"
         verbose_name_plural = "Outages"
@@ -352,17 +361,13 @@ class Outage(BaseEvent):
         super().clean()
         # Validation: end time required when status = RESOLVED
         if self.status == "RESOLVED" and not self.end:
-            raise ValidationError(
-                {"end": "End time is required when marking outage as resolved"}
-            )
+            raise ValidationError({"end": "End time is required when marking outage as resolved"})
 
     def get_status_color(self):
         return OutageStatusChoices.colors.get(self.status)
 
     def get_absolute_url(self):
-        return reverse(
-            "plugins:vendor_notification:outage", args=[self.pk]
-        )
+        return reverse("plugins:vendor_notification:outage", args=[self.pk])
 
 
 class Impact(NetBoxModel):
@@ -375,23 +380,16 @@ class Impact(NetBoxModel):
     event_content_type = models.ForeignKey(
         ContentType,
         on_delete=models.CASCADE,
-        related_name='impacts_as_event',
-        limit_choices_to=models.Q(
-            app_label='vendor_notification',
-            model__in=['maintenance', 'outage']
-        )
+        related_name="impacts_as_event",
+        limit_choices_to=models.Q(app_label="vendor_notification", model__in=["maintenance", "outage"]),
     )
     event_object_id = models.PositiveIntegerField(db_index=True)
-    event = GenericForeignKey('event_content_type', 'event_object_id')
+    event = GenericForeignKey("event_content_type", "event_object_id")
 
     # Link to target NetBox object (Circuit, Device, Site, etc.)
-    target_content_type = models.ForeignKey(
-        ContentType,
-        on_delete=models.CASCADE,
-        related_name='impacts_as_target'
-    )
+    target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name="impacts_as_target")
     target_object_id = models.PositiveIntegerField(db_index=True)
-    target = GenericForeignKey('target_content_type', 'target_object_id')
+    target = GenericForeignKey("target_content_type", "target_object_id")
 
     # Impact level
     impact = models.CharField(
@@ -402,11 +400,8 @@ class Impact(NetBoxModel):
     )
 
     class Meta:
-        unique_together = [
-            ('event_content_type', 'event_object_id',
-             'target_content_type', 'target_object_id')
-        ]
-        ordering = ('impact',)
+        unique_together = [("event_content_type", "event_object_id", "target_content_type", "target_object_id")]
+        ordering = ("impact",)
         verbose_name = "Impact"
         verbose_name_plural = "Impacts"
 
@@ -417,9 +412,9 @@ class Impact(NetBoxModel):
 
     def get_absolute_url(self):
         # Link to the event detail page
-        if self.event and hasattr(self.event, 'get_absolute_url'):
+        if self.event and hasattr(self.event, "get_absolute_url"):
             return self.event.get_absolute_url()
-        return reverse('plugins:vendor_notification:impact', args=[self.pk])
+        return reverse("plugins:vendor_notification:impact", args=[self.pk])
 
     def get_impact_color(self):
         return ImpactTypeChoices.colors.get(self.impact)
@@ -439,28 +434,24 @@ class Impact(NetBoxModel):
             # Case-insensitive comparison
             allowed_types_lower = [t.lower() for t in allowed_types]
             if type_string.lower() not in allowed_types_lower:
-                raise ValidationError({
-                    'target_content_type': f"Content type '{type_string}' is not allowed. "
-                                          f"Allowed types: {', '.join(allowed_types)}"
-                })
+                raise ValidationError(
+                    {
+                        "target_content_type": f"Content type '{type_string}' is not allowed. "
+                        f"Allowed types: {', '.join(allowed_types)}"
+                    }
+                )
 
         # Validate event is Maintenance or Outage
         if self.event_content_type:
-            if self.event_content_type.app_label != 'vendor_notification':
-                raise ValidationError({
-                    'event_content_type': 'Event must be a Maintenance or Outage'
-                })
-            if self.event_content_type.model not in ['maintenance', 'outage']:
-                raise ValidationError({
-                    'event_content_type': 'Event must be a Maintenance or Outage'
-                })
+            if self.event_content_type.app_label != "vendor_notification":
+                raise ValidationError({"event_content_type": "Event must be a Maintenance or Outage"})
+            if self.event_content_type.model not in ["maintenance", "outage"]:
+                raise ValidationError({"event_content_type": "Event must be a Maintenance or Outage"})
 
         # Validate event status - cannot modify impacts on completed events
-        if hasattr(self.event, 'status'):
-            if self.event.status in ['COMPLETED', 'CANCELLED', 'RESOLVED']:
-                raise ValidationError(
-                    "You cannot alter an impact once the event has completed."
-                )
+        if hasattr(self.event, "status"):
+            if self.event.status in ["COMPLETED", "CANCELLED", "RESOLVED"]:
+                raise ValidationError("You cannot alter an impact once the event has completed.")
 
 
 class EventNotification(NetBoxModel):
@@ -473,13 +464,10 @@ class EventNotification(NetBoxModel):
     event_content_type = models.ForeignKey(
         ContentType,
         on_delete=models.CASCADE,
-        limit_choices_to=models.Q(
-            app_label='vendor_notification',
-            model__in=['maintenance', 'outage']
-        )
+        limit_choices_to=models.Q(app_label="vendor_notification", model__in=["maintenance", "outage"]),
     )
     event_object_id = models.PositiveIntegerField(db_index=True)
-    event = GenericForeignKey('event_content_type', 'event_object_id')
+    event = GenericForeignKey("event_content_type", "event_object_id")
 
     email = models.BinaryField()
     email_body = models.TextField(verbose_name="Email Body")
@@ -496,6 +484,4 @@ class EventNotification(NetBoxModel):
         return self.subject
 
     def get_absolute_url(self):
-        return reverse(
-            "plugins:vendor_notification:eventnotification", args=[self.pk]
-        )
+        return reverse("plugins:vendor_notification:eventnotification", args=[self.pk])

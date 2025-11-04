@@ -5,11 +5,11 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["netbox_circuitmaintenance", "netbox_circuitmaintenance.*"]
+include = ["vendor_notification", "vendor_notification.*"]
 
 [project]
-name = "netbox-circuitmaintenance"
-keywords = ['netbox_circuitmaintenance']
+name = "netbox-vendor-notification"
+keywords = ['vendor_notification']
 version = "0.6.0"
 description = "Provides the ability to record circuit maintenance, maintenance impact and maintenance notifications in Netbox and link them to Providers and Circuits."
 readme = "README.md"
@@ -62,7 +62,7 @@ push = true
 [tool.bumpver.file_patterns]
 "pyproject.toml" = ['current_version = "{version}"']
 "README.md" = ["{version}", "{pep440_version}"]
-"netbox_circuitmaintenance/__init__.py" = ["{version}", "{__version__}"]
+"vendor_notification/__init__.py" = ["{version}", "{__version__}"]
 
 [tool.flake8]
 max-line-length = 120
@@ -92,7 +92,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --cov=netbox_circuitmaintenance --cov-report=term-missing"
+addopts = "-v --cov=vendor_notification --cov-report=term-missing"
 
 [tool.tox]
 legacy_tox_ini = """
