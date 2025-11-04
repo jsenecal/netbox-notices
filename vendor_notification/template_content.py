@@ -1,7 +1,34 @@
 from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
 from netbox.plugins import PluginTemplateExtension
 
 from .models import Impact, Maintenance, Outage
+
+
+def add_impact_button(instance):
+    """
+    Add 'Add Impact' button to Maintenance and Outage detail pages.
+    Pre-fills event content type and object ID via URL parameters.
+
+    Args:
+        instance: Maintenance or Outage instance
+
+    Returns:
+        HTML string with button linking to Impact creation form
+    """
+    ct = ContentType.objects.get_for_model(instance)
+    url = f"{reverse('plugins:vendor_notification:impact_add')}?event_content_type={ct.pk}&event_object_id={instance.pk}"
+    return f'''
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Impacts</h5>
+            <p class="card-text">Add affected objects for this event.</p>
+            <a href="{url}" class="btn btn-sm btn-primary">
+                <i class="mdi mdi-plus-thick"></i> Add Impact
+            </a>
+        </div>
+    </div>
+    '''
 
 
 class CircuitMaintenanceList(PluginTemplateExtension):
@@ -72,8 +99,24 @@ class SiteMaintenanceList(PluginTemplateExtension):
         )
 
 
+class MaintenanceImpactButton(PluginTemplateExtension):
+    models = ("vendor_notification.maintenance",)
+
+    def right_page(self):
+        return add_impact_button(self.context["object"])
+
+
+class OutageImpactButton(PluginTemplateExtension):
+    models = ("vendor_notification.outage",)
+
+    def right_page(self):
+        return add_impact_button(self.context["object"])
+
+
 template_extensions = [
     CircuitMaintenanceList,
     ProviderMaintenanceList,
     SiteMaintenanceList,
+    MaintenanceImpactButton,
+    OutageImpactButton,
 ]
