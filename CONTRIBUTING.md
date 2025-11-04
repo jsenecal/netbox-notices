@@ -9,7 +9,7 @@ You can contribute in many ways:
 
 ### Report Bugs
 
-Report bugs at https://github.com/jasonyates/netbox_circuitmaintenance/issues.
+Report bugs at https://github.com/jsenecal/netbox-vendor-notification/issues.
 
 If you are reporting a bug, please include:
 
@@ -29,36 +29,37 @@ and "help wanted" is open to whoever wants to implement it.
 
 ### Write Documentation
 
-Netbox Circuit Maintenance Plugin could always use more documentation, whether as part of the
-official Netbox Circuit Maintenance Plugin docs, in docstrings, or even on the web in blog posts,
+NetBox Vendor Notification Plugin could always use more documentation, whether as part of the
+official NetBox Vendor Notification Plugin docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
 ### Submit Feedback
 
-The best way to send feedback is to file an issue at https://github.com/jasonyates/netbox_circuitmaintenance/issues.
+The best way to send feedback is to file an issue at https://github.com/jsenecal/netbox-vendor-notification/issues.
 
 If you are proposing a feature:
 
 * Explain in detail how it would work.
 * Keep the scope as narrow as possible, to make it easier to implement.
-* Remember that this is a volunteer-driven project, and that contributions
-  are welcome :)
+* Remember that contributions are welcome :)
 
 ## Get Started!
 
-Ready to contribute? Here's how to set up `netbox_circuitmaintenance` for local development.
+Ready to contribute? Here's how to set up `netbox-vendor-notification` for local development.
 
-1. Fork the `netbox_circuitmaintenance` repo on GitHub.
+1. Fork the `netbox-vendor-notification` repo on GitHub.
 2. Clone your fork locally
 
     ```
-    $ git clone git@github.com:your_name_here/netbox_circuitmaintenance.git
+    $ git clone git@github.com:your_name_here/netbox-vendor-notification.git
     ```
 
 3. Install dependencies and start your virtualenv:
 
     ```
-    $ poetry install -E test -E doc -E dev
+    $ python3 -m venv venv
+    $ source venv/bin/activate
+    $ pip install -e ".[dev]"
     ```
 
 4. Create a branch for local development:
@@ -70,10 +71,12 @@ Ready to contribute? Here's how to set up `netbox_circuitmaintenance` for local 
     Now you can make your changes locally.
 
 5. When you're done making changes, check that your changes pass the
-   tests, including testing other Python versions, with tox:
+   tests and linting:
 
     ```
-    $ poetry run tox
+    $ ./venv/bin/pytest tests/ -v
+    $ ./venv/bin/ruff format vendor_notification/ tests/
+    $ ./venv/bin/ruff check --fix vendor_notification/ tests/
     ```
 
 6. Commit your changes and push your branch to GitHub:
@@ -95,7 +98,7 @@ Before you submit a pull request, check that it meets these guidelines:
    your new functionality into a function with a docstring, and add the
    feature to the list in README.md.
 3. The pull request should work for Python 3.10, 3.11, and 3.12. Check
-   https://github.com/jasonyates/netbox_circuitmaintenance/actions
+   https://github.com/jsenecal/netbox-vendor-notification/actions
    and make sure that the tests pass for all supported Python versions.
 
 
@@ -106,9 +109,8 @@ Make sure all your changes are committed (including an entry in CHANGELOG.md).
 Then run:
 
 ```
-$ poetry run bump2version patch # possible: major / minor / patch
-$ git push
-$ git push --tags
+$ pip install bumpver build twine
+$ bumpver update --patch  # or --minor, --major
+$ python -m build
+$ twine upload dist/*
 ```
-
-GitHub Actions will then deploy to PyPI if tests pass.

@@ -2,8 +2,8 @@ include CONTRIBUTING.md
 include LICENSE
 include README.md
 
-recursive-include netbox_circuitmaintenance/templates *
-recursive-include netbox_circuitmaintenance/api *
+recursive-include vendor_notification/templates *
+recursive-include vendor_notification/api *
 
 recursive-include tests *
 recursive-exclude * __pycache__

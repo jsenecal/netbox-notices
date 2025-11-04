@@ -10,7 +10,6 @@ menuitems = [
                 link="plugins:vendor_notification:maintenance_add",
                 title="Add",
                 icon_class="mdi mdi-plus-thick",
-                color=ButtonColorChoices.GREEN,
             )
         ],
     ),
@@ -22,7 +21,6 @@ menuitems = [
                 link="plugins:vendor_notification:outage_add",
                 title="Add",
                 icon_class="mdi mdi-plus-thick",
-                color=ButtonColorChoices.GREEN,
             )
         ],
     ),
@@ -33,7 +31,7 @@ menuitems = [
 ]
 
 menu = PluginMenu(
-    label="Vendor Notification",
-    groups=(("Vendor Notification", menuitems),),
+    label="Vendor Notifications",
+    groups=(("Notifications", menuitems),),
     icon_class="mdi mdi-wrench",
 )
