@@ -1,0 +1,7 @@
+# Ignore local customizations
+home/
+initializers/
+
+# Keep structure files
+!home/.config/.gitkeep
+!home/.claude/.gitkeep
