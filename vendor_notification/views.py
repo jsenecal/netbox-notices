@@ -1,5 +1,5 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.db.models import Count, Q
+from django.db.models import Count
 from django.shortcuts import render
 from django.views.generic import View
 from netbox.views import generic
@@ -13,7 +13,9 @@ class MaintenanceView(generic.ObjectView):
 
     def get_extra_context(self, request, instance):
         # Load the maintenance event impact
-        impact = models.Impact.objects.filter(event_content_type__model="maintenance", event_object_id=instance.pk)
+        impact = models.Impact.objects.filter(
+            event_content_type__model="maintenance", event_object_id=instance.pk
+        )
 
         # Load the maintenance event notifications
         notification = models.EventNotification.objects.filter(
@@ -52,7 +54,9 @@ class OutageView(generic.ObjectView):
 
     def get_extra_context(self, request, instance):
         # Load the outage event impact
-        impact = models.Impact.objects.filter(event_content_type__model="outage", event_object_id=instance.pk)
+        impact = models.Impact.objects.filter(
+            event_content_type__model="outage", event_object_id=instance.pk
+        )
 
         # Load the outage event notifications
         notification = models.EventNotification.objects.filter(
@@ -101,10 +105,9 @@ class MaintenanceCalendarView(PermissionRequiredMixin, View):
     Display maintenance events in an interactive FullCalendar view.
     Event data is loaded via AJAX from the REST API.
     """
-    permission_required = 'vendor_notification.view_maintenance'
-    template_name = 'vendor_notification/calendar.html'
+
+    permission_required = "vendor_notification.view_maintenance"
+    template_name = "vendor_notification/calendar.html"
 
     def get(self, request):
-        return render(request, self.template_name, {
-            'title': 'Maintenance Calendar'
-        })
+        return render(request, self.template_name, {"title": "Maintenance Calendar"})

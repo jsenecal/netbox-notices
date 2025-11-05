@@ -4,12 +4,20 @@
 {% block title %}Maintenance Calendar{% endblock %}
 
 {% block css %}
-<link href="{% static 'vendor_notification/css/fullcalendar/index.min.css' %}" rel="stylesheet">
+<link href="{% static 'vendor_notification/css/calendar-overrides.css' %}" rel="stylesheet">
 {% endblock %}
 
-{% block content %}
-<div id="calendar"></div>
+{% block page %}
+<div class="container-fluid p-3">
+    <div class="card">
+        <div class="card-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
+{% block modals %}
 <!-- Event Detail Modal (Tabler/Bootstrap pattern) -->
 <div class="modal modal-blur fade" id="eventModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">

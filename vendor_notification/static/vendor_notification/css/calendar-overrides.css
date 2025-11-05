@@ -1,0 +1,15 @@
+/* Override FullCalendar's inline height to prevent layout issues with NetBox */
+.fc-view-harness,
+.fc-view-harness-active {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+}
+
+.fc-scrollgrid-sync-table {
+    height: auto !important;
+}
+
+.fc-scroller-liquid-absolute {
+    position: relative !important;
+}

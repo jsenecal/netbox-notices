@@ -1,8 +1,5 @@
-import datetime
-
 from django.db.models import Count
 from django.template.loader import render_to_string
-from django.utils.safestring import mark_safe
 from extras.dashboard.utils import register_widget
 from extras.dashboard.widgets import DashboardWidget
 
