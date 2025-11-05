@@ -24,8 +24,8 @@ menuitems = [
         ],
     ),
     PluginMenuItem(
-        link="plugins:vendor_notification:maintenanceschedule",
-        link_text="Maintenance Schedule",
+        link="plugins:vendor_notification:maintenance_calendar",
+        link_text="Calendar",
     ),
 ]
 
