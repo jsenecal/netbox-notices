@@ -1,43 +1,60 @@
 {% extends 'generic/_base.html' %}
-{% load buttons %}
-{% load render_table from django_tables2 %}
 {% load static %}
-{% load perms %}
-{% load helpers %}
 
-{% block title %}Maintenance Schedule{% endblock %}
+{% block title %}Maintenance Calendar{% endblock %}
 
-{% block controls %}
-  <div class="controls">
-    	<div class="control-group">
-			<a id="btnPrevMonth" class="btn btn-info" href="{{basepath}}?month={{prev_month}}&year={{prev_year}}">
-				<i class="mdi mdi-arrow-left"></i>
-				Previous Month
-			</a>
-            {% if month != this_month or year != this_year%}
-            <a id="btnPrevMonth" class="btn btn-info" href="{{basepath}}?month={{this_month}}&year={{this_year}}">
-				Today
-			</a>
-            {% endif %}
-			<a id="btnNextMonth" class="btn btn-info" href="{{basepath}}?month={{next_month}}&year={{next_year}}">
-				<i class="mdi mdi-arrow-right"></i>
-				Next Month
-			</a>
-    	</div>
-	</div>
-{% endblock controls %}
+{% block css %}
+<link href="{% static 'vendor_notification/css/fullcalendar/index.min.css' %}" rel="stylesheet">
+{% endblock %}
 
 {% block content %}
-<style>
-.today-highlight {
-    background-color: #dee2e6 !important;
-    border: 1px solid #dee2e6 !important;
-    border-radius: 4px;
-}
-</style>
-{{ calendar }}
-{% endblock content %}
+<div id="calendar"></div>
+
+<!-- Event Detail Modal (Tabler/Bootstrap pattern) -->
+<div class="modal modal-blur fade" id="eventModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <span id="eventModalStatus" class="badge"></span>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4"><strong>Provider:</strong></div>
+                    <div class="col-8" id="eventModalProvider"></div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4"><strong>Start:</strong></div>
+                    <div class="col-8" id="eventModalStart"></div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4"><strong>End:</strong></div>
+                    <div class="col-8" id="eventModalEnd"></div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4"><strong>Summary:</strong></div>
+                    <div class="col-8" id="eventModalSummary"></div>
+                </div>
+                <div class="row mb-2" id="eventModalCommentsRow" style="display: none;">
+                    <div class="col-4"><strong>Comments:</strong></div>
+                    <div class="col-8" id="eventModalComments"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a id="eventModalViewLink" href="#" class="btn btn-primary">View Full Details</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
 {% block javascript %}
-
-{% endblock javascript %}
+<script src="{% static 'vendor_notification/js/fullcalendar/index.global.min.js' %}"></script>
+<script src="{% static 'vendor_notification/js/calendar.js' %}"></script>
+{% endblock %}
