@@ -95,10 +95,10 @@ urlpatterns = (
         views.EventNotificationDeleteView.as_view(),
         name="eventnotification_delete",
     ),
-    # Maintenance Schedule View
+    # Maintenance Calendar View
     path(
-        "maintenanceschedule/",
-        views.MaintenanceScheduleView.as_view(),
-        name="maintenanceschedule",
+        "maintenance/calendar/",
+        views.MaintenanceCalendarView.as_view(),
+        name="maintenance_calendar",
     ),
 )
