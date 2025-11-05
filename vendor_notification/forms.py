@@ -8,7 +8,7 @@ from django.utils import timezone
 from netbox.forms import NetBoxModelFilterSetForm, NetBoxModelForm
 from utilities.forms import get_field_value
 from utilities.forms.rendering import FieldSet
-from utilities.forms.fields import ContentTypeChoiceField, DynamicModelChoiceField
+from utilities.forms.fields import DynamicModelChoiceField
 from utilities.forms.widgets import DateTimePicker, HTMXSelect
 
 from .models import (
@@ -307,17 +307,21 @@ class ImpactForm(GenericForeignKeyFormMixin, NetBoxModelForm):
         return super().clean()
 
 
-class EventNotificationForm(NetBoxModelForm):
+class EventNotificationForm(GenericForeignKeyFormMixin, NetBoxModelForm):
     """
     Form for creating/editing EventNotification records.
+    Uses GenericForeignKeyFormMixin for HTMX-based event object picker.
     """
 
-    event_content_type = ContentTypeChoiceField(
-        label="Event Type",
-        queryset=ContentType.objects.filter(
-            app_label="vendor_notification", model__in=["maintenance", "outage"]
-        ),
-        help_text="Type of event (Maintenance or Outage)",
+    # Register GenericFK field with mixin
+    generic_fk_fields = [
+        ("event", "event_content_type", "event_object_id"),
+    ]
+
+    fieldsets = (
+        FieldSet("event_content_type", "event_choice", name="Event"),
+        FieldSet("subject", "email_from", "email_received", name="Email Details"),
+        FieldSet("email_body", name="Message"),
     )
 
     class Meta:
@@ -330,14 +334,31 @@ class EventNotificationForm(NetBoxModelForm):
             "email_body",
             "email_received",
         )
-        widgets = {"email_received": DateTimePicker()}
+        widgets = {
+            "event_content_type": HTMXSelect(),
+            "event_object_id": forms.HiddenInput,
+            "email_received": DateTimePicker(),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["event_object_id"].label = "Event"
+
+        # Customize event_content_type field
+        self.fields["event_content_type"].queryset = ContentType.objects.filter(
+            app_label="vendor_notification", model__in=["maintenance", "outage"]
+        )
+        self.fields["event_content_type"].label = "Event Type"
         self.fields[
-            "event_object_id"
-        ].help_text = "ID of the maintenance or outage event"
+            "event_content_type"
+        ].help_text = "Type of event (Maintenance or Outage)"
+
+        # Make hidden object_id field not required
+        self.fields["event_object_id"].required = False
+
+        # Determine event content type from form state
+        event_ct_id = get_field_value(self, "event_content_type")
+        if event_ct_id:
+            self.init_generic_choice("event", event_ct_id)
 
 
 class OutageForm(NetBoxModelForm):
