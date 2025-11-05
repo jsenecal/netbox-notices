@@ -158,6 +158,10 @@ class MaintenanceSerializer(NetBoxModelSerializer):
     notifications = NestedEventNotificationSerializer(
         required=False, many=True, read_only=True, source="eventnotification_set"
     )
+    status_color = serializers.CharField(
+        source='get_status_color',
+        read_only=True
+    )
 
     class Meta:
         model = Maintenance
@@ -168,6 +172,7 @@ class MaintenanceSerializer(NetBoxModelSerializer):
             "name",
             "summary",
             "status",
+            "status_color",
             "provider",
             "start",
             "end",
