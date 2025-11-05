@@ -103,7 +103,7 @@ class TestTemplateStructure:
         content = template_path.read_text()
 
         # Check title is updated
-        assert "Maintenance Schedule" in content
+        assert "Maintenance Calendar" in content
         assert "Circuit Maintenance Schedule" not in content
 
     def test_include_templates_use_new_field_names(self):
