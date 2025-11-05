@@ -20,7 +20,11 @@ class VendorNotificationConfig(PluginConfig):
     min_version = "4.4.0"
     base_url = "vendor-notification"
 
-    default_settings = {"allowed_content_types": DEFAULT_ALLOWED_CONTENT_TYPES}
+    default_settings = {
+        "allowed_content_types": DEFAULT_ALLOWED_CONTENT_TYPES,
+        "ical_past_days_default": 30,
+        "ical_cache_max_age": 900,
+    }
 
     def ready(self):
         super().ready()
