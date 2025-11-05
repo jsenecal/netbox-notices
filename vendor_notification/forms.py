@@ -8,7 +8,7 @@ from django.utils import timezone
 from netbox.forms import NetBoxModelFilterSetForm, NetBoxModelForm
 from utilities.forms import get_field_value
 from utilities.forms.rendering import FieldSet
-from utilities.forms.fields import ContentTypeChoiceField, DynamicModelChoiceField
+from utilities.forms.fields import DynamicModelChoiceField
 from utilities.forms.widgets import DateTimePicker, HTMXSelect
 
 from .models import (
@@ -21,6 +21,91 @@ from .models import (
     TimeZoneChoices,
 )
 from .utils import get_allowed_content_types
+
+
+class GenericForeignKeyFormMixin:
+    """
+    Mixin for forms with GenericForeignKey fields using HTMX pattern.
+
+    Subclasses should declare:
+        generic_fk_fields = [('field_prefix', 'content_type_field', 'object_id_field')]
+
+    Example:
+        generic_fk_fields = [('event', 'event_content_type', 'event_object_id')]
+
+    This will:
+    - Create 'event_choice' DynamicModelChoiceField when event_content_type is selected
+    - Extract selected object from event_choice in clean()
+    - Populate event_content_type and event_object_id for model save
+    """
+
+    # Override in subclasses with list of (prefix, content_type_field, object_id_field) tuples
+    generic_fk_fields = []
+
+    def init_generic_choice(self, field_prefix, content_type_id):
+        """
+        Initialize a choice field based on selected content type.
+        Creates DynamicModelChoiceField for selecting actual objects.
+
+        Args:
+            field_prefix: Field name prefix (e.g., 'event', 'target')
+            content_type_id: Primary key of selected ContentType (may be list from HTMX)
+        """
+        # Handle list values from duplicate GET parameters (HTMX includes all fields)
+        if isinstance(content_type_id, list):
+            content_type_id = content_type_id[0] if content_type_id else None
+
+        if not content_type_id:
+            return
+
+        initial = None
+        try:
+            content_type = ContentType.objects.get(pk=content_type_id)
+            model_class = content_type.model_class()
+
+            # Get initial value if editing existing object
+            object_id_field = f"{field_prefix}_object_id"
+            object_id = get_field_value(self, object_id_field)
+
+            # Handle list values from duplicate GET parameters
+            if isinstance(object_id, list):
+                object_id = object_id[0] if object_id else None
+
+            if object_id:
+                initial = model_class.objects.get(pk=object_id)
+
+            # Create dynamic choice field with model-specific queryset
+            choice_field_name = f"{field_prefix}_choice"
+            self.fields[choice_field_name] = DynamicModelChoiceField(
+                label=field_prefix.replace("_", " ").title(),
+                queryset=model_class.objects.all(),
+                required=True,
+                initial=initial,
+            )
+        except (ContentType.DoesNotExist, ObjectDoesNotExist):
+            # Invalid content type or object - form validation will catch this
+            pass
+
+    def clean(self):
+        """
+        Extract ContentType and object ID from selected objects.
+        Populates hidden GenericForeignKey fields for model persistence.
+        """
+        super().clean()
+
+        # Process each registered GenericFK field
+        for field_prefix, content_type_field, object_id_field in self.generic_fk_fields:
+            choice_field_name = f"{field_prefix}_choice"
+            choice_object = self.cleaned_data.get(choice_field_name)
+
+            if choice_object:
+                # Populate GenericForeignKey fields
+                self.cleaned_data[content_type_field] = (
+                    ContentType.objects.get_for_model(choice_object)
+                )
+                self.cleaned_data[object_id_field] = choice_object.id
+
+        return self.cleaned_data
 
 
 class MaintenanceForm(NetBoxModelForm):
@@ -128,16 +213,18 @@ class MaintenanceFilterForm(NetBoxModelFilterSetForm):
     internal_ticket = forms.CharField(required=False)
 
 
-class ImpactForm(NetBoxModelForm):
+class ImpactForm(GenericForeignKeyFormMixin, NetBoxModelForm):
     """
     Form for creating/editing Impact records with GenericForeignKey support.
     Handles both event (Maintenance/Outage) and target (Circuit/Device/etc.) relationships.
     Uses HTMX pattern from EventRuleForm for dynamic object selection.
     """
 
-    # Dynamic choice fields - created in __init__ based on content type selection
-    event_choice = None
-    target_choice = None
+    # Register GenericFK fields with mixin
+    generic_fk_fields = [
+        ("event", "event_content_type", "event_object_id"),
+        ("target", "target_content_type", "target_object_id"),
+    ]
 
     fieldsets = (
         FieldSet("event_content_type", "event_choice", name="Event"),
@@ -205,132 +292,36 @@ class ImpactForm(NetBoxModelForm):
         # Determine event content type from form state (instance, initial, or GET/POST)
         event_ct_id = get_field_value(self, "event_content_type")
         if event_ct_id:
-            self.init_event_choice(event_ct_id)
+            self.init_generic_choice("event", event_ct_id)
 
         # Determine target content type from form state
         target_ct_id = get_field_value(self, "target_content_type")
         if target_ct_id:
-            self.init_target_choice(target_ct_id)
-
-    def init_event_choice(self, content_type_id):
-        """
-        Initialize event choice field based on selected content type.
-        Creates DynamicModelChoiceField with appropriate queryset.
-
-        Args:
-            content_type_id: Primary key of selected ContentType (may be list from duplicate params)
-        """
-        # Handle list values from duplicate GET parameters (HTMX includes all fields)
-        if isinstance(content_type_id, list):
-            content_type_id = content_type_id[0] if content_type_id else None
-
-        if not content_type_id:
-            return
-
-        initial = None
-        try:
-            content_type = ContentType.objects.get(pk=content_type_id)
-            model_class = content_type.model_class()
-
-            # Get initial value if editing existing Impact
-            event_id = get_field_value(self, "event_object_id")
-
-            # Handle list values from duplicate GET parameters
-            if isinstance(event_id, list):
-                event_id = event_id[0] if event_id else None
-
-            if event_id:
-                initial = model_class.objects.get(pk=event_id)
-
-            # Create dynamic choice field with model-specific queryset
-            self.fields["event_choice"] = DynamicModelChoiceField(
-                label="Event",
-                queryset=model_class.objects.all(),
-                required=True,
-                initial=initial,
-            )
-        except (ContentType.DoesNotExist, ObjectDoesNotExist):
-            # Invalid content type or object - form validation will catch this
-            pass
-
-    def init_target_choice(self, content_type_id):
-        """
-        Initialize target choice field based on selected content type.
-        Creates DynamicModelChoiceField with appropriate queryset.
-
-        Args:
-            content_type_id: Primary key of selected ContentType (may be list from duplicate params)
-        """
-        # Handle list values from duplicate GET parameters (HTMX includes all fields)
-        if isinstance(content_type_id, list):
-            content_type_id = content_type_id[0] if content_type_id else None
-
-        if not content_type_id:
-            return
-
-        initial = None
-        try:
-            content_type = ContentType.objects.get(pk=content_type_id)
-            model_class = content_type.model_class()
-
-            # Get initial value if editing existing Impact
-            target_id = get_field_value(self, "target_object_id")
-
-            # Handle list values from duplicate GET parameters
-            if isinstance(target_id, list):
-                target_id = target_id[0] if target_id else None
-
-            if target_id:
-                initial = model_class.objects.get(pk=target_id)
-
-            # Create dynamic choice field with model-specific queryset
-            self.fields["target_choice"] = DynamicModelChoiceField(
-                label="Target Object",
-                queryset=model_class.objects.all(),
-                required=True,
-                initial=initial,
-            )
-        except (ContentType.DoesNotExist, ObjectDoesNotExist):
-            # Invalid content type or object - form validation will catch this
-            pass
+            self.init_generic_choice("target", target_ct_id)
 
     def clean(self):
         """
         Extract ContentType and object ID from selected objects.
-        Populates hidden GenericForeignKey fields for model persistence.
+        Mixin handles the GenericFK field population.
         """
-        super().clean()
-
-        # Extract event object and populate GenericForeignKey fields
-        event_choice = self.cleaned_data.get("event_choice")
-        if event_choice:
-            self.cleaned_data["event_content_type"] = ContentType.objects.get_for_model(
-                event_choice
-            )
-            self.cleaned_data["event_object_id"] = event_choice.id
-
-        # Extract target object and populate GenericForeignKey fields
-        target_choice = self.cleaned_data.get("target_choice")
-        if target_choice:
-            self.cleaned_data["target_content_type"] = (
-                ContentType.objects.get_for_model(target_choice)
-            )
-            self.cleaned_data["target_object_id"] = target_choice.id
-
-        return self.cleaned_data
+        return super().clean()
 
 
-class EventNotificationForm(NetBoxModelForm):
+class EventNotificationForm(GenericForeignKeyFormMixin, NetBoxModelForm):
     """
     Form for creating/editing EventNotification records.
+    Uses GenericForeignKeyFormMixin for HTMX-based event object picker.
     """
 
-    event_content_type = ContentTypeChoiceField(
-        label="Event Type",
-        queryset=ContentType.objects.filter(
-            app_label="vendor_notification", model__in=["maintenance", "outage"]
-        ),
-        help_text="Type of event (Maintenance or Outage)",
+    # Register GenericFK field with mixin
+    generic_fk_fields = [
+        ("event", "event_content_type", "event_object_id"),
+    ]
+
+    fieldsets = (
+        FieldSet("event_content_type", "event_choice", name="Event"),
+        FieldSet("subject", "email_from", "email_received", name="Email Details"),
+        FieldSet("email_body", name="Message"),
     )
 
     class Meta:
@@ -343,14 +334,31 @@ class EventNotificationForm(NetBoxModelForm):
             "email_body",
             "email_received",
         )
-        widgets = {"email_received": DateTimePicker()}
+        widgets = {
+            "event_content_type": HTMXSelect(),
+            "event_object_id": forms.HiddenInput,
+            "email_received": DateTimePicker(),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["event_object_id"].label = "Event"
+
+        # Customize event_content_type field
+        self.fields["event_content_type"].queryset = ContentType.objects.filter(
+            app_label="vendor_notification", model__in=["maintenance", "outage"]
+        )
+        self.fields["event_content_type"].label = "Event Type"
         self.fields[
-            "event_object_id"
-        ].help_text = "ID of the maintenance or outage event"
+            "event_content_type"
+        ].help_text = "Type of event (Maintenance or Outage)"
+
+        # Make hidden object_id field not required
+        self.fields["event_object_id"].required = False
+
+        # Determine event content type from form state
+        event_ct_id = get_field_value(self, "event_content_type")
+        if event_ct_id:
+            self.init_generic_choice("event", event_ct_id)
 
 
 class OutageForm(NetBoxModelForm):
