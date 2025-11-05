@@ -23,6 +23,91 @@ from .models import (
 from .utils import get_allowed_content_types
 
 
+class GenericForeignKeyFormMixin:
+    """
+    Mixin for forms with GenericForeignKey fields using HTMX pattern.
+
+    Subclasses should declare:
+        generic_fk_fields = [('field_prefix', 'content_type_field', 'object_id_field')]
+
+    Example:
+        generic_fk_fields = [('event', 'event_content_type', 'event_object_id')]
+
+    This will:
+    - Create 'event_choice' DynamicModelChoiceField when event_content_type is selected
+    - Extract selected object from event_choice in clean()
+    - Populate event_content_type and event_object_id for model save
+    """
+
+    # Override in subclasses with list of (prefix, content_type_field, object_id_field) tuples
+    generic_fk_fields = []
+
+    def init_generic_choice(self, field_prefix, content_type_id):
+        """
+        Initialize a choice field based on selected content type.
+        Creates DynamicModelChoiceField for selecting actual objects.
+
+        Args:
+            field_prefix: Field name prefix (e.g., 'event', 'target')
+            content_type_id: Primary key of selected ContentType (may be list from HTMX)
+        """
+        # Handle list values from duplicate GET parameters (HTMX includes all fields)
+        if isinstance(content_type_id, list):
+            content_type_id = content_type_id[0] if content_type_id else None
+
+        if not content_type_id:
+            return
+
+        initial = None
+        try:
+            content_type = ContentType.objects.get(pk=content_type_id)
+            model_class = content_type.model_class()
+
+            # Get initial value if editing existing object
+            object_id_field = f"{field_prefix}_object_id"
+            object_id = get_field_value(self, object_id_field)
+
+            # Handle list values from duplicate GET parameters
+            if isinstance(object_id, list):
+                object_id = object_id[0] if object_id else None
+
+            if object_id:
+                initial = model_class.objects.get(pk=object_id)
+
+            # Create dynamic choice field with model-specific queryset
+            choice_field_name = f"{field_prefix}_choice"
+            self.fields[choice_field_name] = DynamicModelChoiceField(
+                label=field_prefix.replace("_", " ").title(),
+                queryset=model_class.objects.all(),
+                required=True,
+                initial=initial,
+            )
+        except (ContentType.DoesNotExist, ObjectDoesNotExist):
+            # Invalid content type or object - form validation will catch this
+            pass
+
+    def clean(self):
+        """
+        Extract ContentType and object ID from selected objects.
+        Populates hidden GenericForeignKey fields for model persistence.
+        """
+        super().clean()
+
+        # Process each registered GenericFK field
+        for field_prefix, content_type_field, object_id_field in self.generic_fk_fields:
+            choice_field_name = f"{field_prefix}_choice"
+            choice_object = self.cleaned_data.get(choice_field_name)
+
+            if choice_object:
+                # Populate GenericForeignKey fields
+                self.cleaned_data[content_type_field] = (
+                    ContentType.objects.get_for_model(choice_object)
+                )
+                self.cleaned_data[object_id_field] = choice_object.id
+
+        return self.cleaned_data
+
+
 class MaintenanceForm(NetBoxModelForm):
     provider = DynamicModelChoiceField(queryset=Provider.objects.all())
 
