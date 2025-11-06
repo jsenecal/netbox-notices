@@ -1,3 +1,4 @@
+import django_filters
 from django.db.models import Q
 from netbox.filtersets import NetBoxModelFilterSet
 from utilities.filters import ContentTypeFilter
@@ -12,6 +13,16 @@ from .models import (
 
 class MaintenanceFilterSet(NetBoxModelFilterSet):
     """FilterSet for Maintenance events"""
+
+    replaces_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Maintenance.objects.all(),
+        label='Replaces (ID)',
+    )
+
+    has_replaces = django_filters.BooleanFilter(
+        method='filter_has_replaces',
+        label='Has replacement',
+    )
 
     class Meta:
         model = Maintenance
@@ -35,6 +46,12 @@ class MaintenanceFilterSet(NetBoxModelFilterSet):
         return queryset.filter(
             Q(name__icontains=value) | Q(summary__icontains=value) | Q(internal_ticket__icontains=value)
         )
+
+    def filter_has_replaces(self, queryset, name, value):
+        """Filter maintenances that have been rescheduled."""
+        if value:
+            return queryset.exclude(replaced_by_maintenance=None)
+        return queryset.filter(replaced_by_maintenance=None)
 
 
 class OutageFilterSet(NetBoxModelFilterSet):
