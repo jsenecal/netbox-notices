@@ -131,3 +131,84 @@ class TestIconAndColorMapping:
 
     def test_get_color_for_standard(self):
         assert get_category_color('standard') == 'secondary'
+
+
+from unittest.mock import Mock
+from vendor_notification.timeline_utils import build_timeline_item
+
+
+class TestBuildTimelineItem:
+    def test_build_timeline_item_for_status_change(self):
+        """Test building timeline item for status change"""
+        object_change = Mock()
+        object_change.time = Mock()
+        object_change.user = Mock()
+        object_change.user.username = 'testuser'
+        object_change.user_name = 'testuser'
+        object_change.changed_object_type.model = 'maintenance'
+        object_change.action = 'update'
+        object_change.object_repr = 'MAINT-123'
+        object_change.prechange_data = {'status': 'TENTATIVE', 'acknowledged': False}
+        object_change.postchange_data = {'status': 'CONFIRMED', 'acknowledged': False}
+
+        item = build_timeline_item(object_change, 'maintenance')
+
+        assert item['category'] == 'status'
+        assert item['icon'] == 'check-circle'
+        assert item['title'] == 'Status changed to Confirmed'
+        assert len(item['changes']) == 1
+        assert item['changes'][0]['field'] == 'status'
+        assert item['changes'][0]['old_value'] == 'TENTATIVE'
+        assert item['changes'][0]['new_value'] == 'CONFIRMED'
+
+    def test_build_timeline_item_for_multiple_changes(self):
+        """Test that all field changes are captured"""
+        object_change = Mock()
+        object_change.time = Mock()
+        object_change.user = Mock()
+        object_change.user.username = 'testuser'
+        object_change.user_name = 'testuser'
+        object_change.changed_object_type.model = 'maintenance'
+        object_change.action = 'update'
+        object_change.object_repr = 'MAINT-123'
+        object_change.prechange_data = {
+            'status': 'TENTATIVE',
+            'acknowledged': False,
+            'comments': 'Old comment'
+        }
+        object_change.postchange_data = {
+            'status': 'CONFIRMED',
+            'acknowledged': True,
+            'comments': 'New comment'
+        }
+
+        item = build_timeline_item(object_change, 'maintenance')
+
+        # Category based on priority (status wins)
+        assert item['category'] == 'status'
+        # But all changes are captured
+        assert len(item['changes']) == 3
+        change_fields = [c['field'] for c in item['changes']]
+        assert 'status' in change_fields
+        assert 'acknowledged' in change_fields
+        assert 'comments' in change_fields
+
+    def test_build_timeline_item_for_impact_creation(self):
+        """Test building timeline item for impact creation"""
+        object_change = Mock()
+        object_change.time = Mock()
+        object_change.user = Mock()
+        object_change.user.username = 'testuser'
+        object_change.user_name = 'testuser'
+        object_change.changed_object_type.model = 'impact'
+        object_change.action = 'create'
+        object_change.object_repr = 'Circuit ABC-123 - OUTAGE'
+        object_change.prechange_data = None
+        object_change.postchange_data = {'impact': 'OUTAGE', 'target': 'Circuit ABC-123'}
+
+        item = build_timeline_item(object_change, 'maintenance')
+
+        assert item['category'] == 'impact'
+        assert item['icon'] == 'alert-triangle'
+        assert item['title'] == 'Impact added: Circuit ABC-123 - OUTAGE'
+        assert item['action'] == 'create'

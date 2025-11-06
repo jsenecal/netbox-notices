@@ -140,3 +140,125 @@ def get_category_color(category, status_value=None):
         return color or 'secondary'
 
     return CATEGORY_COLORS.get(category, 'secondary')
+
+
+def build_timeline_item(object_change, event_model_name):
+    """
+    Build enriched timeline item from ObjectChange record.
+
+    Args:
+        object_change: ObjectChange instance
+        event_model_name: 'maintenance' or 'outage'
+
+    Returns:
+        Dict with timeline item data
+    """
+    changed_model = object_change.changed_object_type.model
+    action = object_change.action
+    prechange = object_change.prechange_data or {}
+    postchange = object_change.postchange_data or {}
+
+    # Categorize the change
+    category = categorize_change(changed_model, action, prechange, postchange)
+
+    # Get icon and color
+    icon = get_category_icon(category)
+
+    # For status changes, get color from new status value
+    if category == 'status':
+        new_status = postchange.get('status')
+        color = get_category_color(category, new_status)
+    else:
+        color = get_category_color(category)
+
+    # Build title based on category and action
+    title = _build_title(category, action, changed_model, object_change.object_repr, prechange, postchange)
+
+    # Extract all field changes
+    changes = _extract_field_changes(prechange, postchange)
+
+    # Get user info
+    user = object_change.user
+    user_name = object_change.user_name if object_change.user_name else (user.username if user else 'System')
+
+    return {
+        'time': object_change.time,
+        'user': user,
+        'user_name': user_name,
+        'category': category,
+        'icon': icon,
+        'color': color,
+        'title': title,
+        'changes': changes,
+        'action': action,
+        'object_repr': object_change.object_repr,
+    }
+
+
+def _build_title(category, action, model, object_repr, prechange, postchange):
+    """Build human-readable title for timeline item."""
+    if category == 'status':
+        new_status = postchange.get('status', '').replace('_', ' ').title()
+        return f"Status changed to {new_status}"
+
+    elif category == 'impact':
+        if action == 'create':
+            return f"Impact added: {object_repr}"
+        elif action == 'delete':
+            return f"Impact removed: {object_repr}"
+        else:
+            return f"Impact updated: {object_repr}"
+
+    elif category == 'notification':
+        if action == 'create':
+            subject = postchange.get('subject', 'Unknown')
+            return f"Notification received: {subject}"
+        return f"Notification {action}d"
+
+    elif category == 'acknowledgment':
+        new_val = postchange.get('acknowledged', False)
+        return "Event acknowledged" if new_val else "Acknowledgment removed"
+
+    elif category == 'time':
+        time_fields = ['start', 'end', 'estimated_time_to_repair']
+        changed = [f for f in time_fields if f in postchange and prechange.get(f) != postchange.get(f)]
+        if len(changed) == 1:
+            field_name = get_field_display_name(changed[0])
+            return f"{field_name} updated"
+        return "Event times updated"
+
+    else:  # standard
+        if action == 'create':
+            return f"{model.title()} created"
+        elif action == 'delete':
+            return f"{model.title()} deleted"
+        else:
+            return "Event updated"
+
+
+def _extract_field_changes(prechange, postchange):
+    """
+    Extract list of field changes from pre/post data.
+
+    Returns:
+        List of dicts with field, old_value, new_value, display_name
+    """
+    changes = []
+
+    # Get all fields that changed
+    all_fields = set(prechange.keys()) | set(postchange.keys())
+
+    for field in sorted(all_fields):
+        old_value = prechange.get(field)
+        new_value = postchange.get(field)
+
+        # Only include if actually changed
+        if old_value != new_value:
+            changes.append({
+                'field': field,
+                'old_value': str(old_value) if old_value is not None else 'Not set',
+                'new_value': str(new_value) if new_value is not None else 'Not set',
+                'display_name': get_field_display_name(field),
+            })
+
+    return changes
