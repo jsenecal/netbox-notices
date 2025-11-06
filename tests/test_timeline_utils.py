@@ -1,4 +1,4 @@
-from vendor_notification.timeline_utils import get_field_display_name
+from vendor_notification.timeline_utils import categorize_change, get_field_display_name
 
 
 class TestFieldDisplayNames:
@@ -12,3 +12,83 @@ class TestFieldDisplayNames:
         # Should return titlecased field name with underscores replaced
         assert get_field_display_name("unknown_field") == "Unknown Field"
         assert get_field_display_name("custom") == "Custom"
+
+
+class TestCategorizeChange:
+    def test_categorize_status_change(self):
+        """Status changes should be categorized as 'status'"""
+        prechange = {'status': 'TENTATIVE', 'acknowledged': False}
+        postchange = {'status': 'CONFIRMED', 'acknowledged': False}
+
+        category = categorize_change(
+            changed_object_model='maintenance',
+            action='update',
+            prechange_data=prechange,
+            postchange_data=postchange
+        )
+
+        assert category == 'status'
+
+    def test_categorize_acknowledgment_change(self):
+        """Acknowledgment changes should be categorized as 'acknowledgment'"""
+        prechange = {'status': 'CONFIRMED', 'acknowledged': False}
+        postchange = {'status': 'CONFIRMED', 'acknowledged': True}
+
+        category = categorize_change(
+            changed_object_model='maintenance',
+            action='update',
+            prechange_data=prechange,
+            postchange_data=postchange
+        )
+
+        assert category == 'acknowledgment'
+
+    def test_categorize_time_change(self):
+        """Time field changes should be categorized as 'time'"""
+        prechange = {'start': '2025-01-01T10:00:00Z', 'status': 'CONFIRMED'}
+        postchange = {'start': '2025-01-01T11:00:00Z', 'status': 'CONFIRMED'}
+
+        category = categorize_change(
+            changed_object_model='maintenance',
+            action='update',
+            prechange_data=prechange,
+            postchange_data=postchange
+        )
+
+        assert category == 'time'
+
+    def test_categorize_impact_create(self):
+        """Impact object creation should be categorized as 'impact'"""
+        category = categorize_change(
+            changed_object_model='impact',
+            action='create',
+            prechange_data=None,
+            postchange_data={'impact': 'OUTAGE'}
+        )
+
+        assert category == 'impact'
+
+    def test_categorize_notification_create(self):
+        """Notification creation should be categorized as 'notification'"""
+        category = categorize_change(
+            changed_object_model='eventnotification',
+            action='create',
+            prechange_data=None,
+            postchange_data={'subject': 'Maintenance notice'}
+        )
+
+        assert category == 'notification'
+
+    def test_categorize_standard_change(self):
+        """Other changes should be categorized as 'standard'"""
+        prechange = {'comments': 'Old comment'}
+        postchange = {'comments': 'New comment'}
+
+        category = categorize_change(
+            changed_object_model='maintenance',
+            action='update',
+            prechange_data=prechange,
+            postchange_data=postchange
+        )
+
+        assert category == 'standard'
