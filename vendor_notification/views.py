@@ -8,7 +8,7 @@ from django.http import (
     HttpResponseBadRequest,
     HttpResponseNotModified,
 )
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.generic import View
 from netbox.views import generic
@@ -54,6 +54,68 @@ class MaintenanceEditView(generic.ObjectEditView):
 
 class MaintenanceDeleteView(generic.ObjectDeleteView):
     queryset = models.Maintenance.objects.all()
+
+
+class MaintenanceRescheduleView(generic.ObjectEditView):
+    """
+    Clone a maintenance and mark original as rescheduled.
+
+    Workflow:
+    1. Pre-fill form with existing maintenance data
+    2. Set 'replaces' field to original maintenance
+    3. On save, update original maintenance status to 'RE-SCHEDULED'
+    """
+    queryset = models.Maintenance.objects.all()
+    form = forms.MaintenanceForm
+
+    def get_object(self, **kwargs):
+        """
+        Return None to create new object, but store original for cloning.
+        """
+        # Get original maintenance via URL parameter
+        self.original_maintenance = get_object_or_404(
+            models.Maintenance,
+            pk=self.kwargs['pk']
+        )
+        # Return None to trigger create mode
+        return None
+
+    def get_initial(self):
+        """
+        Pre-fill form with original maintenance data.
+        """
+        initial = super().get_initial()
+
+        # Clone all fields from original (except auto fields)
+        for field in self.original_maintenance._meta.fields:
+            if field.name not in ['id', 'created', 'last_updated']:
+                initial[field.name] = getattr(self.original_maintenance, field.name)
+
+        # Set replaces to original
+        initial['replaces'] = self.original_maintenance.pk
+
+        # Reset status to TENTATIVE
+        initial['status'] = 'TENTATIVE'
+
+        return initial
+
+    def form_valid(self, form):
+        """
+        Save new maintenance and update original status.
+        """
+        response = super().form_valid(form)
+
+        # Update original maintenance status
+        self.original_maintenance.status = 'RE-SCHEDULED'
+        self.original_maintenance.save()
+
+        return response
+
+    def get_extra_context(self, request, instance):
+        """Add original maintenance to context."""
+        context = super().get_extra_context(request, instance)
+        context['original_maintenance'] = self.original_maintenance
+        return context
 
 
 # Outage Views

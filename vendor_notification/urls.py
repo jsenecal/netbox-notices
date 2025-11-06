@@ -31,6 +31,11 @@ urlpatterns = (
         name="maintenance_delete",
     ),
     path(
+        "maintenance/<int:pk>/reschedule/",
+        views.MaintenanceRescheduleView.as_view(),
+        name="maintenance_reschedule",
+    ),
+    path(
         "maintenance/<int:pk>/changelog/",
         ObjectChangeLogView.as_view(),
         name="maintenance_changelog",
