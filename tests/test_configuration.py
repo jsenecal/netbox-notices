@@ -16,7 +16,12 @@ class TestPluginConfiguration:
 
     @override_settings(
         PLUGINS_CONFIG={
-            "vendor_notification": {"allowed_content_types": ["dcim.Device", "virtualization.VirtualMachine"]}
+            "vendor_notification": {
+                "allowed_content_types": [
+                    "dcim.Device",
+                    "virtualization.VirtualMachine",
+                ]
+            }
         }
     )
     def test_custom_allowed_types(self):

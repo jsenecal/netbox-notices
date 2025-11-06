@@ -39,14 +39,20 @@ class TestCircuitOutageFilterSet(unittest.TestCase):
                             if isinstance(target, ast.Name) and target.id == "fields":
                                 # Extract list or tuple values
                                 if isinstance(meta_item.value, (ast.List, ast.Tuple)):
-                                    return [elt.value for elt in meta_item.value.elts if isinstance(elt, ast.Constant)]
+                                    return [
+                                        elt.value
+                                        for elt in meta_item.value.elts
+                                        if isinstance(elt, ast.Constant)
+                                    ]
         return []
 
     def test_circuit_outage_filterset_exists(self):
         """Test that CircuitOutageFilterSet is defined"""
         tree = self._get_filtersets_file_ast()
         class_node = self._find_class(tree, "CircuitOutageFilterSet")
-        self.assertIsNotNone(class_node, "CircuitOutageFilterSet class not found in filtersets.py")
+        self.assertIsNotNone(
+            class_node, "CircuitOutageFilterSet class not found in filtersets.py"
+        )
 
     def test_circuit_outage_filterset_fields(self):
         """Test that filterset includes key filter fields"""

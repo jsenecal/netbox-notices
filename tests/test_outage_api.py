@@ -75,7 +75,9 @@ class TestCircuitOutageViewSetStructure(unittest.TestCase):
 
         # Look for queryset attribute
         queryset_attr = self._find_class_attr(viewset_class, "queryset")
-        self.assertIsNotNone(queryset_attr, "CircuitOutageViewSet should have a queryset attribute")
+        self.assertIsNotNone(
+            queryset_attr, "CircuitOutageViewSet should have a queryset attribute"
+        )
 
     def test_circuit_outage_viewset_has_serializer_class(self):
         """Test that CircuitOutageViewSet has serializer_class attribute"""

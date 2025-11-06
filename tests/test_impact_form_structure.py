@@ -82,7 +82,11 @@ class TestImpactFormStructure(unittest.TestCase):
             "impact",
             "tags",
         )
-        self.assertEqual(fields, expected_fields, f"ImpactForm.Meta.fields = {fields}, expected {expected_fields}")
+        self.assertEqual(
+            fields,
+            expected_fields,
+            f"ImpactForm.Meta.fields = {fields}, expected {expected_fields}",
+        )
 
     def test_impact_form_has_content_type_fields(self):
         """Test that ImpactForm defines event_content_type and target_content_type fields"""
@@ -98,8 +102,16 @@ class TestImpactFormStructure(unittest.TestCase):
                     if isinstance(target, ast.Name):
                         field_names.append(target.id)
 
-        self.assertIn("event_content_type", field_names, "event_content_type field not defined in ImpactForm")
-        self.assertIn("target_content_type", field_names, "target_content_type field not defined in ImpactForm")
+        self.assertIn(
+            "event_content_type",
+            field_names,
+            "event_content_type field not defined in ImpactForm",
+        )
+        self.assertIn(
+            "target_content_type",
+            field_names,
+            "target_content_type field not defined in ImpactForm",
+        )
 
     def test_impact_form_uses_content_type_choice_field(self):
         """Test that ImpactForm uses ContentTypeChoiceField for content type fields"""
@@ -112,14 +124,19 @@ class TestImpactFormStructure(unittest.TestCase):
         for item in impact_form.body:
             if isinstance(item, ast.Assign):
                 for target in item.targets:
-                    if isinstance(target, ast.Name) and target.id in ["event_content_type", "target_content_type"]:
+                    if isinstance(target, ast.Name) and target.id in [
+                        "event_content_type",
+                        "target_content_type",
+                    ]:
                         # Check if value is a Call to ContentTypeChoiceField
                         if isinstance(item.value, ast.Call):
                             if isinstance(item.value.func, ast.Name):
                                 if item.value.func.id == "ContentTypeChoiceField":
                                     found_content_type_field = True
 
-        self.assertTrue(found_content_type_field, "ImpactForm does not use ContentTypeChoiceField")
+        self.assertTrue(
+            found_content_type_field, "ImpactForm does not use ContentTypeChoiceField"
+        )
 
     def test_impact_form_has_init_method(self):
         """Test that ImpactForm has an __init__ method (for filtering allowed types)"""
@@ -134,7 +151,10 @@ class TestImpactFormStructure(unittest.TestCase):
                 has_init = True
                 break
 
-        self.assertTrue(has_init, "ImpactForm does not have __init__ method for filtering content types")
+        self.assertTrue(
+            has_init,
+            "ImpactForm does not have __init__ method for filtering content types",
+        )
 
     def test_forms_imports_utils(self):
         """Test that forms.py imports get_allowed_content_types from utils"""
@@ -149,7 +169,10 @@ class TestImpactFormStructure(unittest.TestCase):
                         if alias.name == "get_allowed_content_types":
                             found_import = True
 
-        self.assertTrue(found_import, "forms.py does not import get_allowed_content_types from utils")
+        self.assertTrue(
+            found_import,
+            "forms.py does not import get_allowed_content_types from utils",
+        )
 
 
 class TestEventNotificationFormStructure(unittest.TestCase):
@@ -193,7 +216,9 @@ class TestEventNotificationFormStructure(unittest.TestCase):
                         field_names.append(target.id)
 
         self.assertIn(
-            "event_content_type", field_names, "event_content_type field not defined in EventNotificationForm"
+            "event_content_type",
+            field_names,
+            "event_content_type field not defined in EventNotificationForm",
         )
 
 

@@ -42,8 +42,7 @@ class MaintenanceView(generic.ObjectView):
         # Load timeline changes
         object_changes = get_timeline_changes(instance, Maintenance, limit=20)
         timeline_items = [
-            build_timeline_item(change, 'maintenance')
-            for change in object_changes
+            build_timeline_item(change, "maintenance") for change in object_changes
         ]
 
         return {
@@ -94,8 +93,7 @@ class OutageView(generic.ObjectView):
         # Load timeline changes
         object_changes = get_timeline_changes(instance, Outage, limit=20)
         timeline_items = [
-            build_timeline_item(change, 'outage')
-            for change in object_changes
+            build_timeline_item(change, "outage") for change in object_changes
         ]
 
         return {

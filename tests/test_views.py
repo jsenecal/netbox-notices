@@ -104,11 +104,21 @@ class TestViewsStructure(unittest.TestCase):
             self.fail("MaintenanceListView class not found")
 
         # Check for required attributes
-        self.assertTrue(self._has_attribute(class_node, "queryset"), "MaintenanceListView missing queryset attribute")
-        self.assertTrue(self._has_attribute(class_node, "table"), "MaintenanceListView missing table attribute")
-        self.assertTrue(self._has_attribute(class_node, "filterset"), "MaintenanceListView missing filterset attribute")
         self.assertTrue(
-            self._has_attribute(class_node, "filterset_form"), "MaintenanceListView missing filterset_form attribute"
+            self._has_attribute(class_node, "queryset"),
+            "MaintenanceListView missing queryset attribute",
+        )
+        self.assertTrue(
+            self._has_attribute(class_node, "table"),
+            "MaintenanceListView missing table attribute",
+        )
+        self.assertTrue(
+            self._has_attribute(class_node, "filterset"),
+            "MaintenanceListView missing filterset attribute",
+        )
+        self.assertTrue(
+            self._has_attribute(class_node, "filterset_form"),
+            "MaintenanceListView missing filterset_form attribute",
         )
 
     def test_outage_list_view_attributes(self):
@@ -120,11 +130,21 @@ class TestViewsStructure(unittest.TestCase):
             self.fail("OutageListView class not found")
 
         # Check for required attributes
-        self.assertTrue(self._has_attribute(class_node, "queryset"), "OutageListView missing queryset attribute")
-        self.assertTrue(self._has_attribute(class_node, "table"), "OutageListView missing table attribute")
-        self.assertTrue(self._has_attribute(class_node, "filterset"), "OutageListView missing filterset attribute")
         self.assertTrue(
-            self._has_attribute(class_node, "filterset_form"), "OutageListView missing filterset_form attribute"
+            self._has_attribute(class_node, "queryset"),
+            "OutageListView missing queryset attribute",
+        )
+        self.assertTrue(
+            self._has_attribute(class_node, "table"),
+            "OutageListView missing table attribute",
+        )
+        self.assertTrue(
+            self._has_attribute(class_node, "filterset"),
+            "OutageListView missing filterset attribute",
+        )
+        self.assertTrue(
+            self._has_attribute(class_node, "filterset_form"),
+            "OutageListView missing filterset_form attribute",
         )
 
     def test_maintenance_edit_view_attributes(self):
@@ -136,8 +156,14 @@ class TestViewsStructure(unittest.TestCase):
             self.fail("MaintenanceEditView class not found")
 
         # Check for required attributes
-        self.assertTrue(self._has_attribute(class_node, "queryset"), "MaintenanceEditView missing queryset attribute")
-        self.assertTrue(self._has_attribute(class_node, "form"), "MaintenanceEditView missing form attribute")
+        self.assertTrue(
+            self._has_attribute(class_node, "queryset"),
+            "MaintenanceEditView missing queryset attribute",
+        )
+        self.assertTrue(
+            self._has_attribute(class_node, "form"),
+            "MaintenanceEditView missing form attribute",
+        )
 
     def test_outage_edit_view_attributes(self):
         """Test that OutageEditView has required attributes"""
@@ -148,8 +174,14 @@ class TestViewsStructure(unittest.TestCase):
             self.fail("OutageEditView class not found")
 
         # Check for required attributes
-        self.assertTrue(self._has_attribute(class_node, "queryset"), "OutageEditView missing queryset attribute")
-        self.assertTrue(self._has_attribute(class_node, "form"), "OutageEditView missing form attribute")
+        self.assertTrue(
+            self._has_attribute(class_node, "queryset"),
+            "OutageEditView missing queryset attribute",
+        )
+        self.assertTrue(
+            self._has_attribute(class_node, "form"),
+            "OutageEditView missing form attribute",
+        )
 
     def test_impact_edit_view_attributes(self):
         """Test that ImpactEditView has required attributes"""
@@ -160,8 +192,14 @@ class TestViewsStructure(unittest.TestCase):
             self.fail("ImpactEditView class not found")
 
         # Check for required attributes
-        self.assertTrue(self._has_attribute(class_node, "queryset"), "ImpactEditView missing queryset attribute")
-        self.assertTrue(self._has_attribute(class_node, "form"), "ImpactEditView missing form attribute")
+        self.assertTrue(
+            self._has_attribute(class_node, "queryset"),
+            "ImpactEditView missing queryset attribute",
+        )
+        self.assertTrue(
+            self._has_attribute(class_node, "form"),
+            "ImpactEditView missing form attribute",
+        )
 
     def test_event_notification_edit_view_attributes(self):
         """Test that EventNotificationEditView has required attributes"""
@@ -173,9 +211,13 @@ class TestViewsStructure(unittest.TestCase):
 
         # Check for required attributes
         self.assertTrue(
-            self._has_attribute(class_node, "queryset"), "EventNotificationEditView missing queryset attribute"
+            self._has_attribute(class_node, "queryset"),
+            "EventNotificationEditView missing queryset attribute",
         )
-        self.assertTrue(self._has_attribute(class_node, "form"), "EventNotificationEditView missing form attribute")
+        self.assertTrue(
+            self._has_attribute(class_node, "form"),
+            "EventNotificationEditView missing form attribute",
+        )
 
     def test_maintenance_view_has_queryset(self):
         """Test that MaintenanceView defines queryset attribute"""
@@ -185,7 +227,10 @@ class TestViewsStructure(unittest.TestCase):
         if class_node is None:
             self.fail("MaintenanceView class not found")
 
-        self.assertTrue(self._has_attribute(class_node, "queryset"), "MaintenanceView missing queryset attribute")
+        self.assertTrue(
+            self._has_attribute(class_node, "queryset"),
+            "MaintenanceView missing queryset attribute",
+        )
 
     def test_outage_view_has_queryset(self):
         """Test that OutageView defines queryset attribute"""
@@ -195,7 +240,10 @@ class TestViewsStructure(unittest.TestCase):
         if class_node is None:
             self.fail("OutageView class not found")
 
-        self.assertTrue(self._has_attribute(class_node, "queryset"), "OutageView missing queryset attribute")
+        self.assertTrue(
+            self._has_attribute(class_node, "queryset"),
+            "OutageView missing queryset attribute",
+        )
 
     def test_delete_views_have_queryset(self):
         """Test that all delete views have queryset attribute"""
@@ -213,7 +261,10 @@ class TestViewsStructure(unittest.TestCase):
             if class_node is None:
                 self.fail(f"{view_class} class not found")
 
-            self.assertTrue(self._has_attribute(class_node, "queryset"), f"{view_class} missing queryset attribute")
+            self.assertTrue(
+                self._has_attribute(class_node, "queryset"),
+                f"{view_class} missing queryset attribute",
+            )
 
     def test_old_view_names_removed(self):
         """Test that old view class names no longer exist"""
@@ -238,7 +289,9 @@ class TestViewsStructure(unittest.TestCase):
 
         for view_class in old_view_classes:
             class_node = self._find_class(tree, view_class)
-            self.assertIsNone(class_node, f"Old view class {view_class} should not exist")
+            self.assertIsNone(
+                class_node, f"Old view class {view_class} should not exist"
+            )
 
     def test_calendar_view_exists(self):
         """Test that MaintenanceScheduleView exists"""
@@ -250,7 +303,9 @@ class TestViewsStructure(unittest.TestCase):
         """Test that old CircuitMaintenanceScheduleView no longer exists"""
         tree = self._get_views_file_ast()
         class_node = self._find_class(tree, "CircuitMaintenanceScheduleView")
-        self.assertIsNone(class_node, "Old CircuitMaintenanceScheduleView should not exist")
+        self.assertIsNone(
+            class_node, "Old CircuitMaintenanceScheduleView should not exist"
+        )
 
 
 if __name__ == "__main__":

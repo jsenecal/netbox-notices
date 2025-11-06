@@ -94,7 +94,11 @@ class TestImpactModelStructure(unittest.TestCase):
         self.assertIsNotNone(class_node)
 
         fields = self._get_field_names(class_node)
-        self.assertIn("event_content_type", fields, "Impact should define 'event_content_type' field")
+        self.assertIn(
+            "event_content_type",
+            fields,
+            "Impact should define 'event_content_type' field",
+        )
 
     def test_impact_has_event_object_id_field(self):
         """Test that Impact has event_object_id field for GenericForeignKey"""
@@ -103,7 +107,9 @@ class TestImpactModelStructure(unittest.TestCase):
         self.assertIsNotNone(class_node)
 
         fields = self._get_field_names(class_node)
-        self.assertIn("event_object_id", fields, "Impact should define 'event_object_id' field")
+        self.assertIn(
+            "event_object_id", fields, "Impact should define 'event_object_id' field"
+        )
 
     def test_impact_has_event_generic_foreign_key(self):
         """Test that Impact has event GenericForeignKey"""
@@ -121,7 +127,11 @@ class TestImpactModelStructure(unittest.TestCase):
         self.assertIsNotNone(class_node)
 
         fields = self._get_field_names(class_node)
-        self.assertIn("target_content_type", fields, "Impact should define 'target_content_type' field")
+        self.assertIn(
+            "target_content_type",
+            fields,
+            "Impact should define 'target_content_type' field",
+        )
 
     def test_impact_has_target_object_id_field(self):
         """Test that Impact has target_object_id field for GenericForeignKey"""
@@ -130,7 +140,9 @@ class TestImpactModelStructure(unittest.TestCase):
         self.assertIsNotNone(class_node)
 
         fields = self._get_field_names(class_node)
-        self.assertIn("target_object_id", fields, "Impact should define 'target_object_id' field")
+        self.assertIn(
+            "target_object_id", fields, "Impact should define 'target_object_id' field"
+        )
 
     def test_impact_has_target_generic_foreign_key(self):
         """Test that Impact has target GenericForeignKey"""
@@ -139,7 +151,9 @@ class TestImpactModelStructure(unittest.TestCase):
         self.assertIsNotNone(class_node)
 
         fields = self._get_field_names(class_node)
-        self.assertIn("target", fields, "Impact should define 'target' GenericForeignKey")
+        self.assertIn(
+            "target", fields, "Impact should define 'target' GenericForeignKey"
+        )
 
     def test_impact_has_impact_field(self):
         """Test that Impact has impact field"""
@@ -190,13 +204,20 @@ class TestImpactModelStructure(unittest.TestCase):
         self.assertIsNotNone(class_node)
 
         meta_attrs = self._get_meta_attributes(class_node)
-        self.assertIn("unique_together", meta_attrs, "Impact Meta should define 'unique_together' constraint")
+        self.assertIn(
+            "unique_together",
+            meta_attrs,
+            "Impact Meta should define 'unique_together' constraint",
+        )
 
     def test_circuit_maintenance_impact_removed(self):
         """Test that old CircuitMaintenanceImpact class is removed"""
         tree = self._get_models_file_ast()
         class_node = self._find_class(tree, "CircuitMaintenanceImpact")
-        self.assertIsNone(class_node, "CircuitMaintenanceImpact should be removed (replaced by Impact)")
+        self.assertIsNone(
+            class_node,
+            "CircuitMaintenanceImpact should be removed (replaced by Impact)",
+        )
 
     def test_impact_clean_validates_allowed_content_types(self):
         """Test that Impact.clean() validates target_content_type against allowed types"""
@@ -224,15 +245,25 @@ class TestImpactModelStructure(unittest.TestCase):
         )
 
         # Check that clean() validates target_content_type
-        self.assertIn("target_content_type", method_source, "Impact.clean() should validate target_content_type")
+        self.assertIn(
+            "target_content_type",
+            method_source,
+            "Impact.clean() should validate target_content_type",
+        )
 
         # Check that clean() raises ValidationError for disallowed types
         self.assertIn(
-            "ValidationError", method_source, "Impact.clean() should raise ValidationError for disallowed content types"
+            "ValidationError",
+            method_source,
+            "Impact.clean() should raise ValidationError for disallowed content types",
         )
 
         # Check that the validation compares against allowed_types
-        self.assertIn("not in", method_source, "Impact.clean() should check if type is not in allowed_types")
+        self.assertIn(
+            "not in",
+            method_source,
+            "Impact.clean() should check if type is not in allowed_types",
+        )
 
 
 # Functional tests using Django TestCase
@@ -257,9 +288,15 @@ try:
 
             from vendor_notification.models import Maintenance
 
-            cls.provider = Provider.objects.create(name="Test Provider", slug="test-provider")
-            cls.circuit_type = CircuitType.objects.create(name="Test Type", slug="test-type")
-            cls.circuit = Circuit.objects.create(cid="TEST-001", provider=cls.provider, type=cls.circuit_type)
+            cls.provider = Provider.objects.create(
+                name="Test Provider", slug="test-provider"
+            )
+            cls.circuit_type = CircuitType.objects.create(
+                name="Test Type", slug="test-type"
+            )
+            cls.circuit = Circuit.objects.create(
+                cid="TEST-001", provider=cls.provider, type=cls.circuit_type
+            )
             cls.site = Site.objects.create(name="Test Site", slug="test-site")
             cls.maintenance = Maintenance.objects.create(
                 name="MAINT-001",
@@ -270,7 +307,11 @@ try:
                 status="CONFIRMED",
             )
 
-        @override_settings(PLUGINS_CONFIG={"vendor_notification": {"allowed_content_types": ["circuits.Circuit"]}})
+        @override_settings(
+            PLUGINS_CONFIG={
+                "vendor_notification": {"allowed_content_types": ["circuits.Circuit"]}
+            }
+        )
         def test_validation_disallowed_content_type(self):
             """Test that non-configured content types are rejected"""
             from django.core.exceptions import ValidationError
