@@ -53,7 +53,11 @@ class BaseTableTest(unittest.TestCase):
                 for target in item.targets:
                     if isinstance(target, ast.Name) and target.id == "fields":
                         if isinstance(item.value, ast.Tuple):
-                            return [elt.value for elt in item.value.elts if isinstance(elt, ast.Constant)]
+                            return [
+                                elt.value
+                                for elt in item.value.elts
+                                if isinstance(elt, ast.Constant)
+                            ]
         return []
 
     def _get_meta_default_columns(self, meta_node):
@@ -63,7 +67,11 @@ class BaseTableTest(unittest.TestCase):
                 for target in item.targets:
                     if isinstance(target, ast.Name) and target.id == "default_columns":
                         if isinstance(item.value, ast.Tuple):
-                            return [elt.value for elt in item.value.elts if isinstance(elt, ast.Constant)]
+                            return [
+                                elt.value
+                                for elt in item.value.elts
+                                if isinstance(elt, ast.Constant)
+                            ]
         return []
 
 

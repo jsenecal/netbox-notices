@@ -185,7 +185,9 @@ class TestURLPatterns(unittest.TestCase):
         ]
 
         for view_ref in view_references:
-            self.assertIn(view_ref, content, f"Maintenance view reference not found: {view_ref}")
+            self.assertIn(
+                view_ref, content, f"Maintenance view reference not found: {view_ref}"
+            )
 
     def test_outage_view_references(self):
         """Test that outage views are referenced correctly"""
@@ -200,7 +202,9 @@ class TestURLPatterns(unittest.TestCase):
         ]
 
         for view_ref in view_references:
-            self.assertIn(view_ref, content, f"Outage view reference not found: {view_ref}")
+            self.assertIn(
+                view_ref, content, f"Outage view reference not found: {view_ref}"
+            )
 
     def test_impact_view_references(self):
         """Test that impact views are referenced correctly"""
@@ -213,7 +217,9 @@ class TestURLPatterns(unittest.TestCase):
         ]
 
         for view_ref in view_references:
-            self.assertIn(view_ref, content, f"Impact view reference not found: {view_ref}")
+            self.assertIn(
+                view_ref, content, f"Impact view reference not found: {view_ref}"
+            )
 
     def test_eventnotification_view_references(self):
         """Test that event notification views are referenced correctly"""
@@ -273,13 +279,19 @@ class TestURLPatterns(unittest.TestCase):
                 pattern = rf"\b{old_name}\b"
                 matches = re.findall(pattern, content)
                 # Filter out matches in comments
-                non_comment_matches = [m for m in matches if not re.search(r"#.*" + old_name, content)]
+                non_comment_matches = [
+                    m for m in matches if not re.search(r"#.*" + old_name, content)
+                ]
                 self.assertEqual(
                     len(non_comment_matches),
                     0,
                     f"Old model name '{old_name}' found in non-comment context",
                 )
-            elif old_name in ["circuitmaintenance", "circuitimpact", "circuitnotification"]:
+            elif old_name in [
+                "circuitmaintenance",
+                "circuitimpact",
+                "circuitnotification",
+            ]:
                 # These should definitely not appear
                 self.assertNotIn(
                     old_name,

@@ -6,18 +6,18 @@ from django.contrib.contenttypes.models import ContentType
 from core.models import ObjectChange
 
 FIELD_DISPLAY_NAMES = {
-    'name': 'Event ID',
-    'summary': 'Summary',
-    'status': 'Status',
-    'start': 'Start Time',
-    'end': 'End Time',
-    'estimated_time_to_repair': 'Estimated Time to Repair',
-    'acknowledged': 'Acknowledged',
-    'internal_ticket': 'Internal Ticket',
-    'comments': 'Comments',
-    'original_timezone': 'Original Timezone',
-    'provider': 'Provider',
-    'impact': 'Impact Level',
+    "name": "Event ID",
+    "summary": "Summary",
+    "status": "Status",
+    "start": "Start Time",
+    "end": "End Time",
+    "estimated_time_to_repair": "Estimated Time to Repair",
+    "acknowledged": "Acknowledged",
+    "internal_ticket": "Internal Ticket",
+    "comments": "Comments",
+    "original_timezone": "Original Timezone",
+    "provider": "Provider",
+    "impact": "Impact Level",
 }
 
 
@@ -35,7 +35,7 @@ def get_field_display_name(field_name):
         return FIELD_DISPLAY_NAMES[field_name]
 
     # Fallback: replace underscores and title case
-    return field_name.replace('_', ' ').title()
+    return field_name.replace("_", " ").title()
 
 
 def categorize_change(changed_object_model, action, prechange_data, postchange_data):
@@ -59,48 +59,54 @@ def categorize_change(changed_object_model, action, prechange_data, postchange_d
         Category string: 'status', 'impact', 'notification', 'acknowledgment', 'time', or 'standard'
     """
     # Handle related object changes
-    if changed_object_model == 'impact':
-        return 'impact'
+    if changed_object_model == "impact":
+        return "impact"
 
-    if changed_object_model == 'eventnotification':
-        return 'notification'
+    if changed_object_model == "eventnotification":
+        return "notification"
 
     # Handle field changes in maintenance/outage objects
-    if action == 'update' and prechange_data and postchange_data:
+    if action == "update" and prechange_data and postchange_data:
         # Priority 1: Status changes
-        if 'status' in postchange_data and prechange_data.get('status') != postchange_data.get('status'):
-            return 'status'
+        if "status" in postchange_data and prechange_data.get(
+            "status"
+        ) != postchange_data.get("status"):
+            return "status"
 
         # Priority 2: Time changes
-        time_fields = ['start', 'end', 'estimated_time_to_repair']
+        time_fields = ["start", "end", "estimated_time_to_repair"]
         for field in time_fields:
-            if field in postchange_data and prechange_data.get(field) != postchange_data.get(field):
-                return 'time'
+            if field in postchange_data and prechange_data.get(
+                field
+            ) != postchange_data.get(field):
+                return "time"
 
         # Priority 3: Acknowledgment changes
-        if 'acknowledged' in postchange_data and prechange_data.get('acknowledged') != postchange_data.get('acknowledged'):
-            return 'acknowledgment'
+        if "acknowledged" in postchange_data and prechange_data.get(
+            "acknowledged"
+        ) != postchange_data.get("acknowledged"):
+            return "acknowledgment"
 
     # Default: standard change
-    return 'standard'
+    return "standard"
 
 
 CATEGORY_ICONS = {
-    'status': 'check-circle',
-    'impact': 'alert-triangle',
-    'notification': 'mail',
-    'acknowledgment': 'check',
-    'time': 'clock',
-    'standard': 'circle',
+    "status": "check-circle",
+    "impact": "alert-triangle",
+    "notification": "mail",
+    "acknowledgment": "check",
+    "time": "clock",
+    "standard": "circle",
 }
 
 CATEGORY_COLORS = {
-    'status': 'secondary',  # Default, actual color from status value
-    'impact': 'yellow',
-    'notification': 'blue',
-    'acknowledgment': 'green',
-    'time': 'orange',
-    'standard': 'secondary',
+    "status": "secondary",  # Default, actual color from status value
+    "impact": "yellow",
+    "notification": "blue",
+    "acknowledgment": "green",
+    "time": "orange",
+    "standard": "secondary",
 }
 
 
@@ -114,7 +120,7 @@ def get_category_icon(category):
     Returns:
         Icon name (e.g., 'check-circle')
     """
-    return CATEGORY_ICONS.get(category, 'circle')
+    return CATEGORY_ICONS.get(category, "circle")
 
 
 def get_category_color(category, status_value=None):
@@ -131,7 +137,7 @@ def get_category_color(category, status_value=None):
     Returns:
         Color name (e.g., 'green', 'yellow')
     """
-    if category == 'status' and status_value:
+    if category == "status" and status_value:
         # Import here to avoid circular dependency
         from .choices import MaintenanceTypeChoices, OutageStatusChoices
 
@@ -140,9 +146,9 @@ def get_category_color(category, status_value=None):
         if not color:
             color = OutageStatusChoices.colors.get(status_value)
 
-        return color or 'secondary'
+        return color or "secondary"
 
-    return CATEGORY_COLORS.get(category, 'secondary')
+    return CATEGORY_COLORS.get(category, "secondary")
 
 
 def build_timeline_item(object_change, event_model_name):
@@ -168,72 +174,87 @@ def build_timeline_item(object_change, event_model_name):
     icon = get_category_icon(category)
 
     # For status changes, get color from new status value
-    if category == 'status':
-        new_status = postchange.get('status')
+    if category == "status":
+        new_status = postchange.get("status")
         color = get_category_color(category, new_status)
     else:
         color = get_category_color(category)
 
     # Build title based on category and action
-    title = _build_title(category, action, changed_model, object_change.object_repr, prechange, postchange)
+    title = _build_title(
+        category,
+        action,
+        changed_model,
+        object_change.object_repr,
+        prechange,
+        postchange,
+    )
 
     # Extract all field changes
     changes = _extract_field_changes(prechange, postchange)
 
     # Get user info
     user = object_change.user
-    user_name = object_change.user_name if object_change.user_name else (user.username if user else 'System')
+    user_name = (
+        object_change.user_name
+        if object_change.user_name
+        else (user.username if user else "System")
+    )
 
     return {
-        'time': object_change.time,
-        'user': user,
-        'user_name': user_name,
-        'category': category,
-        'icon': icon,
-        'color': color,
-        'title': title,
-        'changes': changes,
-        'action': action,
-        'object_repr': object_change.object_repr,
+        "time": object_change.time,
+        "user": user,
+        "user_name": user_name,
+        "category": category,
+        "icon": icon,
+        "color": color,
+        "title": title,
+        "changes": changes,
+        "action": action,
+        "object_repr": object_change.object_repr,
     }
 
 
 def _build_title(category, action, model, object_repr, prechange, postchange):
     """Build human-readable title for timeline item."""
-    if category == 'status':
-        new_status = postchange.get('status', '').replace('_', ' ').title()
+    if category == "status":
+        new_status = postchange.get("status", "").replace("_", " ").title()
         return f"Status changed to {new_status}"
 
-    elif category == 'impact':
-        if action == 'create':
+    elif category == "impact":
+        if action == "create":
             return f"Impact added: {object_repr}"
-        elif action == 'delete':
+        elif action == "delete":
             return f"Impact removed: {object_repr}"
         else:
             return f"Impact updated: {object_repr}"
 
-    elif category == 'notification':
-        if action == 'create':
-            subject = postchange.get('subject', 'Unknown')
+    elif category == "notification":
+        if action == "create":
+            subject = postchange.get("subject", "Unknown")
             return f"Notification received: {subject}"
         return f"Notification {action}d"
 
-    elif category == 'acknowledgment':
-        new_val = postchange.get('acknowledged', False)
+    elif category == "acknowledgment":
+        new_val = postchange.get("acknowledged", False)
         return "Event acknowledged" if new_val else "Acknowledgment removed"
 
-    elif category == 'time':
-        time_fields = ['start', 'end', 'estimated_time_to_repair']
-        changed = [f for f in time_fields if f in postchange and prechange.get(f) != postchange.get(f)]
+    elif category == "time":
+        time_fields = ["start", "end", "estimated_time_to_repair"]
+        changed = [
+            f
+            for f in time_fields
+            if f in postchange and prechange.get(f) != postchange.get(f)
+        ]
         if len(changed) == 1:
             field_name = get_field_display_name(changed[0])
             return f"{field_name} updated"
         return "Event times updated"
 
     else:  # standard
-        if action == 'create':
+        if action == "create":
             return f"{model.title()} created"
-        elif action == 'delete':
+        elif action == "delete":
             return f"{model.title()} deleted"
         else:
             return "Event updated"
@@ -257,12 +278,14 @@ def _extract_field_changes(prechange, postchange):
 
         # Only include if actually changed
         if old_value != new_value:
-            changes.append({
-                'field': field,
-                'old_value': str(old_value) if old_value is not None else 'Not set',
-                'new_value': str(new_value) if new_value is not None else 'Not set',
-                'display_name': get_field_display_name(field),
-            })
+            changes.append(
+                {
+                    "field": field,
+                    "old_value": str(old_value) if old_value is not None else "Not set",
+                    "new_value": str(new_value) if new_value is not None else "Not set",
+                    "display_name": get_field_display_name(field),
+                }
+            )
 
     return changes
 
@@ -286,16 +309,14 @@ def get_timeline_changes(instance, model_class, limit=20):
 
     # Direct changes to this object
     direct_changes = ObjectChange.objects.filter(
-        changed_object_type=content_type,
-        changed_object_id=instance.pk
-    ).select_related('user')
+        changed_object_type=content_type, changed_object_id=instance.pk
+    ).select_related("user")
 
     # Changes to related Impact/EventNotification objects
     # These have related_object pointing to our event
     related_changes = ObjectChange.objects.filter(
-        related_object_type=content_type,
-        related_object_id=instance.pk
-    ).select_related('user')
+        related_object_type=content_type, related_object_id=instance.pk
+    ).select_related("user")
 
     # Combine and sort by time
     all_changes = list(direct_changes) + list(related_changes)

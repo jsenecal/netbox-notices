@@ -39,7 +39,11 @@ class FilterSetTestBase(unittest.TestCase):
                             if isinstance(target, ast.Name) and target.id == "fields":
                                 # Extract list or tuple values
                                 if isinstance(meta_item.value, (ast.List, ast.Tuple)):
-                                    return [elt.value for elt in meta_item.value.elts if isinstance(elt, ast.Constant)]
+                                    return [
+                                        elt.value
+                                        for elt in meta_item.value.elts
+                                        if isinstance(elt, ast.Constant)
+                                    ]
         return []
 
     def _get_meta_model(self, class_node):
@@ -82,7 +86,9 @@ class TestMaintenanceFilterSet(FilterSetTestBase):
         """Test that MaintenanceFilterSet is defined"""
         tree = self._get_filtersets_file_ast()
         class_node = self._find_class(tree, "MaintenanceFilterSet")
-        self.assertIsNotNone(class_node, "MaintenanceFilterSet class not found in filtersets.py")
+        self.assertIsNotNone(
+            class_node, "MaintenanceFilterSet class not found in filtersets.py"
+        )
 
     def test_maintenance_filterset_meta_model(self):
         """Test that MaintenanceFilterSet references Maintenance model"""
@@ -119,7 +125,9 @@ class TestMaintenanceFilterSet(FilterSetTestBase):
         ]
 
         for field in expected_fields:
-            self.assertIn(field, fields, f"Missing expected filter field in Maintenance: {field}")
+            self.assertIn(
+                field, fields, f"Missing expected filter field in Maintenance: {field}"
+            )
 
     def test_maintenance_filterset_has_search(self):
         """Test that MaintenanceFilterSet has search method"""
@@ -138,7 +146,9 @@ class TestOutageFilterSet(FilterSetTestBase):
         """Test that OutageFilterSet is defined"""
         tree = self._get_filtersets_file_ast()
         class_node = self._find_class(tree, "OutageFilterSet")
-        self.assertIsNotNone(class_node, "OutageFilterSet class not found in filtersets.py")
+        self.assertIsNotNone(
+            class_node, "OutageFilterSet class not found in filtersets.py"
+        )
 
     def test_outage_filterset_meta_model(self):
         """Test that OutageFilterSet references Outage model"""
@@ -176,7 +186,9 @@ class TestOutageFilterSet(FilterSetTestBase):
         ]
 
         for field in expected_fields:
-            self.assertIn(field, fields, f"Missing expected filter field in Outage: {field}")
+            self.assertIn(
+                field, fields, f"Missing expected filter field in Outage: {field}"
+            )
 
     def test_outage_filterset_has_search(self):
         """Test that OutageFilterSet has search method"""
@@ -195,7 +207,9 @@ class TestImpactFilterSet(FilterSetTestBase):
         """Test that ImpactFilterSet is defined"""
         tree = self._get_filtersets_file_ast()
         class_node = self._find_class(tree, "ImpactFilterSet")
-        self.assertIsNotNone(class_node, "ImpactFilterSet class not found in filtersets.py")
+        self.assertIsNotNone(
+            class_node, "ImpactFilterSet class not found in filtersets.py"
+        )
 
     def test_impact_filterset_meta_model(self):
         """Test that ImpactFilterSet references Impact model"""
@@ -227,7 +241,9 @@ class TestImpactFilterSet(FilterSetTestBase):
         ]
 
         for field in expected_fields:
-            self.assertIn(field, fields, f"Missing expected filter field in Impact: {field}")
+            self.assertIn(
+                field, fields, f"Missing expected filter field in Impact: {field}"
+            )
 
     def test_impact_filterset_has_content_type_filters(self):
         """Test that ImpactFilterSet has ContentTypeFilter attributes"""
@@ -347,7 +363,9 @@ class TestEventNotificationFilterSet(FilterSetTestBase):
         self.assertIsNotNone(class_node, "EventNotificationFilterSet class not found")
 
         has_search = self._has_search_method(class_node)
-        self.assertTrue(has_search, "EventNotificationFilterSet should have a search method")
+        self.assertTrue(
+            has_search, "EventNotificationFilterSet should have a search method"
+        )
 
 
 class TestFilterSetImports(FilterSetTestBase):

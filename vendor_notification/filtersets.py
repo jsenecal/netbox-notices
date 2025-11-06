@@ -33,7 +33,9 @@ class MaintenanceFilterSet(NetBoxModelFilterSet):
         if not value.strip():
             return queryset
         return queryset.filter(
-            Q(name__icontains=value) | Q(summary__icontains=value) | Q(internal_ticket__icontains=value)
+            Q(name__icontains=value)
+            | Q(summary__icontains=value)
+            | Q(internal_ticket__icontains=value)
         )
 
 
@@ -61,7 +63,9 @@ class OutageFilterSet(NetBoxModelFilterSet):
         if not value.strip():
             return queryset
         return queryset.filter(
-            Q(name__icontains=value) | Q(summary__icontains=value) | Q(internal_ticket__icontains=value)
+            Q(name__icontains=value)
+            | Q(summary__icontains=value)
+            | Q(internal_ticket__icontains=value)
         )
 
 
@@ -120,5 +124,7 @@ class EventNotificationFilterSet(NetBoxModelFilterSet):
         if not value.strip():
             return queryset
         return queryset.filter(
-            Q(subject__icontains=value) | Q(email_body__icontains=value) | Q(email_from__icontains=value)
+            Q(subject__icontains=value)
+            | Q(email_body__icontains=value)
+            | Q(email_from__icontains=value)
         )

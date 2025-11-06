@@ -8,111 +8,237 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('circuits', '0052_extend_circuit_abs_distance_upper_limit'),
-        ('contenttypes', '0002_remove_content_type_name'),
-        ('extras', '0133_make_cf_minmax_decimal'),
+        ("circuits", "0052_extend_circuit_abs_distance_upper_limit"),
+        ("contenttypes", "0002_remove_content_type_name"),
+        ("extras", "0133_make_cf_minmax_decimal"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='EventNotification',
+            name="EventNotification",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
-                ('created', models.DateTimeField(auto_now_add=True, null=True)),
-                ('last_updated', models.DateTimeField(auto_now=True, null=True)),
-                ('custom_field_data', models.JSONField(blank=True, default=dict, encoder=utilities.json.CustomFieldJSONEncoder)),
-                ('event_object_id', models.PositiveIntegerField(db_index=True)),
-                ('email', models.BinaryField()),
-                ('email_body', models.TextField()),
-                ('subject', models.CharField(max_length=100)),
-                ('email_from', models.EmailField(max_length=254)),
-                ('email_received', models.DateTimeField()),
-                ('event_content_type', models.ForeignKey(limit_choices_to=models.Q(('app_label', 'vendor_notification'), ('model__in', ['maintenance', 'outage'])), on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype')),
-                ('tags', taggit.managers.TaggableManager(through='extras.TaggedItem', to='extras.Tag')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False
+                    ),
+                ),
+                ("created", models.DateTimeField(auto_now_add=True, null=True)),
+                ("last_updated", models.DateTimeField(auto_now=True, null=True)),
+                (
+                    "custom_field_data",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        encoder=utilities.json.CustomFieldJSONEncoder,
+                    ),
+                ),
+                ("event_object_id", models.PositiveIntegerField(db_index=True)),
+                ("email", models.BinaryField()),
+                ("email_body", models.TextField()),
+                ("subject", models.CharField(max_length=100)),
+                ("email_from", models.EmailField(max_length=254)),
+                ("email_received", models.DateTimeField()),
+                (
+                    "event_content_type",
+                    models.ForeignKey(
+                        limit_choices_to=models.Q(
+                            ("app_label", "vendor_notification"),
+                            ("model__in", ["maintenance", "outage"]),
+                        ),
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="contenttypes.contenttype",
+                    ),
+                ),
+                (
+                    "tags",
+                    taggit.managers.TaggableManager(
+                        through="extras.TaggedItem", to="extras.Tag"
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Event Notification',
-                'verbose_name_plural': 'Event Notifications',
-                'ordering': ('email_received',),
+                "verbose_name": "Event Notification",
+                "verbose_name_plural": "Event Notifications",
+                "ordering": ("email_received",),
             },
             bases=(netbox.models.deletion.DeleteMixin, models.Model),
         ),
         migrations.CreateModel(
-            name='Maintenance',
+            name="Maintenance",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
-                ('created', models.DateTimeField(auto_now_add=True, null=True)),
-                ('last_updated', models.DateTimeField(auto_now=True, null=True)),
-                ('custom_field_data', models.JSONField(blank=True, default=dict, encoder=utilities.json.CustomFieldJSONEncoder)),
-                ('name', models.CharField(max_length=100)),
-                ('summary', models.CharField(max_length=200)),
-                ('start', models.DateTimeField()),
-                ('original_timezone', models.CharField(blank=True, max_length=63)),
-                ('internal_ticket', models.CharField(blank=True, max_length=100)),
-                ('acknowledged', models.BooleanField(blank=True, default=False, null=True)),
-                ('comments', models.TextField(blank=True)),
-                ('end', models.DateTimeField()),
-                ('status', models.CharField(max_length=30)),
-                ('provider', models.ForeignKey(default=None, on_delete=django.db.models.deletion.CASCADE, related_name='maintenance', to='circuits.provider')),
-                ('tags', taggit.managers.TaggableManager(through='extras.TaggedItem', to='extras.Tag')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False
+                    ),
+                ),
+                ("created", models.DateTimeField(auto_now_add=True, null=True)),
+                ("last_updated", models.DateTimeField(auto_now=True, null=True)),
+                (
+                    "custom_field_data",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        encoder=utilities.json.CustomFieldJSONEncoder,
+                    ),
+                ),
+                ("name", models.CharField(max_length=100)),
+                ("summary", models.CharField(max_length=200)),
+                ("start", models.DateTimeField()),
+                ("original_timezone", models.CharField(blank=True, max_length=63)),
+                ("internal_ticket", models.CharField(blank=True, max_length=100)),
+                (
+                    "acknowledged",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                ("comments", models.TextField(blank=True)),
+                ("end", models.DateTimeField()),
+                ("status", models.CharField(max_length=30)),
+                (
+                    "provider",
+                    models.ForeignKey(
+                        default=None,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="maintenance",
+                        to="circuits.provider",
+                    ),
+                ),
+                (
+                    "tags",
+                    taggit.managers.TaggableManager(
+                        through="extras.TaggedItem", to="extras.Tag"
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Maintenance',
-                'verbose_name_plural': 'Maintenances',
-                'ordering': ('-created',),
+                "verbose_name": "Maintenance",
+                "verbose_name_plural": "Maintenances",
+                "ordering": ("-created",),
             },
             bases=(netbox.models.deletion.DeleteMixin, models.Model),
         ),
         migrations.CreateModel(
-            name='Outage',
+            name="Outage",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
-                ('created', models.DateTimeField(auto_now_add=True, null=True)),
-                ('last_updated', models.DateTimeField(auto_now=True, null=True)),
-                ('custom_field_data', models.JSONField(blank=True, default=dict, encoder=utilities.json.CustomFieldJSONEncoder)),
-                ('name', models.CharField(max_length=100)),
-                ('summary', models.CharField(max_length=200)),
-                ('start', models.DateTimeField()),
-                ('original_timezone', models.CharField(blank=True, max_length=63)),
-                ('internal_ticket', models.CharField(blank=True, max_length=100)),
-                ('acknowledged', models.BooleanField(blank=True, default=False, null=True)),
-                ('comments', models.TextField(blank=True)),
-                ('end', models.DateTimeField(blank=True, null=True)),
-                ('estimated_time_to_repair', models.DateTimeField(blank=True, null=True)),
-                ('status', models.CharField(max_length=30)),
-                ('provider', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='%(class)s_events', to='circuits.provider')),
-                ('tags', taggit.managers.TaggableManager(through='extras.TaggedItem', to='extras.Tag')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False
+                    ),
+                ),
+                ("created", models.DateTimeField(auto_now_add=True, null=True)),
+                ("last_updated", models.DateTimeField(auto_now=True, null=True)),
+                (
+                    "custom_field_data",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        encoder=utilities.json.CustomFieldJSONEncoder,
+                    ),
+                ),
+                ("name", models.CharField(max_length=100)),
+                ("summary", models.CharField(max_length=200)),
+                ("start", models.DateTimeField()),
+                ("original_timezone", models.CharField(blank=True, max_length=63)),
+                ("internal_ticket", models.CharField(blank=True, max_length=100)),
+                (
+                    "acknowledged",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                ("comments", models.TextField(blank=True)),
+                ("end", models.DateTimeField(blank=True, null=True)),
+                (
+                    "estimated_time_to_repair",
+                    models.DateTimeField(blank=True, null=True),
+                ),
+                ("status", models.CharField(max_length=30)),
+                (
+                    "provider",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="%(class)s_events",
+                        to="circuits.provider",
+                    ),
+                ),
+                (
+                    "tags",
+                    taggit.managers.TaggableManager(
+                        through="extras.TaggedItem", to="extras.Tag"
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Outage',
-                'verbose_name_plural': 'Outages',
-                'ordering': ('-created',),
+                "verbose_name": "Outage",
+                "verbose_name_plural": "Outages",
+                "ordering": ("-created",),
             },
             bases=(netbox.models.deletion.DeleteMixin, models.Model),
         ),
         migrations.CreateModel(
-            name='Impact',
+            name="Impact",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
-                ('created', models.DateTimeField(auto_now_add=True, null=True)),
-                ('last_updated', models.DateTimeField(auto_now=True, null=True)),
-                ('custom_field_data', models.JSONField(blank=True, default=dict, encoder=utilities.json.CustomFieldJSONEncoder)),
-                ('event_object_id', models.PositiveIntegerField(db_index=True)),
-                ('target_object_id', models.PositiveIntegerField(db_index=True)),
-                ('impact', models.CharField(blank=True, max_length=30, null=True)),
-                ('event_content_type', models.ForeignKey(limit_choices_to=models.Q(('app_label', 'vendor_notification'), ('model__in', ['maintenance', 'outage'])), on_delete=django.db.models.deletion.CASCADE, related_name='impacts_as_event', to='contenttypes.contenttype')),
-                ('tags', taggit.managers.TaggableManager(through='extras.TaggedItem', to='extras.Tag')),
-                ('target_content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='impacts_as_target', to='contenttypes.contenttype')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False
+                    ),
+                ),
+                ("created", models.DateTimeField(auto_now_add=True, null=True)),
+                ("last_updated", models.DateTimeField(auto_now=True, null=True)),
+                (
+                    "custom_field_data",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        encoder=utilities.json.CustomFieldJSONEncoder,
+                    ),
+                ),
+                ("event_object_id", models.PositiveIntegerField(db_index=True)),
+                ("target_object_id", models.PositiveIntegerField(db_index=True)),
+                ("impact", models.CharField(blank=True, max_length=30, null=True)),
+                (
+                    "event_content_type",
+                    models.ForeignKey(
+                        limit_choices_to=models.Q(
+                            ("app_label", "vendor_notification"),
+                            ("model__in", ["maintenance", "outage"]),
+                        ),
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="impacts_as_event",
+                        to="contenttypes.contenttype",
+                    ),
+                ),
+                (
+                    "tags",
+                    taggit.managers.TaggableManager(
+                        through="extras.TaggedItem", to="extras.Tag"
+                    ),
+                ),
+                (
+                    "target_content_type",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="impacts_as_target",
+                        to="contenttypes.contenttype",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Impact',
-                'verbose_name_plural': 'Impacts',
-                'ordering': ('impact',),
-                'unique_together': {('event_content_type', 'event_object_id', 'target_content_type', 'target_object_id')},
+                "verbose_name": "Impact",
+                "verbose_name_plural": "Impacts",
+                "ordering": ("impact",),
+                "unique_together": {
+                    (
+                        "event_content_type",
+                        "event_object_id",
+                        "target_content_type",
+                        "target_object_id",
+                    )
+                },
             },
             bases=(netbox.models.deletion.DeleteMixin, models.Model),
         ),

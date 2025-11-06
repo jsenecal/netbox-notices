@@ -26,7 +26,9 @@ class TestTimezoneConversionLogic(unittest.TestCase):
     def test_eastern_to_utc_winter(self):
         """Test Eastern (EST) to UTC conversion in winter"""
         # January 15, 2024 14:00 EST
-        est_time = datetime(2024, 1, 15, 14, 0, 0, tzinfo=zoneinfo.ZoneInfo("America/New_York"))
+        est_time = datetime(
+            2024, 1, 15, 14, 0, 0, tzinfo=zoneinfo.ZoneInfo("America/New_York")
+        )
 
         # Convert to UTC
         utc_time = est_time.astimezone(zoneinfo.ZoneInfo("UTC"))
@@ -38,7 +40,9 @@ class TestTimezoneConversionLogic(unittest.TestCase):
     def test_eastern_to_utc_summer(self):
         """Test Eastern (EDT) to UTC conversion in summer"""
         # July 15, 2024 14:00 EDT
-        edt_time = datetime(2024, 7, 15, 14, 0, 0, tzinfo=zoneinfo.ZoneInfo("America/New_York"))
+        edt_time = datetime(
+            2024, 7, 15, 14, 0, 0, tzinfo=zoneinfo.ZoneInfo("America/New_York")
+        )
 
         # Convert to UTC
         utc_time = edt_time.astimezone(zoneinfo.ZoneInfo("UTC"))
@@ -50,7 +54,9 @@ class TestTimezoneConversionLogic(unittest.TestCase):
     def test_london_to_utc_winter(self):
         """Test London (GMT) to UTC conversion in winter"""
         # January 15, 2024 12:00 GMT
-        london_time = datetime(2024, 1, 15, 12, 0, 0, tzinfo=zoneinfo.ZoneInfo("Europe/London"))
+        london_time = datetime(
+            2024, 1, 15, 12, 0, 0, tzinfo=zoneinfo.ZoneInfo("Europe/London")
+        )
 
         # Convert to UTC
         utc_time = london_time.astimezone(zoneinfo.ZoneInfo("UTC"))
@@ -61,7 +67,9 @@ class TestTimezoneConversionLogic(unittest.TestCase):
     def test_london_to_utc_summer(self):
         """Test London (BST) to UTC conversion in summer"""
         # July 15, 2024 12:00 BST
-        london_time = datetime(2024, 7, 15, 12, 0, 0, tzinfo=zoneinfo.ZoneInfo("Europe/London"))
+        london_time = datetime(
+            2024, 7, 15, 12, 0, 0, tzinfo=zoneinfo.ZoneInfo("Europe/London")
+        )
 
         # Convert to UTC
         utc_time = london_time.astimezone(zoneinfo.ZoneInfo("UTC"))
@@ -72,7 +80,9 @@ class TestTimezoneConversionLogic(unittest.TestCase):
     def test_tokyo_to_utc(self):
         """Test Tokyo (JST) to UTC conversion"""
         # January 15, 2024 21:00 JST
-        tokyo_time = datetime(2024, 1, 15, 21, 0, 0, tzinfo=zoneinfo.ZoneInfo("Asia/Tokyo"))
+        tokyo_time = datetime(
+            2024, 1, 15, 21, 0, 0, tzinfo=zoneinfo.ZoneInfo("Asia/Tokyo")
+        )
 
         # Convert to UTC
         utc_time = tokyo_time.astimezone(zoneinfo.ZoneInfo("UTC"))
@@ -83,7 +93,9 @@ class TestTimezoneConversionLogic(unittest.TestCase):
     def test_los_angeles_to_utc_winter(self):
         """Test Los Angeles (PST) to UTC conversion in winter"""
         # January 15, 2024 09:00 PST
-        la_time = datetime(2024, 1, 15, 9, 0, 0, tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
+        la_time = datetime(
+            2024, 1, 15, 9, 0, 0, tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles")
+        )
 
         # Convert to UTC
         utc_time = la_time.astimezone(zoneinfo.ZoneInfo("UTC"))
@@ -94,7 +106,9 @@ class TestTimezoneConversionLogic(unittest.TestCase):
     def test_crossing_date_boundary_forward(self):
         """Test timezone conversion that crosses date boundary forward"""
         # Sydney, 2:00 AM Jan 16
-        sydney_time = datetime(2024, 1, 16, 2, 0, 0, tzinfo=zoneinfo.ZoneInfo("Australia/Sydney"))
+        sydney_time = datetime(
+            2024, 1, 16, 2, 0, 0, tzinfo=zoneinfo.ZoneInfo("Australia/Sydney")
+        )
 
         # Convert to UTC
         utc_time = sydney_time.astimezone(zoneinfo.ZoneInfo("UTC"))
@@ -106,7 +120,9 @@ class TestTimezoneConversionLogic(unittest.TestCase):
     def test_crossing_date_boundary_backward(self):
         """Test timezone conversion that crosses date boundary backward"""
         # Los Angeles, 8:00 PM Jan 15 PST
-        la_time = datetime(2024, 1, 15, 20, 0, 0, tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
+        la_time = datetime(
+            2024, 1, 15, 20, 0, 0, tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles")
+        )
 
         # Convert to UTC
         utc_time = la_time.astimezone(zoneinfo.ZoneInfo("UTC"))
@@ -173,8 +189,12 @@ class TestTimezoneConversionLogic(unittest.TestCase):
     def test_time_delta_preserved_across_conversion(self):
         """Test that time deltas are preserved when converting timezones"""
         # Create a 4-hour maintenance window in EST
-        start_est = datetime(2024, 1, 15, 14, 0, 0, tzinfo=zoneinfo.ZoneInfo("America/New_York"))
-        end_est = datetime(2024, 1, 15, 18, 0, 0, tzinfo=zoneinfo.ZoneInfo("America/New_York"))
+        start_est = datetime(
+            2024, 1, 15, 14, 0, 0, tzinfo=zoneinfo.ZoneInfo("America/New_York")
+        )
+        end_est = datetime(
+            2024, 1, 15, 18, 0, 0, tzinfo=zoneinfo.ZoneInfo("America/New_York")
+        )
 
         # Convert both to UTC
         start_utc = start_est.astimezone(zoneinfo.ZoneInfo("UTC"))

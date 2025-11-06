@@ -40,8 +40,16 @@ class TestCircuitOutageStatusChoices(unittest.TestCase):
                             for elt in item.value.elts:
                                 if isinstance(elt, ast.Tuple) and len(elt.elts) >= 3:
                                     # Extract (status, label, color) tuples
-                                    status = elt.elts[0].value if isinstance(elt.elts[0], ast.Constant) else None
-                                    color = elt.elts[2].value if isinstance(elt.elts[2], ast.Constant) else None
+                                    status = (
+                                        elt.elts[0].value
+                                        if isinstance(elt.elts[0], ast.Constant)
+                                        else None
+                                    )
+                                    color = (
+                                        elt.elts[2].value
+                                        if isinstance(elt.elts[2], ast.Constant)
+                                        else None
+                                    )
                                     if status and color:
                                         choices.append((status, color))
                             return choices
@@ -52,7 +60,9 @@ class TestCircuitOutageStatusChoices(unittest.TestCase):
         tree = self._get_models_file_ast()
         class_node = self._find_class(tree, "CircuitOutageStatusChoices")
 
-        self.assertIsNotNone(class_node, "CircuitOutageStatusChoices class not found in models.py")
+        self.assertIsNotNone(
+            class_node, "CircuitOutageStatusChoices class not found in models.py"
+        )
 
         choices = self._extract_choices(class_node)
         expected_statuses = [
@@ -71,7 +81,9 @@ class TestCircuitOutageStatusChoices(unittest.TestCase):
         tree = self._get_models_file_ast()
         class_node = self._find_class(tree, "CircuitOutageStatusChoices")
 
-        self.assertIsNotNone(class_node, "CircuitOutageStatusChoices class not found in models.py")
+        self.assertIsNotNone(
+            class_node, "CircuitOutageStatusChoices class not found in models.py"
+        )
 
         choices = self._extract_choices(class_node)
         choices_dict = dict(choices)
@@ -211,7 +223,9 @@ class TestCircuitMaintenance(unittest.TestCase):
         tree = self._get_models_file_ast()
         class_node = self._find_class(tree, "CircuitMaintenance")
 
-        self.assertIsNotNone(class_node, "CircuitMaintenance class not found in models.py")
+        self.assertIsNotNone(
+            class_node, "CircuitMaintenance class not found in models.py"
+        )
 
         base_class = self._get_base_class_name(class_node)
         self.assertEqual(
@@ -238,7 +252,9 @@ class TestCircuitMaintenance(unittest.TestCase):
         self.assertIsNotNone(class_node)
 
         fields = self._get_field_names(class_node)
-        self.assertIn("status", fields, "CircuitMaintenance should define 'status' field")
+        self.assertIn(
+            "status", fields, "CircuitMaintenance should define 'status' field"
+        )
 
     def test_circuit_maintenance_does_not_redefine_base_fields(self):
         """Test that CircuitMaintenance doesn't redefine fields from BaseEvent"""
@@ -431,7 +447,10 @@ class TestOutageModel(unittest.TestCase):
         tree = self._get_models_file_ast()
         class_node = self._find_class(tree, "Outage")
 
-        self.assertIsNotNone(class_node, "Outage class not found in models.py. Should be renamed from CircuitOutage")
+        self.assertIsNotNone(
+            class_node,
+            "Outage class not found in models.py. Should be renamed from CircuitOutage",
+        )
 
     def test_outage_verbose_name(self):
         """Test that Outage has correct verbose_name without 'Circuit' prefix"""
@@ -441,7 +460,11 @@ class TestOutageModel(unittest.TestCase):
         self.assertIsNotNone(class_node)
 
         verbose_name = self._get_meta_attribute(class_node, "verbose_name")
-        self.assertEqual(verbose_name, "Outage", "verbose_name should be 'Outage' (not 'Circuit Outage')")
+        self.assertEqual(
+            verbose_name,
+            "Outage",
+            "verbose_name should be 'Outage' (not 'Circuit Outage')",
+        )
 
     def test_outage_verbose_name_plural(self):
         """Test that Outage has correct verbose_name_plural without 'Circuit' prefix"""
@@ -450,9 +473,13 @@ class TestOutageModel(unittest.TestCase):
 
         self.assertIsNotNone(class_node)
 
-        verbose_name_plural = self._get_meta_attribute(class_node, "verbose_name_plural")
+        verbose_name_plural = self._get_meta_attribute(
+            class_node, "verbose_name_plural"
+        )
         self.assertEqual(
-            verbose_name_plural, "Outages", "verbose_name_plural should be 'Outages' (not 'Circuit Outages')"
+            verbose_name_plural,
+            "Outages",
+            "verbose_name_plural should be 'Outages' (not 'Circuit Outages')",
         )
 
     def test_outage_url_pattern(self):

@@ -25,120 +25,120 @@ class TestFieldDisplayNames:
 class TestCategorizeChange:
     def test_categorize_status_change(self):
         """Status changes should be categorized as 'status'"""
-        prechange = {'status': 'TENTATIVE', 'acknowledged': False}
-        postchange = {'status': 'CONFIRMED', 'acknowledged': False}
+        prechange = {"status": "TENTATIVE", "acknowledged": False}
+        postchange = {"status": "CONFIRMED", "acknowledged": False}
 
         category = categorize_change(
-            changed_object_model='maintenance',
-            action='update',
+            changed_object_model="maintenance",
+            action="update",
             prechange_data=prechange,
-            postchange_data=postchange
+            postchange_data=postchange,
         )
 
-        assert category == 'status'
+        assert category == "status"
 
     def test_categorize_acknowledgment_change(self):
         """Acknowledgment changes should be categorized as 'acknowledgment'"""
-        prechange = {'status': 'CONFIRMED', 'acknowledged': False}
-        postchange = {'status': 'CONFIRMED', 'acknowledged': True}
+        prechange = {"status": "CONFIRMED", "acknowledged": False}
+        postchange = {"status": "CONFIRMED", "acknowledged": True}
 
         category = categorize_change(
-            changed_object_model='maintenance',
-            action='update',
+            changed_object_model="maintenance",
+            action="update",
             prechange_data=prechange,
-            postchange_data=postchange
+            postchange_data=postchange,
         )
 
-        assert category == 'acknowledgment'
+        assert category == "acknowledgment"
 
     def test_categorize_time_change(self):
         """Time field changes should be categorized as 'time'"""
-        prechange = {'start': '2025-01-01T10:00:00Z', 'status': 'CONFIRMED'}
-        postchange = {'start': '2025-01-01T11:00:00Z', 'status': 'CONFIRMED'}
+        prechange = {"start": "2025-01-01T10:00:00Z", "status": "CONFIRMED"}
+        postchange = {"start": "2025-01-01T11:00:00Z", "status": "CONFIRMED"}
 
         category = categorize_change(
-            changed_object_model='maintenance',
-            action='update',
+            changed_object_model="maintenance",
+            action="update",
             prechange_data=prechange,
-            postchange_data=postchange
+            postchange_data=postchange,
         )
 
-        assert category == 'time'
+        assert category == "time"
 
     def test_categorize_impact_create(self):
         """Impact object creation should be categorized as 'impact'"""
         category = categorize_change(
-            changed_object_model='impact',
-            action='create',
+            changed_object_model="impact",
+            action="create",
             prechange_data=None,
-            postchange_data={'impact': 'OUTAGE'}
+            postchange_data={"impact": "OUTAGE"},
         )
 
-        assert category == 'impact'
+        assert category == "impact"
 
     def test_categorize_notification_create(self):
         """Notification creation should be categorized as 'notification'"""
         category = categorize_change(
-            changed_object_model='eventnotification',
-            action='create',
+            changed_object_model="eventnotification",
+            action="create",
             prechange_data=None,
-            postchange_data={'subject': 'Maintenance notice'}
+            postchange_data={"subject": "Maintenance notice"},
         )
 
-        assert category == 'notification'
+        assert category == "notification"
 
     def test_categorize_standard_change(self):
         """Other changes should be categorized as 'standard'"""
-        prechange = {'comments': 'Old comment'}
-        postchange = {'comments': 'New comment'}
+        prechange = {"comments": "Old comment"}
+        postchange = {"comments": "New comment"}
 
         category = categorize_change(
-            changed_object_model='maintenance',
-            action='update',
+            changed_object_model="maintenance",
+            action="update",
             prechange_data=prechange,
-            postchange_data=postchange
+            postchange_data=postchange,
         )
 
-        assert category == 'standard'
+        assert category == "standard"
 
 
 class TestIconAndColorMapping:
     def test_get_icon_for_status(self):
-        assert get_category_icon('status') == 'check-circle'
+        assert get_category_icon("status") == "check-circle"
 
     def test_get_icon_for_impact(self):
-        assert get_category_icon('impact') == 'alert-triangle'
+        assert get_category_icon("impact") == "alert-triangle"
 
     def test_get_icon_for_notification(self):
-        assert get_category_icon('notification') == 'mail'
+        assert get_category_icon("notification") == "mail"
 
     def test_get_icon_for_acknowledgment(self):
-        assert get_category_icon('acknowledgment') == 'check'
+        assert get_category_icon("acknowledgment") == "check"
 
     def test_get_icon_for_time(self):
-        assert get_category_icon('time') == 'clock'
+        assert get_category_icon("time") == "clock"
 
     def test_get_icon_for_standard(self):
-        assert get_category_icon('standard') == 'circle'
+        assert get_category_icon("standard") == "circle"
 
     def test_get_color_for_status(self):
         # Status color comes from status value, returns default for testing
-        assert get_category_color('status') == 'secondary'
+        assert get_category_color("status") == "secondary"
 
     def test_get_color_for_impact(self):
-        assert get_category_color('impact') == 'yellow'
+        assert get_category_color("impact") == "yellow"
 
     def test_get_color_for_notification(self):
-        assert get_category_color('notification') == 'blue'
+        assert get_category_color("notification") == "blue"
 
     def test_get_color_for_acknowledgment(self):
-        assert get_category_color('acknowledgment') == 'green'
+        assert get_category_color("acknowledgment") == "green"
 
     def test_get_color_for_time(self):
-        assert get_category_color('time') == 'orange'
+        assert get_category_color("time") == "orange"
 
     def test_get_color_for_standard(self):
-        assert get_category_color('standard') == 'secondary'
+        assert get_category_color("standard") == "secondary"
 
 
 class TestBuildTimelineItem:
@@ -147,72 +147,75 @@ class TestBuildTimelineItem:
         object_change = Mock()
         object_change.time = Mock()
         object_change.user = Mock()
-        object_change.user.username = 'testuser'
-        object_change.user_name = 'testuser'
-        object_change.changed_object_type.model = 'maintenance'
-        object_change.action = 'update'
-        object_change.object_repr = 'MAINT-123'
-        object_change.prechange_data = {'status': 'TENTATIVE', 'acknowledged': False}
-        object_change.postchange_data = {'status': 'CONFIRMED', 'acknowledged': False}
+        object_change.user.username = "testuser"
+        object_change.user_name = "testuser"
+        object_change.changed_object_type.model = "maintenance"
+        object_change.action = "update"
+        object_change.object_repr = "MAINT-123"
+        object_change.prechange_data = {"status": "TENTATIVE", "acknowledged": False}
+        object_change.postchange_data = {"status": "CONFIRMED", "acknowledged": False}
 
-        item = build_timeline_item(object_change, 'maintenance')
+        item = build_timeline_item(object_change, "maintenance")
 
-        assert item['category'] == 'status'
-        assert item['icon'] == 'check-circle'
-        assert item['title'] == 'Status changed to Confirmed'
-        assert len(item['changes']) == 1
-        assert item['changes'][0]['field'] == 'status'
-        assert item['changes'][0]['old_value'] == 'TENTATIVE'
-        assert item['changes'][0]['new_value'] == 'CONFIRMED'
+        assert item["category"] == "status"
+        assert item["icon"] == "check-circle"
+        assert item["title"] == "Status changed to Confirmed"
+        assert len(item["changes"]) == 1
+        assert item["changes"][0]["field"] == "status"
+        assert item["changes"][0]["old_value"] == "TENTATIVE"
+        assert item["changes"][0]["new_value"] == "CONFIRMED"
 
     def test_build_timeline_item_for_multiple_changes(self):
         """Test that all field changes are captured"""
         object_change = Mock()
         object_change.time = Mock()
         object_change.user = Mock()
-        object_change.user.username = 'testuser'
-        object_change.user_name = 'testuser'
-        object_change.changed_object_type.model = 'maintenance'
-        object_change.action = 'update'
-        object_change.object_repr = 'MAINT-123'
+        object_change.user.username = "testuser"
+        object_change.user_name = "testuser"
+        object_change.changed_object_type.model = "maintenance"
+        object_change.action = "update"
+        object_change.object_repr = "MAINT-123"
         object_change.prechange_data = {
-            'status': 'TENTATIVE',
-            'acknowledged': False,
-            'comments': 'Old comment'
+            "status": "TENTATIVE",
+            "acknowledged": False,
+            "comments": "Old comment",
         }
         object_change.postchange_data = {
-            'status': 'CONFIRMED',
-            'acknowledged': True,
-            'comments': 'New comment'
+            "status": "CONFIRMED",
+            "acknowledged": True,
+            "comments": "New comment",
         }
 
-        item = build_timeline_item(object_change, 'maintenance')
+        item = build_timeline_item(object_change, "maintenance")
 
         # Category based on priority (status wins)
-        assert item['category'] == 'status'
+        assert item["category"] == "status"
         # But all changes are captured
-        assert len(item['changes']) == 3
-        change_fields = [c['field'] for c in item['changes']]
-        assert 'status' in change_fields
-        assert 'acknowledged' in change_fields
-        assert 'comments' in change_fields
+        assert len(item["changes"]) == 3
+        change_fields = [c["field"] for c in item["changes"]]
+        assert "status" in change_fields
+        assert "acknowledged" in change_fields
+        assert "comments" in change_fields
 
     def test_build_timeline_item_for_impact_creation(self):
         """Test building timeline item for impact creation"""
         object_change = Mock()
         object_change.time = Mock()
         object_change.user = Mock()
-        object_change.user.username = 'testuser'
-        object_change.user_name = 'testuser'
-        object_change.changed_object_type.model = 'impact'
-        object_change.action = 'create'
-        object_change.object_repr = 'Circuit ABC-123 - OUTAGE'
+        object_change.user.username = "testuser"
+        object_change.user_name = "testuser"
+        object_change.changed_object_type.model = "impact"
+        object_change.action = "create"
+        object_change.object_repr = "Circuit ABC-123 - OUTAGE"
         object_change.prechange_data = None
-        object_change.postchange_data = {'impact': 'OUTAGE', 'target': 'Circuit ABC-123'}
+        object_change.postchange_data = {
+            "impact": "OUTAGE",
+            "target": "Circuit ABC-123",
+        }
 
-        item = build_timeline_item(object_change, 'maintenance')
+        item = build_timeline_item(object_change, "maintenance")
 
-        assert item['category'] == 'impact'
-        assert item['icon'] == 'alert-triangle'
-        assert item['title'] == 'Impact added: Circuit ABC-123 - OUTAGE'
-        assert item['action'] == 'create'
+        assert item["category"] == "impact"
+        assert item["icon"] == "alert-triangle"
+        assert item["title"] == "Impact added: Circuit ABC-123 - OUTAGE"
+        assert item["action"] == "create"
