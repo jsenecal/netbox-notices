@@ -101,4 +101,10 @@ urlpatterns = (
         views.MaintenanceCalendarView.as_view(),
         name="maintenance_calendar",
     ),
+    # iCal Feed
+    path(
+        "ical/maintenances.ics",
+        views.MaintenanceICalView.as_view(),
+        name="ical_maintenances",
+    ),
 )

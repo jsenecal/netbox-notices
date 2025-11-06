@@ -1,13 +1,16 @@
 """Tests for iCal utility functions."""
 
-import hashlib
 import pytest
 from datetime import datetime, timezone as dt_timezone
 from django.test import RequestFactory
 
 from circuits.models import Provider
 from vendor_notification.models import Maintenance
-from vendor_notification.ical_utils import calculate_etag, get_ical_status, generate_maintenance_ical
+from vendor_notification.ical_utils import (
+    calculate_etag,
+    get_ical_status,
+    generate_maintenance_ical,
+)
 
 
 class TestICalStatusMapping:

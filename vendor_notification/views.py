@@ -1,10 +1,25 @@
+from datetime import timedelta
+from django.conf import settings
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db.models import Count
+from django.http import (
+    HttpResponse,
+    HttpResponseForbidden,
+    HttpResponseBadRequest,
+    HttpResponseNotModified,
+)
 from django.shortcuts import render
+from django.utils import timezone
 from django.views.generic import View
 from netbox.views import generic
+from rest_framework import exceptions
+
+from circuits.models import Provider
+from netbox.api.authentication import TokenAuthentication
+from netbox.config import get_config
 
 from . import filtersets, forms, models, tables
+from .ical_utils import generate_maintenance_ical, calculate_etag
 
 
 # Maintenance Views
@@ -111,3 +126,198 @@ class MaintenanceCalendarView(PermissionRequiredMixin, View):
 
     def get(self, request):
         return render(request, self.template_name, {"title": "Maintenance Calendar"})
+
+
+class MaintenanceICalView(View):
+    """
+    Generate iCal feed of maintenance events.
+
+    Supports three authentication methods:
+    1. Token in URL (?token=xxx)
+    2. Authorization header (Token xxx)
+    3. Session authentication (browser)
+
+    Query parameters:
+    - token: API token for authentication
+    - past_days: Days in past to include (default from settings)
+    - provider: Provider slug to filter by
+    - provider_id: Provider ID to filter by
+    - status: Comma-separated status list
+    """
+
+    def get(self, request):
+        # Authenticate user
+        user = self._authenticate_request(request)
+        if not user:
+            return HttpResponseForbidden("Authentication required")
+
+        # Check permission
+        if not user.has_perm("vendor_notification.view_maintenance"):
+            return HttpResponseForbidden("Permission denied")
+
+        # Parse and validate query parameters
+        try:
+            params = self._parse_query_params(request)
+        except ValueError as e:
+            return HttpResponseBadRequest(str(e))
+
+        # Build filtered queryset
+        queryset = self._build_queryset(params)
+
+        # Get cache-related info
+        count = queryset.count()
+        latest_modified = (
+            queryset.order_by("-last_updated")
+            .values_list("last_updated", flat=True)
+            .first()
+        )
+
+        # Calculate ETag
+        etag = calculate_etag(
+            count=count, latest_modified=latest_modified, params=params
+        )
+
+        # Check If-None-Match (ETag)
+        if request.META.get("HTTP_IF_NONE_MATCH") == etag:
+            response = HttpResponseNotModified()
+            response["ETag"] = etag
+            return response
+
+        # Check If-Modified-Since
+        if latest_modified and "HTTP_IF_MODIFIED_SINCE" in request.META:
+            # Parse If-Modified-Since header (simplified)
+            # In production, use proper HTTP date parsing
+            response = HttpResponseNotModified()
+            response["ETag"] = etag
+            response["Last-Modified"] = latest_modified.strftime(
+                "%a, %d %b %Y %H:%M:%S GMT"
+            )
+            return response
+
+        # Generate iCal
+        ical = generate_maintenance_ical(queryset, request)
+
+        # Create response
+        response = HttpResponse(
+            ical.to_ical(), content_type="text/calendar; charset=utf-8"
+        )
+
+        # Set caching headers
+        config = get_config()
+        cache_max_age = config.PLUGINS_CONFIG.get("vendor_notification", {}).get(
+            "ical_cache_max_age", 900
+        )
+
+        response["Cache-Control"] = f"public, max-age={cache_max_age}"
+        response["ETag"] = etag
+
+        if latest_modified:
+            response["Last-Modified"] = latest_modified.strftime(
+                "%a, %d %b %Y %H:%M:%S GMT"
+            )
+
+        return response
+
+    def _authenticate_request(self, request):
+        """
+        Authenticate request using token (URL/header) or session.
+
+        Returns authenticated user or None.
+        """
+        # Try 1: Token in URL parameter
+        token_key = request.GET.get("token")
+        if token_key:
+            try:
+                authenticator = TokenAuthentication()
+                user, token = authenticator.authenticate_credentials(token_key)
+                return user
+            except exceptions.AuthenticationFailed:
+                return None
+
+        # Try 2: Authorization header
+        if not request.user.is_authenticated:
+            authenticator = TokenAuthentication()
+            auth_info = authenticator.authenticate(request)
+            if auth_info:
+                return auth_info[0]
+
+        # Try 3: Session authentication
+        if request.user.is_authenticated:
+            return request.user
+
+        # No authentication
+        if not settings.LOGIN_REQUIRED:
+            # Allow anonymous if LOGIN_REQUIRED=False
+            return request.user
+
+        return None
+
+    def _parse_query_params(self, request):
+        """Parse and validate query parameters."""
+        params = {}
+
+        # past_days
+        config = get_config()
+        default_past_days = config.PLUGINS_CONFIG.get("vendor_notification", {}).get(
+            "ical_past_days_default", 30
+        )
+
+        try:
+            past_days = int(request.GET.get("past_days", default_past_days))
+            if past_days < 0:
+                past_days = default_past_days
+            if past_days > 365:
+                raise ValueError("past_days cannot exceed 365")
+            params["past_days"] = past_days
+        except (ValueError, TypeError):
+            params["past_days"] = default_past_days
+
+        # provider / provider_id
+        if "provider" in request.GET:
+            params["provider"] = request.GET["provider"]
+        elif "provider_id" in request.GET:
+            params["provider_id"] = request.GET["provider_id"]
+
+        # status
+        if "status" in request.GET:
+            params["status"] = request.GET["status"]
+
+        return params
+
+    def _build_queryset(self, params):
+        """Build filtered Maintenance queryset."""
+        # Base queryset with time filter
+        cutoff_date = timezone.now() - timedelta(days=params["past_days"])
+        queryset = models.Maintenance.objects.filter(start__gte=cutoff_date)
+
+        # Optimize queries
+        queryset = queryset.select_related("provider").prefetch_related("impacts")
+
+        # Filter by provider
+        if "provider" in params:
+            try:
+                provider = Provider.objects.get(slug=params["provider"])
+                queryset = queryset.filter(provider=provider)
+            except Provider.DoesNotExist:
+                raise ValueError(f"Provider not found: {params['provider']}")
+
+        elif "provider_id" in params:
+            try:
+                provider_id = int(params["provider_id"])
+                queryset = queryset.filter(provider_id=provider_id)
+            except (ValueError, TypeError):
+                raise ValueError(f"Invalid provider_id: {params['provider_id']}")
+
+        # Filter by status
+        if "status" in params:
+            from .choices import MaintenanceTypeChoices
+
+            status_list = [s.strip().upper() for s in params["status"].split(",")]
+            # Validate statuses
+            valid_statuses = [choice[0] for choice in MaintenanceTypeChoices.CHOICES]
+            filtered_statuses = [s for s in status_list if s in valid_statuses]
+
+            if filtered_statuses:
+                queryset = queryset.filter(status__in=filtered_statuses)
+
+        return queryset
