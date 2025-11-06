@@ -1,4 +1,12 @@
-from vendor_notification.timeline_utils import categorize_change, get_field_display_name, get_category_icon, get_category_color
+from unittest.mock import Mock
+
+from vendor_notification.timeline_utils import (
+    build_timeline_item,
+    categorize_change,
+    get_category_color,
+    get_category_icon,
+    get_field_display_name,
+)
 
 
 class TestFieldDisplayNames:
@@ -131,10 +139,6 @@ class TestIconAndColorMapping:
 
     def test_get_color_for_standard(self):
         assert get_category_color('standard') == 'secondary'
-
-
-from unittest.mock import Mock
-from vendor_notification.timeline_utils import build_timeline_item
 
 
 class TestBuildTimelineItem:
