@@ -88,6 +88,17 @@ class Maintenance(BaseEvent):
         related_query_name="maintenance",
     )
 
+    # Self-referencing FK for rescheduled maintenance tracking
+    replaces = models.ForeignKey(
+        to='self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='replaced_by_maintenance',
+        verbose_name='Replaces Maintenance',
+        help_text='The maintenance event that this event replaces (for rescheduled events)'
+    )
+
     class Meta:
         ordering = ("-created",)
         verbose_name = "Maintenance"

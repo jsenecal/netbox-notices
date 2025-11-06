@@ -3,7 +3,40 @@
 {% load helpers %}
 {% load tz %}
 
+{% block buttons %}
+    {{ block.super }}
+
+    {% if perms.vendor_notification.add_maintenance and object.status not in 'COMPLETED,CANCELLED' %}
+    <a href="{% url 'plugins:vendor_notification:maintenance_reschedule' pk=object.pk %}"
+       class="btn btn-warning">
+        <i class="mdi mdi-calendar-refresh"></i> Reschedule
+    </a>
+    {% endif %}
+{% endblock %}
+
 {% block content %}
+    {# Show if this maintenance replaces another #}
+    {% if object.replaces %}
+    <div class="alert alert-warning mb-3">
+        <i class="mdi mdi-alert"></i>
+        <strong>This maintenance replaces:</strong>
+        <a href="{{ object.replaces.get_absolute_url }}">{{ object.replaces.name }}</a>
+        ({{ object.replaces.start|date:"Y-m-d H:i" }})
+    </div>
+    {% endif %}
+
+    {# Show if this maintenance was rescheduled #}
+    {% if object.replaced_by_maintenance.exists %}
+    <div class="alert alert-info mb-3">
+        <i class="mdi mdi-information"></i>
+        <strong>This maintenance was rescheduled:</strong>
+        {% for replacement in object.replaced_by_maintenance.all %}
+            <a href="{{ replacement.get_absolute_url }}">{{ replacement.name }}</a>
+            ({{ replacement.start|date:"Y-m-d H:i" }}){% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
   <div class="row mb-3">
     <div class="col col-md-6">
       <div class="card">
