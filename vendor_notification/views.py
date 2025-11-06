@@ -91,7 +91,18 @@ class OutageView(generic.ObjectView):
             event_content_type__model="outage", event_object_id=instance.pk
         )
 
-        return {"impacts": impact, "notifications": notification}
+        # Load timeline changes
+        object_changes = get_timeline_changes(instance, Outage, limit=20)
+        timeline_items = [
+            build_timeline_item(change, 'outage')
+            for change in object_changes
+        ]
+
+        return {
+            "impacts": impact,
+            "notifications": notification,
+            "timeline": timeline_items,
+        }
 
 
 class OutageEditView(generic.ObjectEditView):
