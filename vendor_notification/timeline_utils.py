@@ -2,6 +2,9 @@
 Timeline utilities for categorizing and formatting ObjectChange records.
 """
 
+from django.contrib.contenttypes.models import ContentType
+from core.models import ObjectChange
+
 FIELD_DISPLAY_NAMES = {
     'name': 'Event ID',
     'summary': 'Summary',
@@ -262,3 +265,40 @@ def _extract_field_changes(prechange, postchange):
             })
 
     return changes
+
+
+def get_timeline_changes(instance, model_class, limit=20):
+    """
+    Fetch ObjectChange records for an event and its related objects.
+
+    Retrieves changes to the event itself (Maintenance or Outage) plus
+    changes to related Impact and EventNotification objects.
+
+    Args:
+        instance: Maintenance or Outage instance
+        model_class: Maintenance or Outage class
+        limit: Maximum number of changes to return (default 20)
+
+    Returns:
+        List of ObjectChange records, sorted by time descending
+    """
+    content_type = ContentType.objects.get_for_model(model_class)
+
+    # Direct changes to this object
+    direct_changes = ObjectChange.objects.filter(
+        changed_object_type=content_type,
+        changed_object_id=instance.pk
+    ).select_related('user')
+
+    # Changes to related Impact/EventNotification objects
+    # These have related_object pointing to our event
+    related_changes = ObjectChange.objects.filter(
+        related_object_type=content_type,
+        related_object_id=instance.pk
+    ).select_related('user')
+
+    # Combine and sort by time
+    all_changes = list(direct_changes) + list(related_changes)
+    all_changes.sort(key=lambda x: x.time, reverse=True)
+
+    return all_changes[:limit]
