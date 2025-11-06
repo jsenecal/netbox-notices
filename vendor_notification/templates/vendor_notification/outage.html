@@ -1,5 +1,6 @@
 {% extends 'generic/object.html' %}
 {% load helpers %}
+{% load tz %}
 
 {% block content %}
 <div class="row mb-3">
@@ -230,7 +231,7 @@
                           <div class="text-secondary mb-2">by {{ item.user_name }}</div>
                         </div>
                         <div class="col-auto">
-                          <div class="text-secondary">{{ item.time|annotated_date }}</div>
+                          <div class="text-secondary">{{ item.time }}</div>
                         </div>
                       </div>
                       {% if item.changes %}
