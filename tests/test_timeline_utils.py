@@ -1,4 +1,4 @@
-from vendor_notification.timeline_utils import categorize_change, get_field_display_name
+from vendor_notification.timeline_utils import categorize_change, get_field_display_name, get_category_icon, get_category_color
 
 
 class TestFieldDisplayNames:
@@ -92,3 +92,42 @@ class TestCategorizeChange:
         )
 
         assert category == 'standard'
+
+
+class TestIconAndColorMapping:
+    def test_get_icon_for_status(self):
+        assert get_category_icon('status') == 'check-circle'
+
+    def test_get_icon_for_impact(self):
+        assert get_category_icon('impact') == 'alert-triangle'
+
+    def test_get_icon_for_notification(self):
+        assert get_category_icon('notification') == 'mail'
+
+    def test_get_icon_for_acknowledgment(self):
+        assert get_category_icon('acknowledgment') == 'check'
+
+    def test_get_icon_for_time(self):
+        assert get_category_icon('time') == 'clock'
+
+    def test_get_icon_for_standard(self):
+        assert get_category_icon('standard') == 'circle'
+
+    def test_get_color_for_status(self):
+        # Status color comes from status value, returns default for testing
+        assert get_category_color('status') == 'secondary'
+
+    def test_get_color_for_impact(self):
+        assert get_category_color('impact') == 'yellow'
+
+    def test_get_color_for_notification(self):
+        assert get_category_color('notification') == 'blue'
+
+    def test_get_color_for_acknowledgment(self):
+        assert get_category_color('acknowledgment') == 'green'
+
+    def test_get_color_for_time(self):
+        assert get_category_color('time') == 'orange'
+
+    def test_get_color_for_standard(self):
+        assert get_category_color('standard') == 'secondary'

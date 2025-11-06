@@ -80,3 +80,63 @@ def categorize_change(changed_object_model, action, prechange_data, postchange_d
 
     # Default: standard change
     return 'standard'
+
+
+CATEGORY_ICONS = {
+    'status': 'check-circle',
+    'impact': 'alert-triangle',
+    'notification': 'mail',
+    'acknowledgment': 'check',
+    'time': 'clock',
+    'standard': 'circle',
+}
+
+CATEGORY_COLORS = {
+    'status': 'secondary',  # Default, actual color from status value
+    'impact': 'yellow',
+    'notification': 'blue',
+    'acknowledgment': 'green',
+    'time': 'orange',
+    'standard': 'secondary',
+}
+
+
+def get_category_icon(category):
+    """
+    Get Tabler icon name for a change category.
+
+    Args:
+        category: Category string
+
+    Returns:
+        Icon name (e.g., 'check-circle')
+    """
+    return CATEGORY_ICONS.get(category, 'circle')
+
+
+def get_category_color(category, status_value=None):
+    """
+    Get color class for a change category.
+
+    For status changes, color is determined by the status value.
+    For other categories, returns predefined color.
+
+    Args:
+        category: Category string
+        status_value: Optional status value for status changes
+
+    Returns:
+        Color name (e.g., 'green', 'yellow')
+    """
+    if category == 'status' and status_value:
+        # Import here to avoid circular dependency
+        from .choices import MaintenanceTypeChoices, OutageStatusChoices
+
+        # Try maintenance status first, then outage
+        color = MaintenanceTypeChoices.colors.get(status_value)
+        if not color:
+            color = OutageStatusChoices.colors.get(status_value)
+
+        return color or 'secondary'
+
+    return CATEGORY_COLORS.get(category, 'secondary')
