@@ -31,22 +31,18 @@
               <tr>
                 <th scope="row">Start Date/Time</th>
                 <td>
+                  {{ object.start }}
                   {% if object.has_timezone_difference %}
-                    {{ object.start }} (local)
-                    <br><small class="text-muted">{{ object.get_start_in_original_tz }} ({{ object.original_timezone }})</small>
-                  {% else %}
-                    {{ object.start }}
+                    <br><small class="text-muted">({{ object.get_start_in_original_tz }} {{ object.original_timezone }})</small>
                   {% endif %}
                 </td>
               </tr>
               <tr>
                 <th scope="row">End Date/Time</th>
                 <td>
+                  {{ object.end }}
                   {% if object.has_timezone_difference %}
-                    {{ object.end }} (local)
-                    <br><small class="text-muted">{{ object.get_end_in_original_tz }} ({{ object.original_timezone }})</small>
-                  {% else %}
-                    {{ object.end }}
+                    <br><small class="text-muted">({{ object.get_end_in_original_tz }} {{ object.original_timezone }})</small>
                   {% endif %}
                 </td>
               </tr>
