@@ -166,6 +166,11 @@ class MaintenanceSerializer(NetBoxModelSerializer):
     )
 
     provider = ProviderSerializer(nested=True)
+    replaces = serializers.PrimaryKeyRelatedField(
+        queryset=Maintenance.objects.all(),
+        required=False,
+        allow_null=True
+    )
     impacts = NestedImpactSerializer(
         required=False, many=True, read_only=True, source="impact_set"
     )
@@ -195,6 +200,7 @@ class MaintenanceSerializer(NetBoxModelSerializer):
             "original_timezone",
             "internal_ticket",
             "acknowledged",
+            "replaces",
             "impacts",
             "impact_count",
             "notifications",

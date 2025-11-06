@@ -1,0 +1,22 @@
+{% extends 'generic/object_edit.html' %}
+
+{% block form %}
+<div class="alert alert-info mb-3">
+    <h5 class="alert-heading">
+        <i class="mdi mdi-calendar-refresh"></i> Rescheduling Maintenance
+    </h5>
+    <p class="mb-0">
+        You are creating a new maintenance that replaces:
+        <a href="{{ original_maintenance.get_absolute_url }}" target="_blank" class="alert-link">
+            {{ original_maintenance.name }}
+        </a>
+    </p>
+    <p class="mb-0 mt-2">
+        <small class="text-muted">
+            The original maintenance will be automatically marked as "RE-SCHEDULED" when you save.
+        </small>
+    </p>
+</div>
+
+{{ block.super }}
+{% endblock %}

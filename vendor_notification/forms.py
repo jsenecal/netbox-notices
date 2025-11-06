@@ -104,6 +104,13 @@ class GenericForeignKeyFormMixin:
 class MaintenanceForm(NetBoxModelForm):
     provider = DynamicModelChoiceField(queryset=Provider.objects.all())
 
+    replaces = DynamicModelChoiceField(
+        queryset=Maintenance.objects.all(),
+        required=False,
+        label='Replaces',
+        help_text='The maintenance this event replaces (for rescheduled events)'
+    )
+
     original_timezone = forms.ChoiceField(
         choices=TimeZoneChoices,
         required=False,
@@ -124,6 +131,7 @@ class MaintenanceForm(NetBoxModelForm):
             "internal_ticket",
             "acknowledged",
             "comments",
+            "replaces",
             "tags",
         )
         widgets = {"start": DateTimePicker(), "end": DateTimePicker()}
