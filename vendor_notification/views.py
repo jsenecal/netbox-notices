@@ -202,19 +202,25 @@ class MaintenanceICalView(View):
             ical.to_ical(), content_type="text/calendar; charset=utf-8"
         )
 
-        # Set caching headers
-        config = get_config()
-        cache_max_age = config.PLUGINS_CONFIG.get("vendor_notification", {}).get(
-            "ical_cache_max_age", 900
-        )
-
-        response["Cache-Control"] = f"public, max-age={cache_max_age}"
-        response["ETag"] = etag
-
-        if latest_modified:
-            response["Last-Modified"] = latest_modified.strftime(
-                "%a, %d %b %Y %H:%M:%S GMT"
+        # Handle download vs subscription mode
+        if request.GET.get("download", "").lower() in ("true", "1", "yes"):
+            # Download mode: trigger file download with date-stamped filename
+            filename = f"netbox-maintenance-{timezone.now().strftime('%Y-%m-%d')}.ics"
+            response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        else:
+            # Subscription mode: set caching headers for feed readers
+            config = get_config()
+            cache_max_age = config.PLUGINS_CONFIG.get("vendor_notification", {}).get(
+                "ical_cache_max_age", 900
             )
+
+            response["Cache-Control"] = f"public, max-age={cache_max_age}"
+            response["ETag"] = etag
+
+            if latest_modified:
+                response["Last-Modified"] = latest_modified.strftime(
+                    "%a, %d %b %Y %H:%M:%S GMT"
+                )
 
         return response
 
