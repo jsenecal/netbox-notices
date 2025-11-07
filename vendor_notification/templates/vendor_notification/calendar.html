@@ -10,6 +10,19 @@
 {% block page %}
 <div class="container-fluid p-3">
     <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="card-title">Maintenance Calendar</h3>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary" id="icalSubscribeBtn">
+                        <i class="mdi mdi-calendar-sync"></i> Subscribe
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="icalDownloadBtn">
+                        <i class="mdi mdi-download"></i> Download
+                    </button>
+                </div>
+            </div>
+        </div>
         <div class="card-body">
             <div id="calendar"></div>
         </div>
@@ -60,9 +73,54 @@
         </div>
     </div>
 </div>
+
+<!-- iCal Subscribe Modal -->
+<div class="modal modal-blur fade" id="icalSubscribeModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="mdi mdi-calendar-sync"></i> Subscribe to Maintenance Calendar
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Use this URL to subscribe to the maintenance calendar in your calendar application:</p>
+
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control font-monospace" id="icalSubscribeUrl" readonly>
+                    <button class="btn btn-outline-secondary" type="button" id="copyUrlBtn">
+                        <i class="mdi mdi-content-copy"></i> Copy
+                    </button>
+                </div>
+
+                <div class="alert alert-warning">
+                    <i class="mdi mdi-alert"></i>
+                    <strong>Important:</strong> Replace '<code>{{ ical_token_placeholder }}</code>' in the URL with your NetBox API token.
+                    <br>
+                    <small>You can generate an API token in your user profile settings.</small>
+                </div>
+
+                <h6 class="mt-4">How to subscribe in popular calendar apps:</h6>
+                <ul class="mb-0">
+                    <li><strong>Google Calendar:</strong> Settings → Add calendar → From URL</li>
+                    <li><strong>Outlook:</strong> Calendar → Add calendar → Subscribe from web</li>
+                    <li><strong>Apple Calendar:</strong> File → New Calendar Subscription</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block javascript %}
+<script>
+    // Pass Django context to JavaScript
+    window.ICAL_TOKEN_PLACEHOLDER = "{{ ical_token_placeholder }}";
+</script>
 <script src="{% static 'vendor_notification/js/fullcalendar/index.global.min.js' %}"></script>
 <script src="{% static 'vendor_notification/js/calendar.js' %}"></script>
 {% endblock %}
