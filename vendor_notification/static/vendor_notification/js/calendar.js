@@ -139,3 +139,68 @@ document.addEventListener('click', function(e) {
         closeEventModal();
     }
 });
+
+// iCal Subscribe and Download button handlers
+document.addEventListener('DOMContentLoaded', function() {
+    // Subscribe button - shows modal with subscription URL
+    const subscribeBtn = document.getElementById('icalSubscribeBtn');
+    if (subscribeBtn) {
+        subscribeBtn.addEventListener('click', function() {
+            // Generate the iCal feed URL with token placeholder
+            const baseUrl = window.location.origin;
+            const icalPath = '/plugins/vendor-notification/ical/maintenances.ics';
+            const tokenPlaceholder = window.ICAL_TOKEN_PLACEHOLDER || 'changeme';
+            const subscribeUrl = `${baseUrl}${icalPath}?token=${tokenPlaceholder}`;
+
+            // Populate the modal input field
+            document.getElementById('icalSubscribeUrl').value = subscribeUrl;
+
+            // Show the subscribe modal (Bootstrap 5 compatible)
+            const modalEl = document.getElementById('icalSubscribeModal');
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        });
+    }
+
+    // Copy URL button in subscribe modal
+    const copyBtn = document.getElementById('copyUrlBtn');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', function() {
+            const urlInput = document.getElementById('icalSubscribeUrl');
+            const url = urlInput.value;
+
+            // Copy to clipboard using modern API
+            navigator.clipboard.writeText(url).then(function() {
+                // Visual feedback - change button text temporarily
+                const originalHTML = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="mdi mdi-check"></i> Copied!';
+                copyBtn.classList.remove('btn-outline-secondary');
+                copyBtn.classList.add('btn-success');
+
+                // Reset after 2 seconds
+                setTimeout(function() {
+                    copyBtn.innerHTML = originalHTML;
+                    copyBtn.classList.remove('btn-success');
+                    copyBtn.classList.add('btn-outline-secondary');
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Failed to copy URL:', err);
+                // Fallback - select the text
+                urlInput.select();
+            });
+        });
+    }
+
+    // Download button - triggers one-time download
+    const downloadBtn = document.getElementById('icalDownloadBtn');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', function() {
+            // Generate download URL with download=true parameter
+            const icalPath = '/plugins/vendor-notification/ical/maintenances.ics';
+            const downloadUrl = `${icalPath}?download=true`;
+
+            // Navigate to download URL (will use session auth)
+            window.location.href = downloadUrl;
+        });
+    }
+});
