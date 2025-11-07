@@ -125,11 +125,33 @@ function closeEventModal() {
     }
 }
 
+// Close subscribe modal function
+function closeSubscribeModal() {
+    const modalEl = document.getElementById('icalSubscribeModal');
+    modalEl.classList.remove('show');
+    modalEl.style.display = 'none';
+    document.body.classList.remove('modal-open');
+
+    // Remove backdrop
+    const backdrop = document.getElementById('icalSubscribeModalBackdrop');
+    if (backdrop) {
+        backdrop.remove();
+    }
+}
+
 // Add event listeners for modal close buttons and backdrop
 document.addEventListener('DOMContentLoaded', function() {
-    // Close button handlers
+    // Close button handlers - detect which modal and call appropriate close function
     document.querySelectorAll('[data-bs-dismiss="modal"]').forEach(function(btn) {
-        btn.addEventListener('click', closeEventModal);
+        btn.addEventListener('click', function() {
+            // Find which modal this button belongs to
+            const modal = btn.closest('.modal');
+            if (modal && modal.id === 'eventModal') {
+                closeEventModal();
+            } else if (modal && modal.id === 'icalSubscribeModal') {
+                closeSubscribeModal();
+            }
+        });
     });
 });
 
@@ -137,6 +159,8 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('click', function(e) {
     if (e.target && e.target.id === 'eventModalBackdrop') {
         closeEventModal();
+    } else if (e.target && e.target.id === 'icalSubscribeModalBackdrop') {
+        closeSubscribeModal();
     }
 });
 
@@ -155,10 +179,17 @@ document.addEventListener('DOMContentLoaded', function() {
             // Populate the modal input field
             document.getElementById('icalSubscribeUrl').value = subscribeUrl;
 
-            // Show the subscribe modal (Bootstrap 5 compatible)
+            // Show the subscribe modal manually
             const modalEl = document.getElementById('icalSubscribeModal');
-            const modal = new bootstrap.Modal(modalEl);
-            modal.show();
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+            document.body.classList.add('modal-open');
+
+            // Create backdrop
+            const backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop fade show';
+            backdrop.id = 'icalSubscribeModalBackdrop';
+            document.body.appendChild(backdrop);
         });
     }
 

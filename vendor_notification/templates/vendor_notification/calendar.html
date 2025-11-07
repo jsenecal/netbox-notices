@@ -7,22 +7,18 @@
 <link href="{% static 'vendor_notification/css/calendar-overrides.css' %}" rel="stylesheet">
 {% endblock %}
 
+{% block control-buttons %}
+<button type="button" class="btn btn-primary" id="icalSubscribeBtn">
+    <i class="mdi mdi-calendar-sync"></i> Subscribe
+</button>
+<button type="button" class="btn btn-outline-primary" id="icalDownloadBtn">
+    <i class="mdi mdi-download"></i> Download
+</button>
+{% endblock %}
+
 {% block page %}
 <div class="container-fluid p-3">
     <div class="card">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <h3 class="card-title">Maintenance Calendar</h3>
-                <div class="btn-group">
-                    <button type="button" class="btn btn-primary" id="icalSubscribeBtn">
-                        <i class="mdi mdi-calendar-sync"></i> Subscribe
-                    </button>
-                    <button type="button" class="btn btn-outline-primary" id="icalDownloadBtn">
-                        <i class="mdi mdi-download"></i> Download
-                    </button>
-                </div>
-            </div>
-        </div>
         <div class="card-body">
             <div id="calendar"></div>
         </div>
@@ -94,11 +90,14 @@
                     </button>
                 </div>
 
-                <div class="alert alert-warning">
-                    <i class="mdi mdi-alert"></i>
-                    <strong>Important:</strong> Replace '<code>{{ ical_token_placeholder }}</code>' in the URL with your NetBox API token.
-                    <br>
-                    <small>You can generate an API token in your user profile settings.</small>
+                <div class="alert alert-warning d-flex">
+                    <div class="me-2">
+                        <i class="mdi mdi-alert"></i>
+                    </div>
+                    <div>
+                        <div><strong>Important:</strong> Replace <code>{{ ical_token_placeholder }}</code> in the URL with your NetBox API token.</div>
+                        <small>You can generate an API token in your user profile settings.</small>
+                    </div>
                 </div>
 
                 <h6 class="mt-4">How to subscribe in popular calendar apps:</h6>
