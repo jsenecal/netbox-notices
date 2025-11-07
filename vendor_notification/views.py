@@ -125,7 +125,21 @@ class MaintenanceCalendarView(PermissionRequiredMixin, View):
     template_name = "vendor_notification/calendar.html"
 
     def get(self, request):
-        return render(request, self.template_name, {"title": "Maintenance Calendar"})
+        from netbox.config import get_config
+
+        config = get_config()
+        token_placeholder = config.PLUGINS_CONFIG.get("vendor_notification", {}).get(
+            "ical_token_placeholder", "changeme"
+        )
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "title": "Maintenance Calendar",
+                "ical_token_placeholder": token_placeholder,
+            },
+        )
 
 
 class MaintenanceICalView(View):
