@@ -1,0 +1,45 @@
+{% if maintenances or outages %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title">Maintenance & Outage History</h5>
+        <div class="card-subtitle text-muted">
+            Past {{ event_history_days }} days and future events
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs mb-3" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-maintenances-tab" data-bs-toggle="tab" data-bs-target="#tab-maintenances" type="button" role="tab" aria-controls="tab-maintenances" aria-selected="true">
+                    Maintenances
+                    <span class="badge bg-secondary">{{ maintenances|length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-outages-tab" data-bs-toggle="tab" data-bs-target="#tab-outages" type="button" role="tab" aria-controls="tab-outages" aria-selected="false">
+                    Outages
+                    <span class="badge bg-secondary">{{ outages|length }}</span>
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab content -->
+        <div class="tab-content">
+            <div id="tab-maintenances" class="tab-pane fade show active" role="tabpanel" aria-labelledby="tab-maintenances-tab">
+                {% if maintenances %}
+                    {% include 'vendor_notification/event_history_table.html' with events=maintenances %}
+                {% else %}
+                    <p class="text-muted">No maintenances in this period</p>
+                {% endif %}
+            </div>
+            <div id="tab-outages" class="tab-pane fade" role="tabpanel" aria-labelledby="tab-outages-tab">
+                {% if outages %}
+                    {% include 'vendor_notification/event_history_table.html' with events=outages %}
+                {% else %}
+                    <p class="text-muted">No outages in this period</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

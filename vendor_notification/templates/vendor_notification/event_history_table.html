@@ -1,0 +1,54 @@
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Event</th>
+                <th>Provider</th>
+                <th>Status</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Impact</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in events %}
+            <tr>
+                <td>
+                    <a href="{{ item.event.get_absolute_url }}">{{ item.event.name }}</a>
+                </td>
+                <td>
+                    {% if item.event.provider %}
+                        <a href="{{ item.event.provider.get_absolute_url }}">
+                            {{ item.event.provider }}
+                        </a>
+                    {% else %}
+                        <em class="text-muted">-</em>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge bg-{{ item.event.get_status_color }}">
+                        {{ item.event.get_status_display }}
+                    </span>
+                </td>
+                <td>{{ item.event.start|date:"Y-m-d H:i" }}</td>
+                <td>
+                    {% if item.event.end %}
+                        {{ item.event.end|date:"Y-m-d H:i" }}
+                    {% else %}
+                        <em class="text-muted">Ongoing</em>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.impact.impact %}
+                        <span class="badge bg-{{ item.impact.get_impact_color }}">
+                            {{ item.impact.get_impact_display }}
+                        </span>
+                    {% else %}
+                        <em class="text-muted">-</em>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
