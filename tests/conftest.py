@@ -12,43 +12,51 @@ netbox_path = os.environ.get("PYTHONPATH", "/opt/netbox/netbox")
 if netbox_path not in sys.path:
     sys.path.insert(0, netbox_path)
 
-# Configure NetBox to use testing configuration
-os.environ["NETBOX_CONFIGURATION"] = "netbox.configuration_testing"
-
-# Set Django settings module to netbox.settings (NOT configuration_testing)
+# Set Django settings module
 os.environ["DJANGO_SETTINGS_MODULE"] = "netbox.settings"
 
-# Import and configure testing settings BEFORE pytest starts
-from netbox import configuration_testing
+# Detect environment: CI uses pre-configured files, devcontainer uses configuration_testing
+is_ci = "GITHUB_ACTIONS" in os.environ
 
-# Configure database for testing
-# Use PostgreSQL (required for NetBox - SQLite doesn't support array fields)
-# Default HOST differs: CI uses "localhost", devcontainer uses "postgres"
-default_db_host = "localhost" if "GITHUB_ACTIONS" in os.environ else "postgres"
-configuration_testing.DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DB_NAME", "netbox"),
-        "USER": os.environ.get("DB_USER", "netbox"),
-        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
-        "HOST": os.environ.get("DB_HOST", default_db_host),
-        "PORT": os.environ.get("DB_PORT", "5432"),
-        "CONN_MAX_AGE": 300,
+if is_ci:
+    # CI: Use the configuration.py and plugins.py already copied by workflow
+    # These files already have notices configured in PLUGINS
+    # Just set SECRET_KEY if not already set
+    if not os.environ.get("SECRET_KEY"):
+        os.environ["SECRET_KEY"] = "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)"
+else:
+    # DevContainer: Use configuration_testing and manually configure
+    os.environ["NETBOX_CONFIGURATION"] = "netbox.configuration_testing"
+
+    # Import and configure testing settings BEFORE pytest starts
+    from netbox import configuration_testing
+
+    # Configure database for testing
+    # Use PostgreSQL (required for NetBox - SQLite doesn't support array fields)
+    configuration_testing.DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("DB_NAME", "netbox"),
+            "USER": os.environ.get("DB_USER", "netbox"),
+            "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+            "HOST": os.environ.get("DB_HOST", "postgres"),
+            "PORT": os.environ.get("DB_PORT", "5432"),
+            "CONN_MAX_AGE": 300,
+        }
     }
-}
 
-# Add notices to PLUGINS
-if not hasattr(configuration_testing, "PLUGINS"):
-    configuration_testing.PLUGINS = []
-if "notices" not in configuration_testing.PLUGINS:
-    configuration_testing.PLUGINS.append("notices")
+    # Add notices to PLUGINS
+    if not hasattr(configuration_testing, "PLUGINS"):
+        configuration_testing.PLUGINS = []
+    if "notices" not in configuration_testing.PLUGINS:
+        configuration_testing.PLUGINS.append("notices")
 
-# Set default PLUGINS_CONFIG if not present
-if not hasattr(configuration_testing, "PLUGINS_CONFIG"):
-    configuration_testing.PLUGINS_CONFIG = {}
+    # Set default PLUGINS_CONFIG if not present
+    if not hasattr(configuration_testing, "PLUGINS_CONFIG"):
+        configuration_testing.PLUGINS_CONFIG = {}
 
-if "notices" not in configuration_testing.PLUGINS_CONFIG:
-    configuration_testing.PLUGINS_CONFIG["notices"] = {}
+    if "notices" not in configuration_testing.PLUGINS_CONFIG:
+        configuration_testing.PLUGINS_CONFIG["notices"] = {}
 
 # Initialize Django BEFORE test collection
 import django  # noqa: E402
