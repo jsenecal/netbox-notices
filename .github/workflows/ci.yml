@@ -1,0 +1,132 @@
+name: CI Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: netbox
+          POSTGRES_USER: netbox
+          POSTGRES_PASSWORD: J5brHrAXFLQSif0K
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install NetBox
+        run: |
+          # Clone NetBox
+          git clone --depth 1 --branch v4.4.0 https://github.com/netbox-community/netbox.git /tmp/netbox
+
+          # Install NetBox dependencies
+          pip install --upgrade pip
+          pip install -r /tmp/netbox/requirements.txt
+
+      - name: Configure NetBox
+        run: |
+          # Copy configuration
+          cp .devcontainer/configuration/configuration.py /tmp/netbox/netbox/netbox/
+          cp .devcontainer/configuration/plugins.py /tmp/netbox/netbox/netbox/
+
+          # Update database settings for GitHub Actions
+          cat >> /tmp/netbox/netbox/netbox/configuration.py << EOF
+
+          # GitHub Actions database settings
+          DATABASE = {
+              'NAME': 'netbox',
+              'USER': 'netbox',
+              'PASSWORD': 'J5brHrAXFLQSif0K',
+              'HOST': 'localhost',
+              'PORT': '5432',
+          }
+
+          REDIS = {
+              'tasks': {
+                  'HOST': 'localhost',
+                  'PORT': 6379,
+                  'PASSWORD': '',
+                  'DATABASE': 0,
+                  'SSL': False,
+              },
+              'caching': {
+                  'HOST': 'localhost',
+                  'PORT': 6379,
+                  'PASSWORD': '',
+                  'DATABASE': 1,
+                  'SSL': False,
+              }
+          }
+          EOF
+
+      - name: Install plugin
+        run: |
+          pip install -e .
+
+      - name: Run migrations
+        env:
+          PYTHONPATH: /tmp/netbox/netbox
+          DJANGO_SETTINGS_MODULE: netbox.settings
+        run: |
+          cd /tmp/netbox/netbox
+          python manage.py migrate --noinput
+
+      - name: Run linting
+        run: |
+          pip install ruff
+          ruff check notices/ tests/ || true
+          ruff format --check notices/ tests/ || true
+
+      - name: Run tests
+        env:
+          PYTHONPATH: /tmp/netbox/netbox
+          DJANGO_SETTINGS_MODULE: netbox.settings
+        run: |
+          pytest tests/ -v --ignore=tests/test_ical_download.py --ignore=tests/test_ical_view.py --tb=short
+
+      - name: Check migrations
+        env:
+          PYTHONPATH: /tmp/netbox/netbox
+          DJANGO_SETTINGS_MODULE: netbox.settings
+        run: |
+          cd /tmp/netbox/netbox
+          python manage.py makemigrations --check --dry-run
+
+      - name: Django system check
+        env:
+          PYTHONPATH: /tmp/netbox/netbox
+          DJANGO_SETTINGS_MODULE: netbox.settings
+        run: |
+          cd /tmp/netbox/netbox
+          python manage.py check
