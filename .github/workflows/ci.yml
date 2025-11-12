@@ -98,6 +98,7 @@ jobs:
         env:
           PYTHONPATH: /tmp/netbox/netbox
           DJANGO_SETTINGS_MODULE: netbox.settings
+          SECRET_KEY: "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)"
         run: |
           cd /tmp/netbox/netbox
           python manage.py migrate --noinput
@@ -112,6 +113,7 @@ jobs:
         env:
           PYTHONPATH: /tmp/netbox/netbox
           DJANGO_SETTINGS_MODULE: netbox.settings
+          SECRET_KEY: "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)"
         run: |
           pytest tests/ -v --ignore=tests/test_ical_download.py --ignore=tests/test_ical_view.py --tb=short
 
@@ -119,6 +121,7 @@ jobs:
         env:
           PYTHONPATH: /tmp/netbox/netbox
           DJANGO_SETTINGS_MODULE: netbox.settings
+          SECRET_KEY: "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)"
         run: |
           cd /tmp/netbox/netbox
           python manage.py makemigrations --check --dry-run
@@ -127,6 +130,7 @@ jobs:
         env:
           PYTHONPATH: /tmp/netbox/netbox
           DJANGO_SETTINGS_MODULE: netbox.settings
+          SECRET_KEY: "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)"
         run: |
           cd /tmp/netbox/netbox
           python manage.py check
