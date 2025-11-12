@@ -21,11 +21,11 @@ The plugin does not directly provide an automated approach to ingesting provider
  - Maintenance overlap detection (coming soon)
 
 ## Compatibility
-This plugin requires NetBox 4.4 or higher.
+This plugin requires NetBox 4.4.1 or higher.
 
 | NetBox Version | Plugin Version |
 |--|--|
-| 4.4+ | 0.1.0 |
+| 4.4.1+ | 0.1.0 |
 
 
 
