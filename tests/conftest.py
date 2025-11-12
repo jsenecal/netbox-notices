@@ -21,9 +21,24 @@ is_ci = "GITHUB_ACTIONS" in os.environ
 if is_ci:
     # CI: Use the configuration.py and plugins.py already copied by workflow
     # These files already have notices configured in PLUGINS
+    print("=== CI Environment Detected ===")
+    print(f"PYTHONPATH: {os.environ.get('PYTHONPATH')}")
+    print(f"DJANGO_SETTINGS_MODULE: {os.environ.get('DJANGO_SETTINGS_MODULE')}")
+
+    # NetBox needs to know which configuration module to use
+    os.environ["NETBOX_CONFIGURATION"] = "netbox.configuration"
+    print(f"NETBOX_CONFIGURATION set to: {os.environ['NETBOX_CONFIGURATION']}")
+
     # Just set SECRET_KEY if not already set
     if not os.environ.get("SECRET_KEY"):
         os.environ["SECRET_KEY"] = "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)"
+
+    # Import configuration to verify PLUGINS
+    try:
+        from netbox import configuration
+        print(f"PLUGINS from configuration: {getattr(configuration, 'PLUGINS', 'NOT FOUND')}")
+    except Exception as e:
+        print(f"Error importing configuration: {e}")
 else:
     # DevContainer: Use configuration_testing and manually configure
     os.environ["NETBOX_CONFIGURATION"] = "netbox.configuration_testing"
