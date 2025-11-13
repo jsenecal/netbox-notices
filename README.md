@@ -1,37 +1,36 @@
 # NetBox Notices
 
-**Repository:** https://github.com/jsenecal/netbox-notices
+**Repository:** [github.com/jsenecal/netbox-notices](https://github.com/jsenecal/netbox-notices)
 
 **Original Project:** Forked and inspired from [jasonyates/netbox-circuitmaintenance](https://github.com/jasonyates/netbox-circuitmaintenance), differs in the ability to track more than just maintenances, and circuits.
 
 A NetBox plugin built to track maintenance and outage events across various NetBox models. This plugin is agnostic in that it is only built to store data surrounding maintenance/outage events and provide an overview of historical, active and upcoming events. The plugin tracks events at the provider level and associates impact across multiple NetBox object types (circuits, devices, virtual machines, power feeds, sites, etc.).
 
-The plugin does not directly provide an automated approach to ingesting provider notifications, instead it extends NetBox's extensive REST API and provides GET/POST/PUT/PATCH methods to manage events. The plugin is intended to be coupled with an automated parser to handle the parsing of provider notifications and the delivery of the events to the plugin's REST API. Several example parsers have been documented in the upstream project [here](https://jasonyates.github.io/netbox-circuitmaintenance/parsers/).
+The plugin does not directly provide an automated approach to ingesting provider notifications, instead it extends NetBox's extensive REST API and provides GET/POST/PUT/PATCH methods to manage events. The plugin is intended to be coupled with an automated parser to handle the parsing of provider notifications and the delivery of the events to the plugin's REST API. Several example parsers have been [documented in the upstream project](https://jasonyates.github.io/netbox-circuitmaintenance/parsers/).
 
 **Important Note:** This is a significant refactoring from the original `netbox-circuitmaintenance` plugin. **There is no upgrade path** from the original plugin. If you are using the original plugin, you will need to migrate your data manually.
 
 ## Features
 
- - Track provider maintenance events
- - Track impact from provider maintenance across multiple NetBox object types
- - Configurable allowed object types (circuits, devices, virtual machines, power feeds, sites, etc.)
- - Provides a consolidated view of active, upcoming and historical maintenance events at the provider and object level
- - Track unplanned outage events with optional end times and ETR tracking
- - Unified event notification tracking
- - Maintenance overlap detection (coming soon)
+- Track provider maintenance events
+- Track impact from provider maintenance across multiple NetBox object types
+- Configurable allowed object types (circuits, devices, virtual machines, power feeds, sites, etc.)
+- Provides a consolidated view of active, upcoming and historical maintenance events at the provider and object level
+- Track unplanned outage events with optional end times and ETR tracking
+- Unified event notification tracking
+- Maintenance overlap detection (coming soon)
 
 ## Compatibility
+
 This plugin requires NetBox 4.4.1 or higher.
 
 | NetBox Version | Plugin Version |
-|--|--|
-| 4.4.1+ | 0.1.0 |
-
-
+| -------------- | -------------- |
+| 4.4.1+         | 0.1.0          |
 
 ## Installing
 
-A working installation of Netbox 3.4+ is required - [see official documentation](https://netbox.readthedocs.io/en/stable/plugins/).
+A working installation of Netbox 4.4.1+ is required - [see official documentation](https://netbox.readthedocs.io/en/stable/plugins/).
 
 ### Package Installation
 
@@ -86,7 +85,7 @@ PLUGINS_CONFIG = {
 
 You can customize which object types are allowed by specifying the `allowed_content_types` setting. Content types are specified in the format `app_label.model_name`.
 
-**Example: Add Devices and Virtual Machines**
+##### Example: Add Devices and Virtual Machines
 
 ```python
 PLUGINS_CONFIG = {
@@ -102,7 +101,7 @@ PLUGINS_CONFIG = {
 }
 ```
 
-**Example: Minimal Configuration (Circuits Only)**
+##### Example: Minimal Configuration (Circuits Only)
 
 ```python
 PLUGINS_CONFIG = {
@@ -114,7 +113,7 @@ PLUGINS_CONFIG = {
 }
 ```
 
-**Example: Extended Configuration**
+##### Example: Extended Configuration
 
 ```python
 PLUGINS_CONFIG = {
@@ -135,35 +134,35 @@ PLUGINS_CONFIG = {
 }
 ```
 
-**How Configuration Affects Behavior:**
+##### How Configuration Affects Behavior
 
 - Only object types listed in `allowed_content_types` will appear in the Impact creation forms
 - The API will reject attempts to create impacts for non-allowed object types
 - Changing the configuration requires a NetBox restart
 - This setting controls which objects can be linked via the `Impact` model to maintenance and outage events
 
-**Common NetBox Object Types:**
+##### Common NetBox Object Types
 
-| Content Type | Description |
-|--------------|-------------|
-| `circuits.Circuit` | Network circuits |
-| `circuits.Provider` | Service providers |
-| `dcim.Device` | Physical network devices |
-| `dcim.Interface` | Device network interfaces |
-| `dcim.PowerFeed` | Power supply connections |
-| `dcim.PowerPanel` | Power distribution panels |
-| `dcim.Rack` | Equipment racks |
-| `dcim.Site` | Physical locations |
-| `ipam.IPAddress` | IP addresses |
-| `ipam.Prefix` | IP prefixes/subnets |
-| `virtualization.VirtualMachine` | Virtual machines |
-| `virtualization.VMInterface` | VM network interfaces |
+| Content Type                    | Description               |
+| ------------------------------- | ------------------------- |
+| `circuits.Circuit`              | Network circuits          |
+| `circuits.Provider`             | Service providers         |
+| `dcim.Device`                   | Physical network devices  |
+| `dcim.Interface`                | Device network interfaces |
+| `dcim.PowerFeed`                | Power supply connections  |
+| `dcim.PowerPanel`               | Power distribution panels |
+| `dcim.Rack`                     | Equipment racks           |
+| `dcim.Site`                     | Physical locations        |
+| `ipam.IPAddress`                | IP addresses              |
+| `ipam.Prefix`                   | IP prefixes/subnets       |
+| `virtualization.VirtualMachine` | Virtual machines          |
+| `virtualization.VMInterface`    | VM network interfaces     |
 
 ### Apply Database Migrations
 
 Apply database migrations with Netbox `manage.py`:
 
-```
+```bash
 (venv) $ python manage.py migrate
 ```
 
@@ -171,7 +170,7 @@ Apply database migrations with Netbox `manage.py`:
 
 Restart the Netbox service to apply changes:
 
-```
+```bash
 sudo systemctl restart netbox
 ```
 
@@ -196,7 +195,8 @@ In addition to planned maintenance, this plugin supports tracking unplanned outa
 ### API Endpoints
 
 **Maintenance Events:**
-```
+
+```text
 GET    /api/plugins/notices/maintenance/
 POST   /api/plugins/notices/maintenance/
 GET    /api/plugins/notices/maintenance/{id}/
@@ -205,7 +205,8 @@ DELETE /api/plugins/notices/maintenance/{id}/
 ```
 
 **Outage Events:**
-```
+
+```text
 GET    /api/plugins/notices/outage/
 POST   /api/plugins/notices/outage/
 GET    /api/plugins/notices/outage/{id}/
@@ -214,7 +215,8 @@ DELETE /api/plugins/notices/outage/{id}/
 ```
 
 **Impact Tracking:**
-```
+
+```text
 GET    /api/plugins/notices/impact/
 POST   /api/plugins/notices/impact/
 GET    /api/plugins/notices/impact/{id}/
@@ -265,7 +267,9 @@ POST /api/plugins/notices/impact/
 The plugin uses four main models to track maintenance and outage events:
 
 ### Maintenance
+
 Represents a planned maintenance event from a provider. Key fields:
+
 - `name`: Event identifier
 - `summary`: Description of the maintenance
 - `provider`: Foreign key to NetBox Provider
@@ -275,7 +279,9 @@ Represents a planned maintenance event from a provider. Key fields:
 - `acknowledged`: Whether the event has been acknowledged
 
 ### Outage
+
 Represents an unplanned outage event from a provider. Key fields:
+
 - `name`: Event identifier
 - `summary`: Description of the outage
 - `provider`: Foreign key to NetBox Provider
@@ -286,7 +292,9 @@ Represents an unplanned outage event from a provider. Key fields:
 - `acknowledged`: Whether the event has been acknowledged
 
 ### Impact
+
 Links maintenance or outage events to affected NetBox objects using Django's Generic Foreign Key pattern:
+
 - `maintenance` or `outage`: Foreign key to the event (mutually exclusive)
 - `content_type`: The type of affected object (e.g., "circuits.circuit", "dcim.device")
 - `object_id`: The ID of the affected object
@@ -295,7 +303,9 @@ Links maintenance or outage events to affected NetBox objects using Django's Gen
 The Impact model allows linking events to **any NetBox object type** configured in `allowed_content_types`.
 
 ### EventNotification
+
 Stores raw email notifications received from providers:
+
 - `maintenance` or `outage`: Foreign key to the associated event
 - `email`: Binary email data
 - `email_body`: Extracted body text
@@ -308,7 +318,6 @@ Stores raw email notifications received from providers:
 ![Maintenance Event View](docs/img/maintenance.png)
 ![Circuit Maintenance View](docs/img/circuit_maintenance.png)
 ![Provider Maintenance View](docs/img/provider_maintenance.png)
-
 
 ## Credits
 
