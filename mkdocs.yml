@@ -2,7 +2,11 @@ site_name: NetBox Notices Plugin
 site_url: https://jsenecal.github.io/netbox-notices
 repo_url: https://github.com/jsenecal/netbox-notices
 repo_name: jsenecal/netbox-notices
-#strict: true
+
+# Exclude internal planning documents
+exclude_docs: |
+  plans/
+
 nav:
   - Home: index.md
   - Automated Parsers: 
@@ -32,8 +36,8 @@ theme:
     - navigation.tabs.sticky
 markdown_extensions:
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.critic
   - pymdownx.caret
   - pymdownx.mark
@@ -51,15 +55,13 @@ markdown_extensions:
   - toc:
       baselevel: 2
       permalink: true
-      slugify: !!python/name:pymdownx.slugs.uslugify
+      slugify: !!python/object/apply:pymdownx.slugs.slugify {kwds: {case: lower}}
   - meta
 plugins:
   - include-markdown
   - search:
       lang: en
-  - mkdocstrings:
-      watch:
-        - notices
+  - mkdocstrings
 extra:
   social:
     - icon: fontawesome/brands/github
