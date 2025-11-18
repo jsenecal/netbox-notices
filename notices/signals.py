@@ -15,7 +15,11 @@ def update_replaced_maintenance_status(sender, instance, created, **kwargs):
     """
     if created and instance.replaces:
         # Update the replaced maintenance to RE-SCHEDULED status
-        # Use save() instead of update() to trigger changelog
         original_maintenance = instance.replaces
+
+        # Take a snapshot before modification for proper changelog tracking
+        original_maintenance.snapshot()
+
+        # Update status and save to trigger changelog
         original_maintenance.status = MaintenanceTypeChoices.STATUS_RESCHEDULED
         original_maintenance.save()
