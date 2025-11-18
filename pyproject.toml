@@ -62,6 +62,7 @@ Tracker = "https://github.com/jsenecal/netbox-notices/issues"
 current_version = "0.1.1"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "bump version {old_version} -> {new_version}"
+tag_pattern = "v{version}"
 commit = true
 tag = true
 push = true
