@@ -323,6 +323,8 @@ Stores raw email notifications received from providers:
 
 ## Credits
 
+Forked from [jasonyates/netbox-circuitmaintenance](https://github.com/jasonyates/netbox-circuitmaintenance) with significant enhancements including multi-object type support and outage tracking.
+
 Based on the NetBox plugin tutorial:
 
 - [demo repository](https://github.com/netbox-community/netbox-plugin-demo)
