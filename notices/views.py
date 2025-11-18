@@ -1,6 +1,7 @@
 from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.db import transaction
 from django.db.models import Count
 from django.http import (
     HttpResponse,
@@ -81,47 +82,49 @@ class MaintenanceRescheduleView(generic.ObjectEditView):
     queryset = models.Maintenance.objects.all()
     form = forms.MaintenanceForm
 
-    def get_object(self, **kwargs):
-        """
-        Return None to create new object, but store original for cloning.
-        """
+    def setup(self, request, *args, **kwargs):
+        """Store original maintenance during setup."""
+        super().setup(request, *args, **kwargs)
         # Get original maintenance via URL parameter
         self.original_maintenance = get_object_or_404(
             models.Maintenance, pk=self.kwargs["pk"]
         )
-        # Return None to trigger create mode
-        return None
 
-    def get_initial(self):
+    def get_object(self, **kwargs):
         """
-        Pre-fill form with original maintenance data.
+        Return a new unsaved instance pre-populated with original data.
         """
-        initial = super().get_initial()
+        # Create a new instance and copy data from original
+        new_instance = models.Maintenance()
 
         # Clone all fields from original (except auto fields)
         for field in self.original_maintenance._meta.fields:
             if field.name not in ["id", "created", "last_updated"]:
-                initial[field.name] = getattr(self.original_maintenance, field.name)
+                setattr(new_instance, field.name, getattr(self.original_maintenance, field.name))
 
-        # Set replaces to original
+        # Set replaces to original and reset status
+        new_instance.replaces = self.original_maintenance
+        new_instance.status = "TENTATIVE"
+
+        return new_instance
+
+    def get_initial(self):
+        """
+        Additional initial data for the form.
+        """
+        initial = super().get_initial()
+        # The object already has the data, but ensure replaces is set in initial too
         initial["replaces"] = self.original_maintenance.pk
-
-        # Reset status to TENTATIVE
-        initial["status"] = "TENTATIVE"
-
         return initial
 
     def form_valid(self, form):
         """
-        Save new maintenance and update original status.
+        Save new maintenance.
+
+        Note: The original maintenance status is automatically updated to RE-SCHEDULED
+        via a post_save signal handler when a new maintenance with replaces field is saved.
         """
-        response = super().form_valid(form)
-
-        # Update original maintenance status
-        self.original_maintenance.status = "RE-SCHEDULED"
-        self.original_maintenance.save()
-
-        return response
+        return super().form_valid(form)
 
     def get_extra_context(self, request, instance):
         """Add original maintenance to context."""
@@ -266,7 +269,10 @@ class MaintenanceICalView(View):
             return HttpResponseBadRequest(str(e))
 
         # Build filtered queryset
-        queryset = self._build_queryset(params)
+        try:
+            queryset = self._build_queryset(params)
+        except ValueError as e:
+            return HttpResponseBadRequest(str(e))
 
         # Get cache-related info
         count = queryset.count()

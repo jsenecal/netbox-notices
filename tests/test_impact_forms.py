@@ -29,7 +29,7 @@ class TestImpactForm:
             name="MAINT-001",
             summary="Test maintenance",
             provider=provider,
-            status=MaintenanceTypeChoices.CONFIRMED,
+            status="CONFIRMED",
             start=timezone.now(),
             end=timezone.now() + timezone.timedelta(hours=2),
         )
@@ -37,11 +37,13 @@ class TestImpactForm:
     @pytest.fixture
     def circuit(self, provider):
         """Create a test circuit"""
-        from circuits.models import Circuit
+        from circuits.models import Circuit, CircuitType
 
+        circuit_type = CircuitType.objects.create(name="Test Type", slug="test-type")
         return Circuit.objects.create(
             cid="CID-001",
             provider=provider,
+            type=circuit_type,
         )
 
     @pytest.fixture
@@ -205,10 +207,10 @@ class TestImpactForm:
 
         form_data = {
             "event_content_type": maintenance_ct.pk,
-            "event_object_id": maintenance.pk,
+            "event_choice": maintenance.pk,
             "target_content_type": circuit_ct.pk,
-            "target_object_id": circuit.pk,
-            "impact": ImpactTypeChoices.OUTAGE,
+            "target_choice": circuit.pk,
+            "impact": "OUTAGE",
         }
 
         form = ImpactForm(data=form_data)
@@ -217,7 +219,7 @@ class TestImpactForm:
         impact = form.save()
         assert impact.event == maintenance
         assert impact.target == circuit
-        assert impact.impact == ImpactTypeChoices.OUTAGE
+        assert impact.impact == "OUTAGE"
 
     @override_settings(
         PLUGINS_CONFIG={
@@ -243,10 +245,10 @@ class TestImpactForm:
 
         form_data = {
             "event_content_type": maintenance_ct.pk,
-            "event_object_id": maintenance.pk,
+            "event_choice": maintenance.pk,
             "target_content_type": device_ct.pk,
-            "target_object_id": device.pk,
-            "impact": ImpactTypeChoices.DEGRADED,
+            "target_choice": device.pk,
+            "impact": "DEGRADED",
         }
 
         form = ImpactForm(data=form_data)
@@ -255,7 +257,7 @@ class TestImpactForm:
         impact = form.save()
         assert impact.event == maintenance
         assert impact.target == device
-        assert impact.impact == ImpactTypeChoices.DEGRADED
+        assert impact.impact == "DEGRADED"
 
     def test_form_field_labels(self):
         """Test that form fields have appropriate labels"""
@@ -276,5 +278,5 @@ class TestImpactForm:
 
         assert "Maintenance or Outage" in form.fields["event_content_type"].help_text
         assert "maintenance or outage event" in form.fields["event_object_id"].help_text
-        assert "affected object" in form.fields["target_content_type"].help_text
-        assert "affected object" in form.fields["target_object_id"].help_text
+        assert "Type of affected object" == form.fields["target_content_type"].help_text
+        assert "Select the specific object affected by this event" == form.fields["target_object_id"].help_text

@@ -25,11 +25,13 @@ def test_outage_form_fields():
         "status",
         "provider",
         "start",
+        "reported_at",
         "end",
         "estimated_time_to_repair",
         "original_timezone",
         "internal_ticket",
         "acknowledged",
+        "impact",
         "comments",
         "tags",
     )

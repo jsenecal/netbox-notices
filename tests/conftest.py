@@ -41,6 +41,24 @@ if not is_ci:
         }
     }
 
+    # Configure Redis for testing (use container hostname instead of localhost)
+    configuration_testing.REDIS = {
+        "tasks": {
+            "HOST": os.environ.get("REDIS_HOST", "redis"),
+            "PORT": int(os.environ.get("REDIS_PORT", 6379)),
+            "PASSWORD": os.environ.get("REDIS_PASSWORD", ""),
+            "DATABASE": int(os.environ.get("REDIS_DATABASE", 0)),
+            "SSL": os.environ.get("REDIS_SSL", "False").lower() == "true",
+        },
+        "caching": {
+            "HOST": os.environ.get("REDIS_CACHE_HOST", os.environ.get("REDIS_HOST", "redis")),
+            "PORT": int(os.environ.get("REDIS_CACHE_PORT", os.environ.get("REDIS_PORT", 6379))),
+            "PASSWORD": os.environ.get("REDIS_CACHE_PASSWORD", os.environ.get("REDIS_PASSWORD", "")),
+            "DATABASE": int(os.environ.get("REDIS_CACHE_DATABASE", 1)),
+            "SSL": os.environ.get("REDIS_CACHE_SSL", os.environ.get("REDIS_SSL", "False")).lower() == "true",
+        },
+    }
+
     # Add notices to PLUGINS
     if not hasattr(configuration_testing, "PLUGINS"):
         configuration_testing.PLUGINS = []

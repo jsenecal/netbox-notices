@@ -130,6 +130,7 @@ class MaintenanceForm(NetBoxModelForm):
             "original_timezone",
             "internal_ticket",
             "acknowledged",
+            "impact",
             "comments",
             "replaces",
             "tags",
@@ -266,8 +267,13 @@ class ImpactForm(GenericForeignKeyFormMixin, NetBoxModelForm):
         self.fields["target_content_type"].label = "Target Type"
         self.fields["target_content_type"].help_text = "Type of affected object"
 
-        # Make hidden object_id fields not required
+        # Customize object_id fields (labels and help text)
+        self.fields["event_object_id"].label = "Event"
+        self.fields["event_object_id"].help_text = "Select a specific maintenance or outage event"
         self.fields["event_object_id"].required = False
+
+        self.fields["target_object_id"].label = "Target Object"
+        self.fields["target_object_id"].help_text = "Select the specific object affected by this event"
         self.fields["target_object_id"].required = False
 
         # Get allowed content types for targets from plugin configuration
@@ -380,16 +386,19 @@ class OutageForm(NetBoxModelForm):
             "status",
             "provider",
             "start",
+            "reported_at",
             "end",
             "estimated_time_to_repair",
             "original_timezone",
             "internal_ticket",
             "acknowledged",
+            "impact",
             "comments",
             "tags",
         )
         widgets = {
             "start": DateTimePicker(),
+            "reported_at": DateTimePicker(),
             "end": DateTimePicker(),
             "estimated_time_to_repair": DateTimePicker(),
         }
@@ -427,6 +436,18 @@ class OutageForm(NetBoxModelForm):
                             tzinfo=original_tz
                         )
                     instance.start = start_in_original_tz.astimezone(system_tz)
+
+                # Convert reported_at time if provided
+                if instance.reported_at:
+                    if timezone.is_naive(instance.reported_at):
+                        reported_at_in_original_tz = instance.reported_at.replace(
+                            tzinfo=original_tz
+                        )
+                    else:
+                        reported_at_in_original_tz = instance.reported_at.replace(
+                            tzinfo=original_tz
+                        )
+                    instance.reported_at = reported_at_in_original_tz.astimezone(system_tz)
 
                 # Convert end time if provided
                 if instance.end:

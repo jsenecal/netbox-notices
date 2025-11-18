@@ -142,9 +142,16 @@ class TestMaintenanceRescheduleView:
             "replaces": original_maintenance.pk,
         }
 
-        client.post(url, data)
+        response = client.post(url, data)
 
-        # Refresh original from database
+        # Should redirect to new maintenance
+        assert response.status_code == 302
+
+        # Verify new maintenance was created
+        new_maintenance = Maintenance.objects.get(name="MAINT-002")
+        assert new_maintenance.replaces == original_maintenance
+
+        # Verify original maintenance status was updated to RE-SCHEDULED
         original_maintenance.refresh_from_db()
         assert original_maintenance.status == "RE-SCHEDULED"
 

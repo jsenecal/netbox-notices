@@ -37,6 +37,7 @@ class MaintenanceFilterSet(NetBoxModelFilterSet):
             "original_timezone",
             "internal_ticket",
             "acknowledged",
+            "impact",
             "comments",
         )
 
@@ -47,6 +48,7 @@ class MaintenanceFilterSet(NetBoxModelFilterSet):
             Q(name__icontains=value)
             | Q(summary__icontains=value)
             | Q(internal_ticket__icontains=value)
+            | Q(impact__icontains=value)
         )
 
     def filter_has_replaces(self, queryset, name, value):
@@ -68,11 +70,13 @@ class OutageFilterSet(NetBoxModelFilterSet):
             "status",
             "provider",
             "start",
+            "reported_at",
             "end",
             "estimated_time_to_repair",
             "original_timezone",
             "internal_ticket",
             "acknowledged",
+            "impact",
             "comments",
         )
 
@@ -83,6 +87,7 @@ class OutageFilterSet(NetBoxModelFilterSet):
             Q(name__icontains=value)
             | Q(summary__icontains=value)
             | Q(internal_ticket__icontains=value)
+            | Q(impact__icontains=value)
         )
 
 

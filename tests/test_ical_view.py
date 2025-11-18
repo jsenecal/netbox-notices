@@ -3,10 +3,9 @@
 import pytest
 from datetime import datetime, timedelta, timezone as dt_timezone
 from django.test import Client
-from django.contrib.auth.models import User
+from users.models import User, Token
 
 from circuits.models import Provider
-from users.models import Token
 from notices.models import Maintenance
 
 
@@ -16,7 +15,7 @@ class TestMaintenanceICalViewAuthentication:
 
     def test_token_in_url_authenticates(self):
         # Create user and token
-        user = User.objects.create_user(username="testuser", password="testpass")
+        user = User.objects.create_user(username="testuser", password="testpass", is_superuser=True)
         token = Token.objects.create(user=user)
 
         # Create test maintenance
@@ -33,7 +32,7 @@ class TestMaintenanceICalViewAuthentication:
         # Request with token in URL
         client = Client()
         response = client.get(
-            f"/plugins/vendor-notification/ical/maintenances.ics?token={token.key}"
+            f"/plugins/notices/ical/maintenances.ics?token={token.key}"
         )
 
         assert response.status_code == 200
@@ -42,20 +41,20 @@ class TestMaintenanceICalViewAuthentication:
     def test_invalid_token_returns_403(self):
         client = Client()
         response = client.get(
-            "/plugins/vendor-notification/ical/maintenances.ics?token=invalid"
+            "/plugins/notices/ical/maintenances.ics?token=invalid"
         )
 
         assert response.status_code == 403
 
     def test_no_authentication_returns_403_when_login_required(self):
         client = Client()
-        response = client.get("/plugins/vendor-notification/ical/maintenances.ics")
+        response = client.get("/plugins/notices/ical/maintenances.ics")
 
         # Will be 403 if LOGIN_REQUIRED=True (default in tests)
         assert response.status_code in [200, 403]
 
     def test_authorization_header_authenticates(self):
-        user = User.objects.create_user(username="apiuser", password="testpass")
+        user = User.objects.create_user(username="apiuser", password="testpass", is_superuser=True)
         token = Token.objects.create(user=user)
 
         provider = Provider.objects.create(name="Test", slug="test")
@@ -70,7 +69,7 @@ class TestMaintenanceICalViewAuthentication:
 
         client = Client()
         response = client.get(
-            "/plugins/vendor-notification/ical/maintenances.ics",
+            "/plugins/notices/ical/maintenances.ics",
             HTTP_AUTHORIZATION=f"Token {token.key}",
         )
 
@@ -83,7 +82,7 @@ class TestMaintenanceICalViewFiltering:
 
     def setup_method(self):
         """Create test user and token."""
-        self.user = User.objects.create_user(username="testuser", password="testpass")
+        self.user = User.objects.create_user(username="testuser", password="testpass", is_superuser=True)
         self.token = Token.objects.create(user=self.user)
         self.client = Client()
 
@@ -114,7 +113,7 @@ class TestMaintenanceICalViewFiltering:
 
         # Default (30 days) should exclude old
         response = self.client.get(
-            f"/plugins/vendor-notification/ical/maintenances.ics?token={self.token.key}"
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.key}"
         )
         content = response.content.decode("utf-8")
         assert "RECENT" in content
@@ -122,7 +121,7 @@ class TestMaintenanceICalViewFiltering:
 
         # past_days=90 should include both
         response = self.client.get(
-            f"/plugins/vendor-notification/ical/maintenances.ics?token={self.token.key}&past_days=90"
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.key}&past_days=90"
         )
         content = response.content.decode("utf-8")
         assert "RECENT" in content
@@ -151,7 +150,7 @@ class TestMaintenanceICalViewFiltering:
         )
 
         response = self.client.get(
-            f"/plugins/vendor-notification/ical/maintenances.ics?token={self.token.key}&provider=aws"
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.key}&provider=aws"
         )
         content = response.content.decode("utf-8")
         assert "AWS-1" in content
@@ -179,7 +178,7 @@ class TestMaintenanceICalViewFiltering:
         )
 
         response = self.client.get(
-            f"/plugins/vendor-notification/ical/maintenances.ics?token={self.token.key}&status=CONFIRMED"
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.key}&status=CONFIRMED"
         )
         content = response.content.decode("utf-8")
         assert "CONF" in content
@@ -187,7 +186,7 @@ class TestMaintenanceICalViewFiltering:
 
     def test_invalid_provider_returns_400(self):
         response = self.client.get(
-            f"/plugins/vendor-notification/ical/maintenances.ics?token={self.token.key}&provider=nonexistent"
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.key}&provider=nonexistent"
         )
         assert response.status_code == 400
 
@@ -197,7 +196,7 @@ class TestMaintenanceICalViewCaching:
     """Test HTTP caching behavior."""
 
     def setup_method(self):
-        self.user = User.objects.create_user(username="testuser", password="testpass")
+        self.user = User.objects.create_user(username="testuser", password="testpass", is_superuser=True)
         self.token = Token.objects.create(user=self.user)
         self.client = Client()
 
@@ -214,7 +213,7 @@ class TestMaintenanceICalViewCaching:
         )
 
         response = self.client.get(
-            f"/plugins/vendor-notification/ical/maintenances.ics?token={self.token.key}"
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.key}"
         )
 
         assert "Cache-Control" in response
@@ -236,13 +235,13 @@ class TestMaintenanceICalViewCaching:
 
         # First request
         response1 = self.client.get(
-            f"/plugins/vendor-notification/ical/maintenances.ics?token={self.token.key}"
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.key}"
         )
         etag = response1["ETag"]
 
         # Second request with If-None-Match
         response2 = self.client.get(
-            f"/plugins/vendor-notification/ical/maintenances.ics?token={self.token.key}",
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.key}",
             HTTP_IF_NONE_MATCH=etag,
         )
 
@@ -250,7 +249,7 @@ class TestMaintenanceICalViewCaching:
 
     def test_empty_queryset_returns_valid_calendar(self):
         response = self.client.get(
-            f"/plugins/vendor-notification/ical/maintenances.ics?token={self.token.key}"
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.key}"
         )
 
         assert response.status_code == 200

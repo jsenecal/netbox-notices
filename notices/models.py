@@ -57,6 +57,23 @@ class BaseEvent(NetBoxModel):
 
     comments = models.TextField(blank=True)
 
+    impact = models.TextField(
+        blank=True,
+        help_text="Description of the impact of this event"
+    )
+
+    clone_fields = [
+        "name",
+        "summary",
+        "provider",
+        "start",
+        "end",
+        "original_timezone",
+        "internal_ticket",
+        "impact",
+        "comments",
+    ]
+
     class Meta:
         abstract = True
         ordering = ("-created",)
@@ -105,7 +122,7 @@ class Maintenance(BaseEvent):
         verbose_name_plural = "Maintenances"
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
     def get_status_color(self):
         return MaintenanceTypeChoices.colors.get(self.status)
@@ -152,6 +169,18 @@ class Outage(BaseEvent):
     Inherits common fields from BaseEvent.
     """
 
+    # Override start field to default to now() for outages
+    start = models.DateTimeField(
+        default=timezone.now,
+        help_text="Start date and time of the outage"
+    )
+
+    reported_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name="Reported At",
+        help_text="Date and time when this outage was reported"
+    )
+
     end = models.DateTimeField(
         null=True,
         blank=True,
@@ -193,6 +222,58 @@ class Outage(BaseEvent):
 
     def get_status_color(self):
         return OutageStatusChoices.colors.get(self.status)
+
+    def get_start_in_original_tz(self):
+        """Get start time in original timezone if specified"""
+        if self.original_timezone and self.start:
+            try:
+                tz = zoneinfo.ZoneInfo(self.original_timezone)
+                return self.start.astimezone(tz)
+            except (zoneinfo.ZoneInfoNotFoundError, ValueError):
+                return self.start
+        return self.start
+
+    def get_end_in_original_tz(self):
+        """Get end time in original timezone if specified"""
+        if self.original_timezone and self.end:
+            try:
+                tz = zoneinfo.ZoneInfo(self.original_timezone)
+                return self.end.astimezone(tz)
+            except (zoneinfo.ZoneInfoNotFoundError, ValueError):
+                return self.end
+        return self.end
+
+    def get_estimated_time_to_repair_in_original_tz(self):
+        """Get ETR in original timezone if specified"""
+        if self.original_timezone and self.estimated_time_to_repair:
+            try:
+                tz = zoneinfo.ZoneInfo(self.original_timezone)
+                return self.estimated_time_to_repair.astimezone(tz)
+            except (zoneinfo.ZoneInfoNotFoundError, ValueError):
+                return self.estimated_time_to_repair
+        return self.estimated_time_to_repair
+
+    def get_reported_at_in_original_tz(self):
+        """Get reported_at time in original timezone if specified"""
+        if self.original_timezone and self.reported_at:
+            try:
+                tz = zoneinfo.ZoneInfo(self.original_timezone)
+                return self.reported_at.astimezone(tz)
+            except (zoneinfo.ZoneInfoNotFoundError, ValueError):
+                return self.reported_at
+        return self.reported_at
+
+    def has_timezone_difference(self):
+        """Check if original timezone differs from current timezone"""
+        if not self.original_timezone:
+            return False
+        try:
+            original_tz = zoneinfo.ZoneInfo(self.original_timezone)
+            current_tz = timezone.get_current_timezone()
+            # Compare timezone names - if they're different, we should show both
+            return str(original_tz) != str(current_tz)
+        except (zoneinfo.ZoneInfoNotFoundError, ValueError):
+            return False
 
     def get_absolute_url(self):
         return reverse("plugins:notices:outage", args=[self.pk])
@@ -257,6 +338,15 @@ class Impact(NetBoxModel):
 
     def get_impact_color(self):
         return ImpactTypeChoices.colors.get(self.impact)
+
+    def to_objectchange(self, action):
+        """
+        Return a new ObjectChange with the related_object set to the parent event.
+        This ensures that changes to impacts appear in the event's changelog.
+        """
+        objectchange = super().to_objectchange(action)
+        objectchange.related_object = self.event
+        return objectchange
 
     def clean(self):
         super().clean()
@@ -332,3 +422,12 @@ class EventNotification(NetBoxModel):
 
     def get_absolute_url(self):
         return reverse("plugins:notices:eventnotification", args=[self.pk])
+
+    def to_objectchange(self, action):
+        """
+        Return a new ObjectChange with the related_object set to the parent event.
+        This ensures that changes to notifications appear in the event's changelog.
+        """
+        objectchange = super().to_objectchange(action)
+        objectchange.related_object = self.event
+        return objectchange

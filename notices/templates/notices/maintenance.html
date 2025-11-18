@@ -3,10 +3,8 @@
 {% load helpers %}
 {% load tz %}
 
-{% block buttons %}
-    {{ block.super }}
-
-    {% if perms.notices.add_maintenance and object.status not in 'COMPLETED,CANCELLED' %}
+{% block extra_controls %}
+    {% if perms.notices.add_maintenance and object.status != 'COMPLETED' and object.status != 'CANCELLED' %}
     <a href="{% url 'plugins:notices:maintenance_reschedule' pk=object.pk %}"
        class="btn btn-warning">
         <i class="mdi mdi-calendar-refresh"></i> Reschedule

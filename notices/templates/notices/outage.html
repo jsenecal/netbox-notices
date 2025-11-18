@@ -37,6 +37,17 @@
                         </td>
                     </tr>
                     <tr>
+                        <th scope="row">Reported At</th>
+                        <td>
+                            {{ object.reported_at|date:"N j, Y, g:i a e" }}
+                            {% if object.has_timezone_difference %}
+                                {% localtime off %}
+                                    <br><small class="text-muted">({{ object.get_reported_at_in_original_tz|date:"N j, Y, g:i a e" }})</small>
+                                {% endlocaltime %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
                         <th scope="row">End</th>
                         <td>
                             {% if object.end %}

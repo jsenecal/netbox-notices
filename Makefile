@@ -2,7 +2,7 @@ NAME=netbox-notices
 VERFILE=./notices/__init__.py
 NETBOX_DIR=/opt/netbox/netbox
 PLUGIN_NAME=notices
-REPO_PATH=/opt/netbox-vendor-notification
+REPO_PATH=/opt/netbox-notices
 VENV_PY_PATH=/opt/netbox/venv/bin/python3
 INITIALIZER_PATH=${REPO_PATH}/.devcontainer/initializers
 
@@ -43,14 +43,18 @@ showmigrations: ## Show migration status
 	${VENV_PY_PATH} ${NETBOX_DIR}/manage.py showmigrations $(PLUGIN_NAME)
 
 .PHONY: test
-test: setup ## Run plugin tests with migration check
+test: setup ## Run plugin tests with pytest
 	${VENV_PY_PATH} ${NETBOX_DIR}/manage.py makemigrations $(PLUGIN_NAME) --check
-	${VENV_PY_PATH} ${NETBOX_DIR}/manage.py test $(PLUGIN_NAME) --keepdb
+	${VENV_PY_PATH} -m pytest ${REPO_PATH}/tests/
 
 .PHONY: test-verbose
 test-verbose: setup ## Run plugin tests with verbose output
 	${VENV_PY_PATH} ${NETBOX_DIR}/manage.py makemigrations $(PLUGIN_NAME) --check
-	${VENV_PY_PATH} ${NETBOX_DIR}/manage.py test $(PLUGIN_NAME) --keepdb --verbosity=2
+	${VENV_PY_PATH} -m pytest ${REPO_PATH}/tests/ -vv
+
+.PHONY: test-quick
+test-quick: ## Run plugin tests without migration check (faster)
+	${VENV_PY_PATH} -m pytest ${REPO_PATH}/tests/ --tb=short --cov=notices --cov-report=term-missing
 
 .PHONY: collectstatic
 collectstatic: ## Collect static files
@@ -113,10 +117,10 @@ initializers: ## Setup and load demo data via initializers
 
 # Composite targets
 .PHONY: rebuild
-rebuild: setup makemigrations migrate collectstatic ## Rebuild plugin (setup, migrations, static)
+rebuild: setup migrations migrate collectstatic ## Rebuild plugin (setup, migrations, static)
 
 .PHONY: all
-all: setup makemigrations migrate collectstatic initializers trace_paths ## Full setup with demo data
+all: setup migrations migrate collectstatic initializers trace_paths ## Full setup with demo data
 
 # Package building targets
 .PHONY: pbuild

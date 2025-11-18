@@ -294,10 +294,10 @@ class TestViewsStructure(unittest.TestCase):
             )
 
     def test_calendar_view_exists(self):
-        """Test that MaintenanceScheduleView exists"""
+        """Test that MaintenanceCalendarView exists"""
         tree = self._get_views_file_ast()
-        class_node = self._find_class(tree, "MaintenanceScheduleView")
-        self.assertIsNotNone(class_node, "MaintenanceScheduleView class not found")
+        class_node = self._find_class(tree, "MaintenanceCalendarView")
+        self.assertIsNotNone(class_node, "MaintenanceCalendarView class not found")
 
     def test_old_calendar_view_removed(self):
         """Test that old CircuitMaintenanceScheduleView no longer exists"""

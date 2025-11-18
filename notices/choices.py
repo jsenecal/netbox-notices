@@ -154,14 +154,22 @@ class MaintenanceTypeChoices(ChoiceSet):
 
     key = "DocTypeChoices.Maintenance"
 
+    STATUS_TENTATIVE = "TENTATIVE"
+    STATUS_CONFIRMED = "CONFIRMED"
+    STATUS_CANCELLED = "CANCELLED"
+    STATUS_IN_PROCESS = "IN-PROCESS"
+    STATUS_COMPLETED = "COMPLETED"
+    STATUS_RESCHEDULED = "RE-SCHEDULED"
+    STATUS_UNKNOWN = "UNKNOWN"
+
     CHOICES = [
-        ("TENTATIVE", "Tentative", "yellow"),
-        ("CONFIRMED", "Confirmed", "green"),
-        ("CANCELLED", "Cancelled", "blue"),
-        ("IN-PROCESS", "In-Progress", "orange"),
-        ("COMPLETED", "Completed", "indigo"),
-        ("RE-SCHEDULED", "Rescheduled", "green"),
-        ("UNKNOWN", "Unknown", "blue"),
+        (STATUS_TENTATIVE, "Tentative", "yellow"),
+        (STATUS_CONFIRMED, "Confirmed", "green"),
+        (STATUS_CANCELLED, "Cancelled", "blue"),
+        (STATUS_IN_PROCESS, "In-Progress", "orange"),
+        (STATUS_COMPLETED, "Completed", "indigo"),
+        (STATUS_RESCHEDULED, "Rescheduled", "green"),
+        (STATUS_UNKNOWN, "Unknown", "blue"),
     ]
 
 
@@ -170,11 +178,16 @@ class ImpactTypeChoices(ChoiceSet):
 
     key = "DocTypeChoices.Impact"
 
+    IMPACT_NO_IMPACT = "NO-IMPACT"
+    IMPACT_REDUCED_REDUNDANCY = "REDUCED-REDUNDANCY"
+    IMPACT_DEGRADED = "DEGRADED"
+    IMPACT_OUTAGE = "OUTAGE"
+
     CHOICES = [
-        ("NO-IMPACT", "No-Impact", "green"),
-        ("REDUCED-REDUNDANCY", "Reduced Redundancy", "yellow"),
-        ("DEGRADED", "Degraded", "orange"),
-        ("OUTAGE", "Outage", "red"),
+        (IMPACT_NO_IMPACT, "No-Impact", "green"),
+        (IMPACT_REDUCED_REDUNDANCY, "Reduced Redundancy", "yellow"),
+        (IMPACT_DEGRADED, "Degraded", "orange"),
+        (IMPACT_OUTAGE, "Outage", "red"),
     ]
 
 
@@ -183,10 +196,16 @@ class OutageStatusChoices(ChoiceSet):
 
     key = "Outage.Status"
 
+    STATUS_REPORTED = "REPORTED"
+    STATUS_INVESTIGATING = "INVESTIGATING"
+    STATUS_IDENTIFIED = "IDENTIFIED"
+    STATUS_MONITORING = "MONITORING"
+    STATUS_RESOLVED = "RESOLVED"
+
     CHOICES = [
-        ("REPORTED", "Reported", "red"),
-        ("INVESTIGATING", "Investigating", "orange"),
-        ("IDENTIFIED", "Identified", "yellow"),
-        ("MONITORING", "Monitoring", "blue"),
-        ("RESOLVED", "Resolved", "green"),
+        (STATUS_REPORTED, "Reported", "red"),
+        (STATUS_INVESTIGATING, "Investigating", "orange"),
+        (STATUS_IDENTIFIED, "Identified", "yellow"),
+        (STATUS_MONITORING, "Monitoring", "blue"),
+        (STATUS_RESOLVED, "Resolved", "green"),
     ]

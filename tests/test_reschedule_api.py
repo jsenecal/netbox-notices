@@ -44,7 +44,7 @@ class TestMaintenanceRescheduleAPI:
             status="CONFIRMED",
         )
 
-        url = f"/api/plugins/notices/maintenances/{maintenance.pk}/"
+        url = f"/api/plugins/notices/maintenance/{maintenance.pk}/"
         response = api_client.get(url)
 
         assert response.status_code == 200
@@ -61,7 +61,7 @@ class TestMaintenanceRescheduleAPI:
             status="CONFIRMED",
         )
 
-        url = "/api/plugins/notices/maintenances/"
+        url = "/api/plugins/notices/maintenance/"
         data = {
             "name": "MAINT-002",
             "summary": "Rescheduled",
