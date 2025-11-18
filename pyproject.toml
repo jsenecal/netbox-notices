@@ -52,10 +52,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/jsenecal/netbox-vendor-notification"
-Documentation = "https://github.com/jsenecal/netbox-vendor-notification"
-Source = "https://github.com/jsenecal/netbox-vendor-notification"
-Tracker = "https://github.com/jsenecal/netbox-vendor-notification/issues"
+Homepage = "https://github.com/jsenecal/netbox-notices"
+Documentation = "https://jsenecal.github.io/netbox-notices"
+Source = "https://github.com/jsenecal/netbox-notices"
+Tracker = "https://github.com/jsenecal/netbox-notices/issues"
 
 
 [tool.bumpver]

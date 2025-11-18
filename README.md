@@ -1,12 +1,14 @@
 # NetBox Notices
 
 **Repository:** [github.com/jsenecal/netbox-notices](https://github.com/jsenecal/netbox-notices)
+**Documentation:** [jsenecal.github.io/netbox-notices](https://jsenecal.github.io/netbox-notices)
+**PyPI:** [pypi.org/project/netbox-notices](https://pypi.org/project/netbox-notices)
 
 **Original Project:** Forked and inspired from [jasonyates/netbox-circuitmaintenance](https://github.com/jasonyates/netbox-circuitmaintenance), differs in the ability to track more than just maintenances, and circuits.
 
 A NetBox plugin built to track maintenance and outage events across various NetBox models. This plugin is agnostic in that it is only built to store data surrounding maintenance/outage events and provide an overview of historical, active and upcoming events. The plugin tracks events at the provider level and associates impact across multiple NetBox object types (circuits, devices, virtual machines, power feeds, sites, etc.).
 
-The plugin does not directly provide an automated approach to ingesting provider notifications, instead it extends NetBox's extensive REST API and provides GET/POST/PUT/PATCH methods to manage events. The plugin is intended to be coupled with an automated parser to handle the parsing of provider notifications and the delivery of the events to the plugin's REST API. Several example parsers have been [documented in the upstream project](https://jasonyates.github.io/netbox-circuitmaintenance/parsers/).
+The plugin does not directly provide an automated approach to ingesting provider notifications, instead it extends NetBox's extensive REST API and provides GET/POST/PUT/PATCH methods to manage events. The plugin is intended to be coupled with an automated parser to handle the parsing of provider notifications and the delivery of the events to the plugin's REST API. Several example parsers are [documented here](https://jsenecal.github.io/netbox-notices/parsers/).
 
 **Important Note:** This is a significant refactoring from the original `netbox-circuitmaintenance` plugin. **There is no upgrade path** from the original plugin. If you are using the original plugin, you will need to migrate your data manually.
 
