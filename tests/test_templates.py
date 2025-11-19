@@ -147,9 +147,7 @@ class TestTemplateStructure:
                         # Make sure it's actually the old model name, not just part of text
                         matches = re.findall(pattern, content)
                         if matches:
-                            assert False, (
-                                f"Found old model name '{pattern}' in {template_file.name}"
-                            )
+                            assert False, f"Found old model name '{pattern}' in {template_file.name}"
 
     def test_templates_extend_correct_base(self):
         """Verify templates extend correct base templates"""
