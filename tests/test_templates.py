@@ -23,6 +23,7 @@ class TestTemplateStructure:
             "calendar_widget.html",
             "eventnotification.html",
             "maintenance.html",
+            "maintenance_cancel.html",
             "maintenance_include.html",
             "outage.html",
             "provider_include.html",
@@ -46,6 +47,13 @@ class TestTemplateStructure:
         assert "plugins:notices:eventnotification" in content
         assert "plugins:notices:eventnotification_delete" in content
         assert "plugins:notices:eventnotification_add" in content
+
+        # Check for quick action URLs
+        assert "plugins:notices:maintenance_acknowledge" in content
+        assert "plugins:notices:maintenance_reschedule" in content
+        assert "plugins:notices:maintenance_cancel" in content
+        assert "plugins:notices:maintenance_mark_in_progress" in content
+        assert "plugins:notices:maintenance_mark_completed" in content
 
         # Check that old URLs are NOT present
         assert "netbox_circuitmaintenance" not in content
@@ -240,3 +248,26 @@ class TestTemplateConditionals:
         # Should check for timezone difference
         assert "has_timezone_difference" in content
         assert "original_timezone" in content
+
+    def test_maintenance_cancel_template_structure(self):
+        """Verify maintenance_cancel.html has proper confirmation structure"""
+        template_path = self.TEMPLATE_DIR / "maintenance_cancel.html"
+        content = template_path.read_text()
+
+        # Should extend delete template
+        assert "extends 'generic/object_delete.html'" in content
+
+        # Should have confirmation message
+        assert "cancel" in content.lower()
+
+        # Should have form with CSRF token
+        assert "{% csrf_token %}" in content
+        assert "<form" in content
+        assert "method=\"post\"" in content
+
+        # Should have return_url handling
+        assert "return_url" in content
+
+        # Should have both confirm and cancel buttons
+        assert "btn-danger" in content  # Confirm button
+        assert "btn-secondary" in content  # Cancel button

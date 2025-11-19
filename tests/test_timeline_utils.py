@@ -104,7 +104,19 @@ class TestCategorizeChange:
 
 class TestIconAndColorMapping:
     def test_get_icon_for_status(self):
+        # Default status icon without status_value
         assert get_category_icon("status") == "check-circle"
+
+    def test_get_icon_for_status_cancelled(self):
+        # Cancelled status should return x-circle icon
+        assert get_category_icon("status", "CANCELLED") == "x-circle"
+
+    def test_get_icon_for_status_confirmed(self):
+        # Other statuses should return check-circle icon
+        assert get_category_icon("status", "CONFIRMED") == "check-circle"
+
+    def test_get_icon_for_status_completed(self):
+        assert get_category_icon("status", "COMPLETED") == "check-circle"
 
     def test_get_icon_for_impact(self):
         assert get_category_icon("impact") == "alert-triangle"
@@ -219,3 +231,41 @@ class TestBuildTimelineItem:
         assert item["icon"] == "alert-triangle"
         assert item["title"] == "Impact added: Circuit ABC-123 - OUTAGE"
         assert item["action"] == "create"
+
+    def test_build_timeline_item_for_cancelled_status(self):
+        """Test that cancelled status changes use x-circle icon"""
+        object_change = Mock()
+        object_change.time = Mock()
+        object_change.user = Mock()
+        object_change.user.username = "testuser"
+        object_change.user_name = "testuser"
+        object_change.changed_object_type.model = "maintenance"
+        object_change.action = "update"
+        object_change.object_repr = "MAINT-123"
+        object_change.prechange_data = {"status": "CONFIRMED"}
+        object_change.postchange_data = {"status": "CANCELLED"}
+
+        item = build_timeline_item(object_change, "maintenance")
+
+        assert item["category"] == "status"
+        assert item["icon"] == "x-circle"
+        assert item["title"] == "Status changed to Cancelled"
+
+    def test_build_timeline_item_for_completed_status(self):
+        """Test that completed status changes use check-circle icon"""
+        object_change = Mock()
+        object_change.time = Mock()
+        object_change.user = Mock()
+        object_change.user.username = "testuser"
+        object_change.user_name = "testuser"
+        object_change.changed_object_type.model = "maintenance"
+        object_change.action = "update"
+        object_change.object_repr = "MAINT-123"
+        object_change.prechange_data = {"status": "IN-PROCESS"}
+        object_change.postchange_data = {"status": "COMPLETED"}
+
+        item = build_timeline_item(object_change, "maintenance")
+
+        assert item["category"] == "status"
+        assert item["icon"] == "check-circle"
+        assert item["title"] == "Status changed to Completed"

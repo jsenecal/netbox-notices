@@ -307,6 +307,59 @@ class TestViewsStructure(unittest.TestCase):
             class_node, "Old CircuitMaintenanceScheduleView should not exist"
         )
 
+    def test_quick_action_views_exist(self):
+        """Test that all quick action views are defined"""
+        tree = self._get_views_file_ast()
+
+        quick_action_views = [
+            "MaintenanceAcknowledgeView",
+            "MaintenanceCancelView",
+            "MaintenanceMarkInProgressView",
+            "MaintenanceMarkCompletedView",
+        ]
+
+        for view_class in quick_action_views:
+            class_node = self._find_class(tree, view_class)
+            self.assertIsNotNone(class_node, f"{view_class} class not found")
+
+    def test_quick_action_views_have_permission_required(self):
+        """Test that quick action views have permission_required attribute"""
+        tree = self._get_views_file_ast()
+
+        quick_action_views = [
+            "MaintenanceAcknowledgeView",
+            "MaintenanceCancelView",
+            "MaintenanceMarkInProgressView",
+            "MaintenanceMarkCompletedView",
+        ]
+
+        for view_class in quick_action_views:
+            class_node = self._find_class(tree, view_class)
+            if class_node is None:
+                self.fail(f"{view_class} class not found")
+
+            self.assertTrue(
+                self._has_attribute(class_node, "permission_required"),
+                f"{view_class} missing permission_required attribute",
+            )
+
+    def test_cancel_view_has_get_and_post_methods(self):
+        """Test that MaintenanceCancelView has both GET and POST handlers"""
+        tree = self._get_views_file_ast()
+        class_node = self._find_class(tree, "MaintenanceCancelView")
+
+        if class_node is None:
+            self.fail("MaintenanceCancelView class not found")
+
+        # Find method definitions
+        methods = []
+        for item in class_node.body:
+            if isinstance(item, ast.FunctionDef):
+                methods.append(item.name)
+
+        self.assertIn("get", methods, "MaintenanceCancelView missing get method")
+        self.assertIn("post", methods, "MaintenanceCancelView missing post method")
+
 
 if __name__ == "__main__":
     unittest.main()
