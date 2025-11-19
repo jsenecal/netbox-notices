@@ -263,7 +263,7 @@ class TestTemplateConditionals:
         # Should have form with CSRF token
         assert "{% csrf_token %}" in content
         assert "<form" in content
-        assert "method=\"post\"" in content
+        assert 'method="post"' in content
 
         # Should have return_url handling
         assert "return_url" in content

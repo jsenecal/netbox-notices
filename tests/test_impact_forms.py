@@ -22,7 +22,6 @@ class TestImpactForm:
         """Create a test maintenance event"""
         from django.utils import timezone
 
-        from notices.choices import MaintenanceTypeChoices
         from notices.models import Maintenance
 
         return Maintenance.objects.create(
@@ -198,7 +197,6 @@ class TestImpactForm:
         from circuits.models import Circuit
         from django.contrib.contenttypes.models import ContentType
 
-        from notices.choices import ImpactTypeChoices
         from notices.forms import ImpactForm
         from notices.models import Maintenance
 
@@ -236,7 +234,6 @@ class TestImpactForm:
         from dcim.models import Device
         from django.contrib.contenttypes.models import ContentType
 
-        from notices.choices import ImpactTypeChoices
         from notices.forms import ImpactForm
         from notices.models import Maintenance
 
@@ -279,4 +276,7 @@ class TestImpactForm:
         assert "Maintenance or Outage" in form.fields["event_content_type"].help_text
         assert "maintenance or outage event" in form.fields["event_object_id"].help_text
         assert "Type of affected object" == form.fields["target_content_type"].help_text
-        assert "Select the specific object affected by this event" == form.fields["target_object_id"].help_text
+        assert (
+            "Select the specific object affected by this event"
+            == form.fields["target_object_id"].help_text
+        )

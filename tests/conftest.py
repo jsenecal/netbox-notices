@@ -51,11 +51,20 @@ if not is_ci:
             "SSL": os.environ.get("REDIS_SSL", "False").lower() == "true",
         },
         "caching": {
-            "HOST": os.environ.get("REDIS_CACHE_HOST", os.environ.get("REDIS_HOST", "redis")),
-            "PORT": int(os.environ.get("REDIS_CACHE_PORT", os.environ.get("REDIS_PORT", 6379))),
-            "PASSWORD": os.environ.get("REDIS_CACHE_PASSWORD", os.environ.get("REDIS_PASSWORD", "")),
+            "HOST": os.environ.get(
+                "REDIS_CACHE_HOST", os.environ.get("REDIS_HOST", "redis")
+            ),
+            "PORT": int(
+                os.environ.get("REDIS_CACHE_PORT", os.environ.get("REDIS_PORT", 6379))
+            ),
+            "PASSWORD": os.environ.get(
+                "REDIS_CACHE_PASSWORD", os.environ.get("REDIS_PASSWORD", "")
+            ),
             "DATABASE": int(os.environ.get("REDIS_CACHE_DATABASE", 1)),
-            "SSL": os.environ.get("REDIS_CACHE_SSL", os.environ.get("REDIS_SSL", "False")).lower() == "true",
+            "SSL": os.environ.get(
+                "REDIS_CACHE_SSL", os.environ.get("REDIS_SSL", "False")
+            ).lower()
+            == "true",
         },
     }
 

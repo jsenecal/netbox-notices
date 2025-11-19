@@ -58,8 +58,7 @@ class BaseEvent(NetBoxModel):
     comments = models.TextField(blank=True)
 
     impact = models.TextField(
-        blank=True,
-        help_text="Description of the impact of this event"
+        blank=True, help_text="Description of the impact of this event"
     )
 
     clone_fields = [
@@ -171,14 +170,13 @@ class Outage(BaseEvent):
 
     # Override start field to default to now() for outages
     start = models.DateTimeField(
-        default=timezone.now,
-        help_text="Start date and time of the outage"
+        default=timezone.now, help_text="Start date and time of the outage"
     )
 
     reported_at = models.DateTimeField(
         default=timezone.now,
         verbose_name="Reported At",
-        help_text="Date and time when this outage was reported"
+        help_text="Date and time when this outage was reported",
     )
 
     end = models.DateTimeField(

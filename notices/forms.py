@@ -269,11 +269,15 @@ class ImpactForm(GenericForeignKeyFormMixin, NetBoxModelForm):
 
         # Customize object_id fields (labels and help text)
         self.fields["event_object_id"].label = "Event"
-        self.fields["event_object_id"].help_text = "Select a specific maintenance or outage event"
+        self.fields[
+            "event_object_id"
+        ].help_text = "Select a specific maintenance or outage event"
         self.fields["event_object_id"].required = False
 
         self.fields["target_object_id"].label = "Target Object"
-        self.fields["target_object_id"].help_text = "Select the specific object affected by this event"
+        self.fields[
+            "target_object_id"
+        ].help_text = "Select the specific object affected by this event"
         self.fields["target_object_id"].required = False
 
         # Get allowed content types for targets from plugin configuration
@@ -447,7 +451,9 @@ class OutageForm(NetBoxModelForm):
                         reported_at_in_original_tz = instance.reported_at.replace(
                             tzinfo=original_tz
                         )
-                    instance.reported_at = reported_at_in_original_tz.astimezone(system_tz)
+                    instance.reported_at = reported_at_in_original_tz.astimezone(
+                        system_tz
+                    )
 
                 # Convert end time if provided
                 if instance.end:

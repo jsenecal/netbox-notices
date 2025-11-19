@@ -5,15 +5,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('notices', '0003_alter_outage_start'),
+        ("notices", "0003_alter_outage_start"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='outage',
-            name='reported_at',
+            model_name="outage",
+            name="reported_at",
             field=models.DateTimeField(default=django.utils.timezone.now),
         ),
     ]

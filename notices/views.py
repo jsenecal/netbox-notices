@@ -11,8 +11,6 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 from django.views.generic import View
 from netbox.views import generic
 from rest_framework import exceptions
@@ -148,7 +146,7 @@ class MaintenanceAcknowledgeView(PermissionRequiredMixin, View):
         maintenance = get_object_or_404(models.Maintenance, pk=pk)
 
         # Take a snapshot for change logging
-        if hasattr(maintenance, 'snapshot'):
+        if hasattr(maintenance, "snapshot"):
             maintenance.snapshot()
 
         maintenance.acknowledged = True
@@ -156,7 +154,11 @@ class MaintenanceAcknowledgeView(PermissionRequiredMixin, View):
         messages.success(request, f"Maintenance {maintenance.name} acknowledged.")
 
         # Redirect to return_url or maintenance detail
-        return_url = request.POST.get("return_url") or request.GET.get("return_url") or maintenance.get_absolute_url()
+        return_url = (
+            request.POST.get("return_url")
+            or request.GET.get("return_url")
+            or maintenance.get_absolute_url()
+        )
         return redirect(return_url)
 
 
@@ -170,10 +172,14 @@ class MaintenanceCancelView(PermissionRequiredMixin, View):
         maintenance = get_object_or_404(models.Maintenance, pk=pk)
         return_url = request.GET.get("return_url") or maintenance.get_absolute_url()
 
-        return render(request, 'notices/maintenance_cancel.html', {
-            'object': maintenance,
-            'return_url': return_url,
-        })
+        return render(
+            request,
+            "notices/maintenance_cancel.html",
+            {
+                "object": maintenance,
+                "return_url": return_url,
+            },
+        )
 
     def post(self, request, pk):
         maintenance = get_object_or_404(models.Maintenance, pk=pk)
@@ -186,7 +192,7 @@ class MaintenanceCancelView(PermissionRequiredMixin, View):
             )
         else:
             # Take a snapshot for change logging
-            if hasattr(maintenance, 'snapshot'):
+            if hasattr(maintenance, "snapshot"):
                 maintenance.snapshot()
 
             maintenance.status = "CANCELLED"
@@ -194,7 +200,11 @@ class MaintenanceCancelView(PermissionRequiredMixin, View):
             messages.success(request, f"Maintenance {maintenance.name} cancelled.")
 
         # Redirect to return_url or maintenance detail
-        return_url = request.POST.get("return_url") or request.GET.get("return_url") or maintenance.get_absolute_url()
+        return_url = (
+            request.POST.get("return_url")
+            or request.GET.get("return_url")
+            or maintenance.get_absolute_url()
+        )
         return redirect(return_url)
 
 
@@ -214,7 +224,7 @@ class MaintenanceMarkInProgressView(PermissionRequiredMixin, View):
             )
         else:
             # Take a snapshot for change logging
-            if hasattr(maintenance, 'snapshot'):
+            if hasattr(maintenance, "snapshot"):
                 maintenance.snapshot()
 
             maintenance.status = "IN-PROCESS"
@@ -224,7 +234,11 @@ class MaintenanceMarkInProgressView(PermissionRequiredMixin, View):
             )
 
         # Redirect to return_url or maintenance detail
-        return_url = request.POST.get("return_url") or request.GET.get("return_url") or maintenance.get_absolute_url()
+        return_url = (
+            request.POST.get("return_url")
+            or request.GET.get("return_url")
+            or maintenance.get_absolute_url()
+        )
         return redirect(return_url)
 
 
@@ -248,7 +262,7 @@ class MaintenanceMarkCompletedView(PermissionRequiredMixin, View):
             )
         else:
             # Take a snapshot for change logging
-            if hasattr(maintenance, 'snapshot'):
+            if hasattr(maintenance, "snapshot"):
                 maintenance.snapshot()
 
             maintenance.status = "COMPLETED"
@@ -256,7 +270,11 @@ class MaintenanceMarkCompletedView(PermissionRequiredMixin, View):
             messages.success(request, f"Maintenance {maintenance.name} completed.")
 
         # Redirect to return_url or maintenance detail
-        return_url = request.POST.get("return_url") or request.GET.get("return_url") or maintenance.get_absolute_url()
+        return_url = (
+            request.POST.get("return_url")
+            or request.GET.get("return_url")
+            or maintenance.get_absolute_url()
+        )
         return redirect(return_url)
 
 

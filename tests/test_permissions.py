@@ -13,8 +13,7 @@ from django.utils import timezone
 from datetime import timedelta
 
 from circuits.models import Provider
-from notices.models import Maintenance, Outage, Impact, EventNotification
-from django.contrib.contenttypes.models import ContentType
+from notices.models import Maintenance, Outage
 
 User = get_user_model()
 
@@ -44,9 +43,7 @@ class TestMaintenancePermissions:
     def user_no_perms(self):
         """Create user without any permissions."""
         return User.objects.create_user(
-            username="noauth",
-            password="test",
-            email="noauth@example.com"
+            username="noauth", password="test", email="noauth@example.com"
         )
 
     def test_list_view_requires_permission(self, user_no_perms):
@@ -140,9 +137,7 @@ class TestOutagePermissions:
     def user_no_perms(self):
         """Create user without any permissions."""
         return User.objects.create_user(
-            username="noauth",
-            password="test",
-            email="noauth@example.com"
+            username="noauth", password="test", email="noauth@example.com"
         )
 
     def test_list_view_requires_permission(self, user_no_perms):
@@ -215,9 +210,7 @@ class TestAPIPermissions:
     def user_no_perms(self):
         """Create user without any permissions."""
         return User.objects.create_user(
-            username="apiuser",
-            password="test",
-            email="api@example.com"
+            username="apiuser", password="test", email="api@example.com"
         )
 
     def test_api_list_requires_permission(self, user_no_perms):
@@ -310,9 +303,7 @@ class TestICalPermissions:
     def user_no_perms(self):
         """Create user without any permissions."""
         return User.objects.create_user(
-            username="icaluser",
-            password="test",
-            email="ical@example.com"
+            username="icaluser", password="test", email="ical@example.com"
         )
 
     def test_ical_requires_permission(self, user_no_perms):

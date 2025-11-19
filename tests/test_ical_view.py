@@ -15,7 +15,9 @@ class TestMaintenanceICalViewAuthentication:
 
     def test_token_in_url_authenticates(self):
         # Create user and token
-        user = User.objects.create_user(username="testuser", password="testpass", is_superuser=True)
+        user = User.objects.create_user(
+            username="testuser", password="testpass", is_superuser=True
+        )
         token = Token.objects.create(user=user)
 
         # Create test maintenance
@@ -40,9 +42,7 @@ class TestMaintenanceICalViewAuthentication:
 
     def test_invalid_token_returns_403(self):
         client = Client()
-        response = client.get(
-            "/plugins/notices/ical/maintenances.ics?token=invalid"
-        )
+        response = client.get("/plugins/notices/ical/maintenances.ics?token=invalid")
 
         assert response.status_code == 403
 
@@ -54,7 +54,9 @@ class TestMaintenanceICalViewAuthentication:
         assert response.status_code in [200, 403]
 
     def test_authorization_header_authenticates(self):
-        user = User.objects.create_user(username="apiuser", password="testpass", is_superuser=True)
+        user = User.objects.create_user(
+            username="apiuser", password="testpass", is_superuser=True
+        )
         token = Token.objects.create(user=user)
 
         provider = Provider.objects.create(name="Test", slug="test")
@@ -82,7 +84,9 @@ class TestMaintenanceICalViewFiltering:
 
     def setup_method(self):
         """Create test user and token."""
-        self.user = User.objects.create_user(username="testuser", password="testpass", is_superuser=True)
+        self.user = User.objects.create_user(
+            username="testuser", password="testpass", is_superuser=True
+        )
         self.token = Token.objects.create(user=self.user)
         self.client = Client()
 
@@ -196,7 +200,9 @@ class TestMaintenanceICalViewCaching:
     """Test HTTP caching behavior."""
 
     def setup_method(self):
-        self.user = User.objects.create_user(username="testuser", password="testpass", is_superuser=True)
+        self.user = User.objects.create_user(
+            username="testuser", password="testpass", is_superuser=True
+        )
         self.token = Token.objects.create(user=self.user)
         self.client = Client()
 
