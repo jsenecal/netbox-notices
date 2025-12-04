@@ -2,8 +2,8 @@ include CONTRIBUTING.md
 include LICENSE
 include README.md
 
-recursive-include vendor_notification/templates *
-recursive-include vendor_notification/api *
+recursive-include notices/templates *
+recursive-include notices/api *
 
 recursive-include tests *
 recursive-exclude * __pycache__
