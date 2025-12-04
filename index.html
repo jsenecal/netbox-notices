@@ -1,0 +1,1634 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://jsenecal.github.io/netbox-notices/">
+      
+      
+      
+        <link rel="next" href="parsers/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>NetBox Notices Plugin</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#netbox-notices" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="NetBox Notices Plugin" class="md-header__button md-logo" aria-label="NetBox Notices Plugin" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NetBox Notices Plugin
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Home
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jsenecal/netbox-notices" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jsenecal/netbox-notices
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="NetBox Notices Plugin" class="md-nav__button md-logo" aria-label="NetBox Notices Plugin" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NetBox Notices Plugin
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jsenecal/netbox-notices" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jsenecal/netbox-notices
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#netbox-notices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NetBox Notices
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="NetBox Notices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compatibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#installing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Installing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#package-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Package Installation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enable-the-plugin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enable the Plugin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#default-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Default Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Custom Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-add-devices-and-virtual-machines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: Add Devices and Virtual Machines
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-minimal-configuration-circuits-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: Minimal Configuration (Circuits Only)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-extended-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: Extended Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-configuration-affects-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How Configuration Affects Behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-netbox-object-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common NetBox Object Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apply-database-migrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apply Database Migrations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#restart-netbox" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Restart Netbox
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outage-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outage Tracking
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Outage Tracking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Endpoints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-creating-an-outage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: Creating an Outage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-creating-impact-for-a-circuit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: Creating Impact for a Circuit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-creating-impact-for-a-device" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: Creating Impact for a Device
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#maintenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Maintenance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Impact
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#eventnotification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EventNotification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#screenshots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Screenshots
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#credits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Credits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automated Parsers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Automated Parsers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="parsers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a parser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="parsers_sns_lambda/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AWS SNS & Lambda
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#netbox-notices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NetBox Notices
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="NetBox Notices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compatibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#installing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Installing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#package-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Package Installation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enable-the-plugin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enable the Plugin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#default-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Default Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Custom Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-add-devices-and-virtual-machines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: Add Devices and Virtual Machines
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-minimal-configuration-circuits-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: Minimal Configuration (Circuits Only)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-extended-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: Extended Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-configuration-affects-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How Configuration Affects Behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-netbox-object-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common NetBox Object Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apply-database-migrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apply Database Migrations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#restart-netbox" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Restart Netbox
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outage-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outage Tracking
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Outage Tracking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Endpoints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-creating-an-outage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: Creating an Outage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-creating-impact-for-a-circuit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: Creating Impact for a Circuit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-creating-impact-for-a-device" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: Creating Impact for a Device
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#maintenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Maintenance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Impact
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#eventnotification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EventNotification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#screenshots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Screenshots
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#credits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Credits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+  <h1>Home</h1>
+
+<h2 id="netbox-notices">NetBox Notices<a class="headerlink" href="#netbox-notices" title="Permanent link">&para;</a></h2>
+<p><strong>Repository:</strong> <a href="https://github.com/jsenecal/netbox-notices">github.com/jsenecal/netbox-notices</a>
+<strong>Documentation:</strong> <a href="https://jsenecal.github.io/netbox-notices">jsenecal.github.io/netbox-notices</a>
+<strong>PyPI:</strong> <a href="https://pypi.org/project/netbox-notices">pypi.org/project/netbox-notices</a></p>
+<p><strong>Original Project:</strong> Forked and inspired from <a href="https://github.com/jasonyates/netbox-circuitmaintenance">jasonyates/netbox-circuitmaintenance</a>, differs in the ability to track more than just maintenances, and circuits.</p>
+<p>A NetBox plugin built to track maintenance and outage events across various NetBox models. This plugin is agnostic in that it is only built to store data surrounding maintenance/outage events and provide an overview of historical, active and upcoming events. The plugin tracks events at the provider level and associates impact across multiple NetBox object types (circuits, devices, virtual machines, power feeds, sites, etc.).</p>
+<p>The plugin does not directly provide an automated approach to ingesting provider notifications, instead it extends NetBox's extensive REST API and provides GET/POST/PUT/PATCH methods to manage events. The plugin is intended to be coupled with an automated parser to handle the parsing of provider notifications and the delivery of the events to the plugin's REST API. Several example parsers are <a href="https://jsenecal.github.io/netbox-notices/parsers/">documented here</a>.</p>
+<p><strong>Important Note:</strong> This is a significant refactoring from the original <code>netbox-circuitmaintenance</code> plugin. <strong>There is no upgrade path</strong> from the original plugin. If you are using the original plugin, you will need to migrate your data manually.</p>
+<h3 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Track provider maintenance events</li>
+<li>Track impact from provider maintenance across multiple NetBox object types</li>
+<li>Configurable allowed object types (circuits, devices, virtual machines, power feeds, sites, etc.)</li>
+<li>Provides a consolidated view of active, upcoming and historical maintenance events at the provider and object level</li>
+<li>Track unplanned outage events with optional end times and ETR tracking</li>
+<li>Unified event notification tracking</li>
+<li>Quick action buttons for common maintenance operations:</li>
+<li>Acknowledge maintenance events</li>
+<li>Reschedule maintenance (only before start time)</li>
+<li>Mark maintenance as in-progress or completed</li>
+<li>Cancel maintenance with confirmation</li>
+<li>Event timeline with status-specific icons and colors</li>
+<li>Maintenance rescheduling with automatic status updates</li>
+<li>iCalendar feed for external calendar integration</li>
+<li>Maintenance overlap detection (coming soon)</li>
+</ul>
+<h3 id="compatibility">Compatibility<a class="headerlink" href="#compatibility" title="Permanent link">&para;</a></h3>
+<p>This plugin requires NetBox 4.4.1 or higher.</p>
+<table>
+<thead>
+<tr>
+<th>NetBox Version</th>
+<th>Plugin Version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4.4.1+</td>
+<td>0.2.x</td>
+</tr>
+</tbody>
+</table>
+<h3 id="installing">Installing<a class="headerlink" href="#installing" title="Permanent link">&para;</a></h3>
+<p>A working installation of Netbox 4.4.1+ is required - <a href="https://netbox.readthedocs.io/en/stable/plugins/">see official documentation</a>.</p>
+<h4 id="package-installation">Package Installation<a class="headerlink" href="#package-installation" title="Permanent link">&para;</a></h4>
+<p>Activate your virtual env and install via pip:</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">source</span><span class="w"> </span>/opt/netbox/venv/bin/activate
+<span class="o">(</span>venv<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>netbox-notices
+</code></pre></div>
+<p>To ensure the plugin is automatically re-installed during future upgrades, add the package to your <code>local_requirements.txt</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># echo netbox-notices &gt;&gt; local_requirements.txt</span>
+</code></pre></div>
+<h4 id="enable-the-plugin">Enable the Plugin<a class="headerlink" href="#enable-the-plugin" title="Permanent link">&para;</a></h4>
+<p>In the Netbox <code>configuration.py</code> configuration file add or update the PLUGINS parameter, adding <code>vendor_notification</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">PLUGINS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;notices&#39;</span>
+<span class="p">]</span>
+
+<span class="n">PLUGINS_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;notices&quot;</span><span class="p">:</span> <span class="p">{},</span>
+<span class="p">}</span>
+</code></pre></div>
+<h4 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h4>
+<p>The plugin supports configuration of which NetBox object types can be linked to maintenance and outage events. By default, the plugin allows linking to circuits, power feeds, and sites.</p>
+<h5 id="default-configuration">Default Configuration<a class="headerlink" href="#default-configuration" title="Permanent link">&para;</a></h5>
+<p>If you don't specify any configuration, the plugin uses these defaults:</p>
+<div class="highlight"><pre><span></span><code><span class="n">PLUGINS_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;notices&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;allowed_content_types&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;circuits.Circuit&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dcim.PowerFeed&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dcim.Site&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h5 id="custom-configuration">Custom Configuration<a class="headerlink" href="#custom-configuration" title="Permanent link">&para;</a></h5>
+<p>You can customize which object types are allowed by specifying the <code>allowed_content_types</code> setting. Content types are specified in the format <code>app_label.model_name</code>.</p>
+<h6 id="example-add-devices-and-virtual-machines">Example: Add Devices and Virtual Machines<a class="headerlink" href="#example-add-devices-and-virtual-machines" title="Permanent link">&para;</a></h6>
+<div class="highlight"><pre><span></span><code><span class="n">PLUGINS_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;notices&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;allowed_content_types&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;circuits.Circuit&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dcim.Device&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dcim.PowerFeed&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dcim.Site&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;virtualization.VirtualMachine&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h6 id="example-minimal-configuration-circuits-only">Example: Minimal Configuration (Circuits Only)<a class="headerlink" href="#example-minimal-configuration-circuits-only" title="Permanent link">&para;</a></h6>
+<div class="highlight"><pre><span></span><code><span class="n">PLUGINS_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;notices&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;allowed_content_types&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;circuits.Circuit&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h6 id="example-extended-configuration">Example: Extended Configuration<a class="headerlink" href="#example-extended-configuration" title="Permanent link">&para;</a></h6>
+<div class="highlight"><pre><span></span><code><span class="n">PLUGINS_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;notices&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;allowed_content_types&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;circuits.Circuit&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dcim.Device&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dcim.Interface&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dcim.PowerFeed&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dcim.Rack&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dcim.Site&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ipam.IPAddress&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ipam.Prefix&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;virtualization.VirtualMachine&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;virtualization.VMInterface&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h6 id="how-configuration-affects-behavior">How Configuration Affects Behavior<a class="headerlink" href="#how-configuration-affects-behavior" title="Permanent link">&para;</a></h6>
+<ul>
+<li>Only object types listed in <code>allowed_content_types</code> will appear in the Impact creation forms</li>
+<li>The API will reject attempts to create impacts for non-allowed object types</li>
+<li>Changing the configuration requires a NetBox restart</li>
+<li>This setting controls which objects can be linked via the <code>Impact</code> model to maintenance and outage events</li>
+</ul>
+<h6 id="common-netbox-object-types">Common NetBox Object Types<a class="headerlink" href="#common-netbox-object-types" title="Permanent link">&para;</a></h6>
+<table>
+<thead>
+<tr>
+<th>Content Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>circuits.Circuit</code></td>
+<td>Network circuits</td>
+</tr>
+<tr>
+<td><code>circuits.Provider</code></td>
+<td>Service providers</td>
+</tr>
+<tr>
+<td><code>dcim.Device</code></td>
+<td>Physical network devices</td>
+</tr>
+<tr>
+<td><code>dcim.Interface</code></td>
+<td>Device network interfaces</td>
+</tr>
+<tr>
+<td><code>dcim.PowerFeed</code></td>
+<td>Power supply connections</td>
+</tr>
+<tr>
+<td><code>dcim.PowerPanel</code></td>
+<td>Power distribution panels</td>
+</tr>
+<tr>
+<td><code>dcim.Rack</code></td>
+<td>Equipment racks</td>
+</tr>
+<tr>
+<td><code>dcim.Site</code></td>
+<td>Physical locations</td>
+</tr>
+<tr>
+<td><code>ipam.IPAddress</code></td>
+<td>IP addresses</td>
+</tr>
+<tr>
+<td><code>ipam.Prefix</code></td>
+<td>IP prefixes/subnets</td>
+</tr>
+<tr>
+<td><code>virtualization.VirtualMachine</code></td>
+<td>Virtual machines</td>
+</tr>
+<tr>
+<td><code>virtualization.VMInterface</code></td>
+<td>VM network interfaces</td>
+</tr>
+</tbody>
+</table>
+<h4 id="apply-database-migrations">Apply Database Migrations<a class="headerlink" href="#apply-database-migrations" title="Permanent link">&para;</a></h4>
+<p>Apply database migrations with Netbox <code>manage.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="o">(</span>venv<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>python<span class="w"> </span>manage.py<span class="w"> </span>migrate
+</code></pre></div>
+<h4 id="restart-netbox">Restart Netbox<a class="headerlink" href="#restart-netbox" title="Permanent link">&para;</a></h4>
+<p>Restart the Netbox service to apply changes:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>netbox
+</code></pre></div>
+<h3 id="outage-tracking">Outage Tracking<a class="headerlink" href="#outage-tracking" title="Permanent link">&para;</a></h3>
+<p>In addition to planned maintenance, this plugin supports tracking unplanned outage events:</p>
+<h4 id="key-features">Key Features<a class="headerlink" href="#key-features" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>Optional End Time</strong>: Outages can be created without an end time, which becomes required when marking as resolved</li>
+<li><strong>ETR Tracking</strong>: Track Estimated Time to Repair with full revision history via NetBox's changelog</li>
+<li><strong>Outage Status Workflow</strong>:</li>
+<li>REPORTED: Initial state when outage is reported</li>
+<li>INVESTIGATING: Team is investigating root cause</li>
+<li>IDENTIFIED: Root cause identified, working on fix</li>
+<li>MONITORING: Fix applied, monitoring for stability</li>
+<li>RESOLVED: Outage fully resolved (requires end time)</li>
+<li><strong>Shared Impact Model</strong>: Uses the same impact tracking as maintenance events (Impact model)</li>
+<li><strong>Unified View</strong>: View both maintenance and outages together in a single interface</li>
+<li><strong>Flexible Object Support</strong>: Link outages to any configured NetBox object type</li>
+</ul>
+<h4 id="api-endpoints">API Endpoints<a class="headerlink" href="#api-endpoints" title="Permanent link">&para;</a></h4>
+<p><strong>Maintenance Events:</strong></p>
+<div class="highlight"><pre><span></span><code>GET    /api/plugins/notices/maintenance/
+POST   /api/plugins/notices/maintenance/
+GET    /api/plugins/notices/maintenance/{id}/
+PATCH  /api/plugins/notices/maintenance/{id}/
+DELETE /api/plugins/notices/maintenance/{id}/
+</code></pre></div>
+<p><strong>Outage Events:</strong></p>
+<div class="highlight"><pre><span></span><code>GET    /api/plugins/notices/outage/
+POST   /api/plugins/notices/outage/
+GET    /api/plugins/notices/outage/{id}/
+PATCH  /api/plugins/notices/outage/{id}/
+DELETE /api/plugins/notices/outage/{id}/
+</code></pre></div>
+<p><strong>Impact Tracking:</strong></p>
+<div class="highlight"><pre><span></span><code>GET    /api/plugins/notices/impact/
+POST   /api/plugins/notices/impact/
+GET    /api/plugins/notices/impact/{id}/
+PATCH  /api/plugins/notices/impact/{id}/
+DELETE /api/plugins/notices/impact/{id}/
+</code></pre></div>
+<h4 id="example-creating-an-outage">Example: Creating an Outage<a class="headerlink" href="#example-creating-an-outage" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="err">POST</span><span class="w"> </span><span class="err">/api/plugi</span><span class="kc">ns</span><span class="err">/</span><span class="kc">n</span><span class="err">o</span><span class="kc">t</span><span class="err">ices/ou</span><span class="kc">ta</span><span class="err">ge/</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OUT-2024-001&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Fiber cut on Main Street&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;provider&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;start&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-10-29T14:30:00Z&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;estimated_time_to_repair&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-10-29T18:00:00Z&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;INVESTIGATING&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+<h4 id="example-creating-impact-for-a-circuit">Example: Creating Impact for a Circuit<a class="headerlink" href="#example-creating-impact-for-a-circuit" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="err">POST</span><span class="w"> </span><span class="err">/api/plugi</span><span class="kc">ns</span><span class="err">/</span><span class="kc">n</span><span class="err">o</span><span class="kc">t</span><span class="err">ices/impac</span><span class="kc">t</span><span class="err">/</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;maintenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;content_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;circuits.circuit&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;object_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;impact&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OUTAGE&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+<h4 id="example-creating-impact-for-a-device">Example: Creating Impact for a Device<a class="headerlink" href="#example-creating-impact-for-a-device" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="err">POST</span><span class="w"> </span><span class="err">/api/plugi</span><span class="kc">ns</span><span class="err">/</span><span class="kc">n</span><span class="err">o</span><span class="kc">t</span><span class="err">ices/impac</span><span class="kc">t</span><span class="err">/</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;outage&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;content_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dcim.device&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;object_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;impact&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;DEGRADED&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="data-models">Data Models<a class="headerlink" href="#data-models" title="Permanent link">&para;</a></h3>
+<p>The plugin uses four main models to track maintenance and outage events:</p>
+<h4 id="maintenance">Maintenance<a class="headerlink" href="#maintenance" title="Permanent link">&para;</a></h4>
+<p>Represents a planned maintenance event from a provider. Key fields:</p>
+<ul>
+<li><code>name</code>: Event identifier</li>
+<li><code>summary</code>: Description of the maintenance</li>
+<li><code>provider</code>: Foreign key to NetBox Provider</li>
+<li><code>start</code>, <code>end</code>: Maintenance window times</li>
+<li><code>status</code>: TENTATIVE, CONFIRMED, CANCELLED, IN-PROCESS, COMPLETED, RE-SCHEDULED, UNKNOWN</li>
+<li><code>internal_ticket</code>: Your organization's tracking ticket reference</li>
+<li><code>acknowledged</code>: Whether the event has been acknowledged</li>
+</ul>
+<h4 id="outage">Outage<a class="headerlink" href="#outage" title="Permanent link">&para;</a></h4>
+<p>Represents an unplanned outage event from a provider. Key fields:</p>
+<ul>
+<li><code>name</code>: Event identifier</li>
+<li><code>summary</code>: Description of the outage</li>
+<li><code>provider</code>: Foreign key to NetBox Provider</li>
+<li><code>start</code>, <code>end</code>: Outage window times (end is optional until resolved)</li>
+<li><code>status</code>: REPORTED, INVESTIGATING, IDENTIFIED, MONITORING, RESOLVED</li>
+<li><code>estimated_time_to_repair</code>: ETR timestamp (tracked with changelog history)</li>
+<li><code>internal_ticket</code>: Your organization's tracking ticket reference</li>
+<li><code>acknowledged</code>: Whether the event has been acknowledged</li>
+</ul>
+<h4 id="impact">Impact<a class="headerlink" href="#impact" title="Permanent link">&para;</a></h4>
+<p>Links maintenance or outage events to affected NetBox objects using Django's Generic Foreign Key pattern:</p>
+<ul>
+<li><code>maintenance</code> or <code>outage</code>: Foreign key to the event (mutually exclusive)</li>
+<li><code>content_type</code>: The type of affected object (e.g., "circuits.circuit", "dcim.device")</li>
+<li><code>object_id</code>: The ID of the affected object</li>
+<li><code>impact</code>: Impact level - NO-IMPACT, REDUCED-REDUNDANCY, DEGRADED, OUTAGE</li>
+</ul>
+<p>The Impact model allows linking events to <strong>any NetBox object type</strong> configured in <code>allowed_content_types</code>.</p>
+<h4 id="eventnotification">EventNotification<a class="headerlink" href="#eventnotification" title="Permanent link">&para;</a></h4>
+<p>Stores raw email notifications received from providers:</p>
+<ul>
+<li><code>maintenance</code> or <code>outage</code>: Foreign key to the associated event</li>
+<li><code>email</code>: Binary email data</li>
+<li><code>email_body</code>: Extracted body text</li>
+<li><code>subject</code>: Email subject line</li>
+<li><code>email_from</code>: Sender address</li>
+<li><code>email_received</code>: Receipt timestamp</li>
+</ul>
+<h3 id="screenshots">Screenshots<a class="headerlink" href="#screenshots" title="Permanent link">&para;</a></h3>
+<p><img alt="Maintenance Event View" src="img/maintenance.png" />
+<img alt="Circuit Maintenance View" src="img/circuit_maintenance.png" />
+<img alt="Provider Maintenance View" src="img/provider_maintenance.png" /></p>
+<h3 id="credits">Credits<a class="headerlink" href="#credits" title="Permanent link">&para;</a></h3>
+<p>Forked from <a href="https://github.com/jasonyates/netbox-circuitmaintenance">jasonyates/netbox-circuitmaintenance</a> with significant enhancements including multi-object type support and outage tracking.</p>
+<p>Based on the NetBox plugin tutorial:</p>
+<ul>
+<li><a href="https://github.com/netbox-community/netbox-plugin-demo">demo repository</a></li>
+<li><a href="https://github.com/netbox-community/netbox-plugin-tutorial">tutorial</a></li>
+</ul>
+<p>This package was created with <a href="https://github.com/audreyr/cookiecutter">Cookiecutter</a> and the <a href="https://github.com/netbox-community/cookiecutter-netbox-plugin"><code>netbox-community/cookiecutter-netbox-plugin</code></a> project template.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/jsenecal/netbox-notices" target="_blank" rel="noopener" title="Github" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.indexes", "navigation.instant", "navigation.tabs.sticky"], "search": "assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+    
+  </body>
+</html>
