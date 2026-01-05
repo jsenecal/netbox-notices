@@ -13,7 +13,7 @@ notices = ["templates/**/*", "static/**/*"]
 [project]
 name = "netbox-notices"
 keywords = ['notices']
-version = "0.2.1"
+version = "0.2.2"
 description = "Track maintenance and outage events across various NetBox models from vendors and internal sources."
 readme = "README.md"
 authors = [
@@ -63,7 +63,7 @@ Tracker = "https://github.com/jsenecal/netbox-notices/issues"
 
 
 [tool.bumpver]
-current_version = "0.2.1"
+current_version = "0.2.2"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "chore: bump version {old_version} -> {new_version}"
 tag_pattern = "v{version}"
