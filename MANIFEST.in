@@ -3,6 +3,7 @@ include LICENSE
 include README.md
 
 recursive-include notices/templates *
+recursive-include notices/static *
 recursive-include notices/api *
 
 recursive-include tests *

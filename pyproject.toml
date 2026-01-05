@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 include = ["notices", "notices.*"]
 
 [tool.setuptools.package-data]
-notices = ["templates/**/*"]
+notices = ["templates/**/*", "static/**/*"]
 
 [project]
 name = "netbox-notices"
