@@ -201,6 +201,9 @@ class EventNotificationTable(NetBoxTable):
     Shows the associated event (Maintenance/Outage) and email details.
     """
 
+    # Customize actions column to exclude edit (notifications are read-only)
+    actions = columns.ActionsColumn(actions=("delete",))
+
     # Event column - display the event name and link to it
     event = tables.TemplateColumn(
         template_code="""
