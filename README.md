@@ -1,8 +1,13 @@
 # NetBox Notices
 
-**Repository:** [github.com/jsenecal/netbox-notices](https://github.com/jsenecal/netbox-notices)
-**Documentation:** [jsenecal.github.io/netbox-notices](https://jsenecal.github.io/netbox-notices)
-**PyPI:** [pypi.org/project/netbox-notices](https://pypi.org/project/netbox-notices)
+[![PyPI version](https://img.shields.io/pypi/v/netbox-notices.svg)](https://pypi.org/project/netbox-notices/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/netbox-notices.svg)](https://pypi.org/project/netbox-notices/)
+[![CI Tests](https://github.com/jsenecal/netbox-notices/actions/workflows/ci.yml/badge.svg)](https://github.com/jsenecal/netbox-notices/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/jsenecal/netbox-notices/graph/badge.svg)](https://codecov.io/gh/jsenecal/netbox-notices)
+
+**Repository:** [github.com/jsenecal/netbox-notices](https://github.com/jsenecal/netbox-notices)  
+**Documentation:** [jsenecal.github.io/netbox-notices](https://jsenecal.github.io/netbox-notices)  
+**PyPI:** [pypi.org/project/netbox-notices](https://pypi.org/project/netbox-notices)  
 
 **Original Project:** Forked and inspired from [jasonyates/netbox-circuitmaintenance](https://github.com/jasonyates/netbox-circuitmaintenance), differs in the ability to track more than just maintenances, and circuits.
 
