@@ -2,6 +2,24 @@
 
 **Date:** 2026-01-22
 **Status:** Design Complete
+**Tracking:** [GitHub Issue #2](https://github.com/jsenecal/netbox-notices/issues/2)
+
+## GitHub Issues
+
+| Component | Issue |
+|-----------|-------|
+| Main Feature | [#2 - Outgoing notifications with Jinja templates](https://github.com/jsenecal/netbox-notices/issues/2) |
+| Data Models | [#3 - MessageTemplate, TemplateScope, PreparedMessage](https://github.com/jsenecal/netbox-notices/issues/3) |
+| Template Engine | [#4 - Jinja rendering, Markdown, custom filters](https://github.com/jsenecal/netbox-notices/issues/4) |
+| Recipient Discovery | [#5 - Contact resolution from tenants/impacts](https://github.com/jsenecal/netbox-notices/issues/5) |
+| Template Matching | [#6 - Scope matching and merge logic](https://github.com/jsenecal/netbox-notices/issues/6) |
+| State Machine | [#7 - Status transitions with validation](https://github.com/jsenecal/netbox-notices/issues/7) |
+| iCal Generation | [#8 - BCOP-compliant calendar attachments](https://github.com/jsenecal/netbox-notices/issues/8) |
+| REST API | [#9 - Endpoints and serializers](https://github.com/jsenecal/netbox-notices/issues/9) |
+| Admin UI | [#10 - Template management, message workflow](https://github.com/jsenecal/netbox-notices/issues/10) |
+| Documentation | [#11 - User guide and API reference](https://github.com/jsenecal/netbox-notices/issues/11) |
+
+---
 
 ## Overview
 
