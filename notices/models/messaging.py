@@ -1,3 +1,5 @@
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.urls import reverse
@@ -11,7 +13,10 @@ from ..choices import (
     MessageGranularityChoices,
 )
 
-__all__ = ("MessageTemplate",)
+__all__ = (
+    "MessageTemplate",
+    "TemplateScope",
+)
 
 
 class MessageTemplate(NetBoxModel):
@@ -124,3 +129,66 @@ class MessageTemplate(NetBoxModel):
 
     def get_absolute_url(self):
         return reverse("plugins:notices:messagetemplate", args=[self.pk])
+
+
+class TemplateScope(models.Model):
+    """
+    Links a MessageTemplate to NetBox objects for Config Context-like matching.
+
+    When generating messages, templates with matching scopes are selected
+    and merged by weight.
+    """
+
+    template = models.ForeignKey(
+        to=MessageTemplate,
+        on_delete=models.CASCADE,
+        related_name="scopes",
+    )
+
+    # GenericFK to any NetBox object
+    content_type = models.ForeignKey(
+        to=ContentType,
+        on_delete=models.CASCADE,
+        help_text="The type of object this scope matches.",
+    )
+    object_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        help_text="Specific object ID (null = all of this type).",
+    )
+    object = GenericForeignKey("content_type", "object_id")
+
+    # Event filtering
+    event_type = models.CharField(
+        max_length=20,
+        choices=MessageEventTypeChoices,
+        null=True,
+        blank=True,
+        help_text="Filter by event type.",
+    )
+    event_status = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Filter by event status (e.g., CONFIRMED, TENTATIVE).",
+    )
+
+    # Merge priority
+    weight = models.IntegerField(
+        default=1000,
+        help_text="Weight for this scope (higher = higher priority in merge).",
+    )
+
+    class Meta:
+        ordering = ["template", "-weight"]
+        verbose_name = "Template Scope"
+        verbose_name_plural = "Template Scopes"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["template", "content_type", "object_id", "event_type", "event_status"],
+                name="unique_template_scope",
+            ),
+        ]
+
+    def __str__(self):
+        obj_str = str(self.object) if self.object_id else f"All {self.content_type.model}s"
+        return f"{self.template.name} → {obj_str}"
