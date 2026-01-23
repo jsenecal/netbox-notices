@@ -179,3 +179,14 @@ def tenant(db):
         name="Test Tenant",
         slug="test-tenant",
     )
+
+
+@pytest.fixture
+def contact():
+    """Create a test contact with email."""
+    from tenancy.models import Contact
+
+    return Contact.objects.create(
+        name="Test Contact",
+        email="test@example.com",
+    )
