@@ -6,6 +6,8 @@ Sets up Django and NetBox environment for testing.
 import os
 import sys
 
+import pytest
+
 # Add NetBox to Python path BEFORE any imports
 # Use PYTHONPATH if set (CI environment), otherwise use devcontainer path
 netbox_path = os.environ.get("PYTHONPATH", "/opt/netbox/netbox")
@@ -51,20 +53,11 @@ if not is_ci:
             "SSL": os.environ.get("REDIS_SSL", "False").lower() == "true",
         },
         "caching": {
-            "HOST": os.environ.get(
-                "REDIS_CACHE_HOST", os.environ.get("REDIS_HOST", "redis")
-            ),
-            "PORT": int(
-                os.environ.get("REDIS_CACHE_PORT", os.environ.get("REDIS_PORT", 6379))
-            ),
-            "PASSWORD": os.environ.get(
-                "REDIS_CACHE_PASSWORD", os.environ.get("REDIS_PASSWORD", "")
-            ),
+            "HOST": os.environ.get("REDIS_CACHE_HOST", os.environ.get("REDIS_HOST", "redis")),
+            "PORT": int(os.environ.get("REDIS_CACHE_PORT", os.environ.get("REDIS_PORT", 6379))),
+            "PASSWORD": os.environ.get("REDIS_CACHE_PASSWORD", os.environ.get("REDIS_PASSWORD", "")),
             "DATABASE": int(os.environ.get("REDIS_CACHE_DATABASE", 1)),
-            "SSL": os.environ.get(
-                "REDIS_CACHE_SSL", os.environ.get("REDIS_SSL", "False")
-            ).lower()
-            == "true",
+            "SSL": os.environ.get("REDIS_CACHE_SSL", os.environ.get("REDIS_SSL", "False")).lower() == "true",
         },
     }
 
@@ -96,7 +89,6 @@ def pytest_configure(config):
 
 
 # Common fixtures for all tests
-import pytest  # noqa: E402
 
 
 @pytest.fixture
@@ -175,4 +167,15 @@ def device(db, site, device_role, device_type):
         site=site,
         role=device_role,
         device_type=device_type,
+    )
+
+
+@pytest.fixture
+def tenant(db):
+    """Create a test tenant."""
+    from tenancy.models import Tenant
+
+    return Tenant.objects.create(
+        name="Test Tenant",
+        slug="test-tenant",
     )
