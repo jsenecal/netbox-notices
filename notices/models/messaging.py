@@ -1,21 +1,26 @@
+from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.urls import reverse
 from netbox.models import NetBoxModel
-from tenancy.models import ContactRole
+from tenancy.models import Contact, ContactRole
 
 from ..choices import (
     BodyFormatChoices,
     ContactPriorityChoices,
     MessageEventTypeChoices,
     MessageGranularityChoices,
+    PreparedMessageStatusChoices,
 )
+
+User = get_user_model()
 
 __all__ = (
     "MessageTemplate",
     "TemplateScope",
+    "PreparedMessage",
 )
 
 
@@ -192,3 +197,115 @@ class TemplateScope(models.Model):
     def __str__(self):
         obj_str = str(self.object) if self.object_id else f"All {self.content_type.model}s"
         return f"{self.template.name} → {obj_str}"
+
+
+class PreparedMessage(NetBoxModel):
+    """
+    A rendered message ready for delivery.
+
+    Stores a snapshot of rendered content and recipients at generation time.
+    Status transitions are validated via state machine.
+    """
+
+    # Source template
+    template = models.ForeignKey(
+        to=MessageTemplate,
+        on_delete=models.PROTECT,
+        related_name="prepared_messages",
+    )
+
+    # Linked event (optional)
+    event_content_type = models.ForeignKey(
+        to=ContentType,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    event_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+    )
+    event = GenericForeignKey("event_content_type", "event_id")
+
+    # Status
+    status = models.CharField(
+        max_length=20,
+        choices=PreparedMessageStatusChoices,
+        default=PreparedMessageStatusChoices.DRAFT,
+    )
+
+    # Recipients
+    contacts = models.ManyToManyField(
+        to=Contact,
+        blank=True,
+        related_name="prepared_messages",
+        help_text="Contacts to receive this message.",
+    )
+    recipients = models.JSONField(
+        default=list,
+        help_text="Readonly snapshot of recipients at send time.",
+    )
+
+    # Rendered content snapshot
+    subject = models.CharField(
+        max_length=255,
+    )
+    body_text = models.TextField()
+    body_html = models.TextField(
+        blank=True,
+    )
+    headers = models.JSONField(
+        default=dict,
+    )
+    css = models.TextField(
+        blank=True,
+    )
+    ical_content = models.TextField(
+        blank=True,
+    )
+
+    # Approval tracking
+    approved_by = models.ForeignKey(
+        to=User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    # Delivery tracking
+    sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+    delivered_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+    viewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        ordering = ["-created"]
+        verbose_name = "Prepared Message"
+        verbose_name_plural = "Prepared Messages"
+
+    def __str__(self):
+        return f"{self.subject[:50]}..." if len(self.subject) > 50 else self.subject
+
+    def get_absolute_url(self):
+        return reverse("plugins:notices:preparedmessage", args=[self.pk])
+
+    @property
+    def event_type_name(self):
+        """Return the event type name (maintenance/outage) or None."""
+        if self.event_content_type:
+            return self.event_content_type.model
+        return None
