@@ -190,3 +190,34 @@ def contact():
         name="Test Contact",
         email="test@example.com",
     )
+
+
+@pytest.fixture
+def provider():
+    """Create a test provider."""
+    from circuits.models import Provider
+
+    return Provider.objects.create(
+        name="Test Provider",
+        slug="test-provider",
+    )
+
+
+@pytest.fixture
+def maintenance(provider):
+    """Create a test maintenance event."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from notices.models import Maintenance
+
+    now = timezone.now()
+    return Maintenance.objects.create(
+        name="MAINT-001",
+        summary="Test maintenance event",
+        provider=provider,
+        status="CONFIRMED",
+        start=now,
+        end=now + timedelta(hours=4),
+    )
