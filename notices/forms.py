@@ -625,6 +625,28 @@ class PreparedMessageFilterForm(NetBoxModelFilterSetForm):
     )
 
 
+class OutboundMessageFilterForm(NetBoxModelFilterSetForm):
+    """Filter form for Outbound messages (only sent/delivered statuses)."""
+
+    model = PreparedMessage
+
+    from utilities.forms.fields import DynamicModelMultipleChoiceField
+
+    # Only show sent/delivered status options
+    status = forms.MultipleChoiceField(
+        choices=[
+            ("sent", "Sent"),
+            ("delivered", "Delivered"),
+        ],
+        required=False,
+    )
+    template_id = DynamicModelMultipleChoiceField(
+        queryset=MessageTemplate.objects.all(),
+        required=False,
+        label="Template",
+    )
+
+
 class PreparedMessageBulkEditForm(NetBoxModelForm):
     """Form for bulk editing PreparedMessage records."""
 
