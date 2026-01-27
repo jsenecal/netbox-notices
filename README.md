@@ -42,7 +42,7 @@ This plugin requires NetBox 4.4.1 or higher.
 
 | NetBox Version | Plugin Version |
 | -------------- | -------------- |
-| 4.4.1+         | 0.2.x         |
+| 4.4.x - 4.5.x  | 0.2.x          |
 
 ## Installing
 

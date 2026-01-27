@@ -1,6 +1,7 @@
 # Ignore local customizations
 home/
 initializers/
+netbox-demo-data/
 
 # Keep structure files
 !home/.config/.gitkeep

@@ -5,6 +5,8 @@ PLUGIN_NAME=notices
 REPO_PATH=/opt/netbox-notices
 VENV_PY_PATH=/opt/netbox/venv/bin/python3
 INITIALIZER_PATH=${REPO_PATH}/.devcontainer/initializers
+DEMO_DATA_PATH=${REPO_PATH}/.devcontainer/netbox-demo-data
+NETBOX_VERSION=v$(shell grep '^version' /opt/netbox/pyproject.toml | head -1 | cut -d'"' -f2 | cut -d. -f1,2)
 
 .PHONY: help
 help: ## Show this help message
@@ -114,6 +116,45 @@ initializers: ## Setup and load demo data via initializers
 	-${VENV_PY_PATH} ${NETBOX_DIR}/manage.py copy_initializers_examples --path ${INITIALIZER_PATH}
 	-for file in ${INITIALIZER_PATH}/*.yml; do sed -i "s/^# //g" "$$file"; done
 	-${VENV_PY_PATH} ${NETBOX_DIR}/manage.py load_initializer_data --path ${INITIALIZER_PATH}
+
+# NetBox Community Demo Data (https://github.com/netbox-community/netbox-demo-data)
+.PHONY: clone-demo-data
+clone-demo-data: ## Clone netbox-demo-data repository
+	@if [ -d "${DEMO_DATA_PATH}" ]; then \
+		echo "Updating existing netbox-demo-data..."; \
+		cd ${DEMO_DATA_PATH} && git pull; \
+	else \
+		echo "Cloning netbox-demo-data..."; \
+		git clone --depth 1 https://github.com/netbox-community/netbox-demo-data.git ${DEMO_DATA_PATH}; \
+	fi
+
+.PHONY: load-demo-data
+load-demo-data: clone-demo-data ## Load NetBox community demo data (WARNING: drops existing database!)
+	@echo "NetBox version detected: ${NETBOX_VERSION}"
+	@if [ ! -f "${DEMO_DATA_PATH}/sql/netbox-demo-${NETBOX_VERSION}.sql" ]; then \
+		echo "ERROR: Demo data for NetBox ${NETBOX_VERSION} not found!"; \
+		echo "Available versions:"; \
+		ls -1 ${DEMO_DATA_PATH}/sql/*.sql 2>/dev/null | sed 's/.*netbox-demo-/  /' | sed 's/.sql//'; \
+		exit 1; \
+	fi
+	@echo "WARNING: This will DROP and recreate the NetBox database!"
+	@echo "Press Ctrl+C to cancel, or wait 5 seconds to continue..."
+	@sleep 5
+	@echo "Dropping and recreating database..."
+	PGPASSWORD=$${DB_PASSWORD} psql -h $${DB_HOST:-postgres} -U $${DB_USER:-netbox} -d postgres -c "DROP DATABASE IF EXISTS netbox;"
+	PGPASSWORD=$${DB_PASSWORD} psql -h $${DB_HOST:-postgres} -U $${DB_USER:-netbox} -d postgres -c "CREATE DATABASE netbox;"
+	@echo "Loading demo data for NetBox ${NETBOX_VERSION}..."
+	PGPASSWORD=$${DB_PASSWORD} psql -h $${DB_HOST:-postgres} -U $${DB_USER:-netbox} -d netbox < ${DEMO_DATA_PATH}/sql/netbox-demo-${NETBOX_VERSION}.sql
+	@echo "Running migrations for plugin..."
+	${VENV_PY_PATH} ${NETBOX_DIR}/manage.py migrate
+	@echo "Demo data loaded! Login with admin/admin"
+
+.PHONY: demo-data-versions
+demo-data-versions: clone-demo-data ## List available demo data versions
+	@echo "Available NetBox demo data versions:"
+	@ls -1 ${DEMO_DATA_PATH}/sql/*.sql 2>/dev/null | sed 's/.*netbox-demo-/  /' | sed 's/.sql//'
+	@echo ""
+	@echo "Current NetBox version: ${NETBOX_VERSION}"
 
 # Composite targets
 .PHONY: rebuild
