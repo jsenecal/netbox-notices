@@ -13,12 +13,13 @@ class TestOutageSerializerStructure(unittest.TestCase):
     """Test the OutageSerializer class structure"""
 
     def _get_serializers_file_ast(self):
-        """Parse the serializers.py file and return AST"""
+        """Parse the serializers/events.py file and return AST"""
         serializers_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
             "notices",
             "api",
-            "serializers.py",
+            "serializers",
+            "events.py",
         )
         with open(serializers_path, "r") as f:
             return ast.parse(f.read())
@@ -99,9 +100,7 @@ class TestOutageSerializerStructure(unittest.TestCase):
 
         # Look for provider field assignment
         provider_field = self._find_class_attr(serializer_class, "provider")
-        self.assertIsNotNone(
-            provider_field, "OutageSerializer should have a provider field"
-        )
+        self.assertIsNotNone(provider_field, "OutageSerializer should have a provider field")
 
     def test_outage_serializer_has_meta_class(self):
         """Test that OutageSerializer has Meta class"""
@@ -188,12 +187,13 @@ class TestNestedOutageSerializer(unittest.TestCase):
     """Test the NestedOutageSerializer class structure"""
 
     def _get_serializers_file_ast(self):
-        """Parse the serializers.py file and return AST"""
+        """Parse the serializers/events.py file and return AST"""
         serializers_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
             "notices",
             "api",
-            "serializers.py",
+            "serializers",
+            "events.py",
         )
         with open(serializers_path, "r") as f:
             return ast.parse(f.read())
@@ -209,9 +209,7 @@ class TestNestedOutageSerializer(unittest.TestCase):
         """Test that NestedOutageSerializer class exists"""
         tree = self._get_serializers_file_ast()
         serializer_class = self._find_class(tree, "NestedOutageSerializer")
-        self.assertIsNotNone(
-            serializer_class, "NestedOutageSerializer class should exist"
-        )
+        self.assertIsNotNone(serializer_class, "NestedOutageSerializer class should exist")
 
     def test_nested_outage_serializer_inherits_from_writable_nested_serializer(
         self,
@@ -234,12 +232,13 @@ class TestImpactSerializer(unittest.TestCase):
     """Test the ImpactSerializer class structure"""
 
     def _get_serializers_file_ast(self):
-        """Parse the serializers.py file and return AST"""
+        """Parse the serializers/events.py file and return AST"""
         serializers_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
             "notices",
             "api",
-            "serializers.py",
+            "serializers",
+            "events.py",
         )
         with open(serializers_path, "r") as f:
             return ast.parse(f.read())
@@ -366,12 +365,13 @@ class TestEventNotificationSerializer(unittest.TestCase):
     """Test the EventNotificationSerializer class structure"""
 
     def _get_serializers_file_ast(self):
-        """Parse the serializers.py file and return AST"""
+        """Parse the serializers/events.py file and return AST"""
         serializers_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
             "notices",
             "api",
-            "serializers.py",
+            "serializers",
+            "events.py",
         )
         with open(serializers_path, "r") as f:
             return ast.parse(f.read())
@@ -418,9 +418,7 @@ class TestEventNotificationSerializer(unittest.TestCase):
         """Test that EventNotificationSerializer class exists"""
         tree = self._get_serializers_file_ast()
         serializer_class = self._find_class(tree, "EventNotificationSerializer")
-        self.assertIsNotNone(
-            serializer_class, "EventNotificationSerializer class should exist"
-        )
+        self.assertIsNotNone(serializer_class, "EventNotificationSerializer class should exist")
 
     def test_event_notification_serializer_inherits_from_netbox_model_serializer(self):
         """Test that EventNotificationSerializer inherits from NetBoxModelSerializer"""
