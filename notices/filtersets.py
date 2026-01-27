@@ -3,11 +3,18 @@ from django.db.models import Q
 from netbox.filtersets import NetBoxModelFilterSet
 from utilities.filters import ContentTypeFilter
 
+from .choices import (
+    MessageEventTypeChoices,
+    MessageGranularityChoices,
+    PreparedMessageStatusChoices,
+)
 from .models import (
     EventNotification,
     Impact,
     Maintenance,
+    MessageTemplate,
     Outage,
+    PreparedMessage,
 )
 
 
@@ -146,7 +153,55 @@ class EventNotificationFilterSet(NetBoxModelFilterSet):
         if not value.strip():
             return queryset
         return queryset.filter(
-            Q(subject__icontains=value)
-            | Q(email_body__icontains=value)
-            | Q(email_from__icontains=value)
+            Q(subject__icontains=value) | Q(email_body__icontains=value) | Q(email_from__icontains=value)
         )
+
+
+class MessageTemplateFilterSet(NetBoxModelFilterSet):
+    """Filterset for MessageTemplate."""
+
+    event_type = django_filters.MultipleChoiceFilter(
+        choices=MessageEventTypeChoices,
+    )
+    granularity = django_filters.MultipleChoiceFilter(
+        choices=MessageGranularityChoices,
+    )
+    is_base_template = django_filters.BooleanFilter()
+    q = django_filters.CharFilter(
+        method="search",
+        label="Search",
+    )
+
+    class Meta:
+        model = MessageTemplate
+        fields = ["id", "name", "slug", "event_type", "granularity", "is_base_template"]
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(Q(name__icontains=value) | Q(slug__icontains=value) | Q(description__icontains=value))
+
+
+class PreparedMessageFilterSet(NetBoxModelFilterSet):
+    """Filterset for PreparedMessage."""
+
+    status = django_filters.MultipleChoiceFilter(
+        choices=PreparedMessageStatusChoices,
+    )
+    template_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=MessageTemplate.objects.all(),
+        field_name="template",
+    )
+    q = django_filters.CharFilter(
+        method="search",
+        label="Search",
+    )
+
+    class Meta:
+        model = PreparedMessage
+        fields = ["id", "status", "template_id"]
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(Q(subject__icontains=value) | Q(body_text__icontains=value))

@@ -1,10 +1,8 @@
 from netbox.api.viewsets import NetBoxModelViewSet
 
 from notices.api.serializers import MessageTemplateSerializer, PreparedMessageSerializer
+from notices.filtersets import MessageTemplateFilterSet, PreparedMessageFilterSet
 from notices.models import MessageTemplate, PreparedMessage
-
-# Note: Filtersets will be added in Task 4.3
-# from notices.filtersets import MessageTemplateFilterSet, PreparedMessageFilterSet
 
 __all__ = (
     "MessageTemplateViewSet",
@@ -21,7 +19,7 @@ class MessageTemplateViewSet(NetBoxModelViewSet):
         "tags",
     )
     serializer_class = MessageTemplateSerializer
-    # filterset_class = MessageTemplateFilterSet  # To be added in Task 4.3
+    filterset_class = MessageTemplateFilterSet
 
 
 class PreparedMessageViewSet(NetBoxModelViewSet):
@@ -35,4 +33,4 @@ class PreparedMessageViewSet(NetBoxModelViewSet):
         "tags",
     )
     serializer_class = PreparedMessageSerializer
-    # filterset_class = PreparedMessageFilterSet  # To be added in Task 4.3
+    filterset_class = PreparedMessageFilterSet
