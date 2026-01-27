@@ -52,11 +52,42 @@ events_items = [
     ),
 ]
 
+# Messaging group
+messaging_items = [
+    PluginMenuItem(
+        link="plugins:notices:messagetemplate_list",
+        link_text="Message Templates",
+        permissions=["notices.view_messagetemplate"],
+        buttons=[
+            PluginMenuButton(
+                link="plugins:notices:messagetemplate_add",
+                title="Add",
+                icon_class="mdi mdi-plus-thick",
+                permissions=["notices.add_messagetemplate"],
+            )
+        ],
+    ),
+    PluginMenuItem(
+        link="plugins:notices:preparedmessage_list",
+        link_text="Prepared Messages",
+        permissions=["notices.view_preparedmessage"],
+        buttons=[
+            PluginMenuButton(
+                link="plugins:notices:preparedmessage_add",
+                title="Add",
+                icon_class="mdi mdi-plus-thick",
+                permissions=["notices.add_preparedmessage"],
+            )
+        ],
+    ),
+]
+
 menu = PluginMenu(
     label="Notices",
     groups=(
         ("Notifications", notifications_items),
         ("Events", events_items),
+        ("Messaging", messaging_items),
     ),
     icon_class="mdi mdi-wrench",
 )

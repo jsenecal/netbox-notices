@@ -116,6 +116,7 @@ max-complexity = 18
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
 "parsers/*" = ["E711", "E722"]
+"notices/tables.py" = ["E501"]  # Template strings in ActionsColumn can exceed line length
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

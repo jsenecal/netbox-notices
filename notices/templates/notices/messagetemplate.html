@@ -1,0 +1,275 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col col-md-6">
+        <div class="card">
+            <h5 class="card-header">Template Details</h5>
+            <div class="card-body">
+                <table class="table table-hover attr-table">
+                    <tr>
+                        <th scope="row">Name</th>
+                        <td>{{ object.name }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Slug</th>
+                        <td><code>{{ object.slug }}</code></td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Description</th>
+                        <td>{{ object.description|placeholder }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Event Type</th>
+                        <td>{% badge object.get_event_type_display %}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Granularity</th>
+                        <td>{% badge object.get_granularity_display %}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Body Format</th>
+                        <td>{% badge object.get_body_format_display %}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Weight</th>
+                        <td>{{ object.weight }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Include iCal</th>
+                        <td>{% checkmark object.include_ical %}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <h5 class="card-header">Inheritance</h5>
+            <div class="card-body">
+                <table class="table table-hover attr-table">
+                    <tr>
+                        <th scope="row">Is Base Template</th>
+                        <td>{% checkmark object.is_base_template %}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Extends</th>
+                        <td>
+                            {% if object.extends %}
+                                {{ object.extends|linkify }}
+                            {% else %}
+                                {{ ''|placeholder }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        {% include 'inc/panels/custom_fields.html' %}
+    </div>
+    <div class="col col-md-6">
+        {% include 'inc/panels/tags.html' %}
+
+        <div class="card">
+            <h5 class="card-header">Recipients</h5>
+            <div class="card-body">
+                <table class="table table-hover attr-table">
+                    <tr>
+                        <th scope="row">Contact Roles</th>
+                        <td>
+                            {% if object.contact_roles.all %}
+                                {% for role in object.contact_roles.all %}
+                                    {% badge role %}{% if not forloop.last %} {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                {{ ''|placeholder }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Contact Priorities</th>
+                        <td>
+                            {% if object.contact_priorities %}
+                                {% for priority in object.contact_priorities %}
+                                    {% badge priority %}{% if not forloop.last %} {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                {{ ''|placeholder }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col col-md-12">
+        <div class="card">
+            <h5 class="card-header">Subject Template</h5>
+            <div class="card-body">
+                <pre class="mb-0"><code>{{ object.subject_template }}</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col col-md-12">
+        <div class="card">
+            <h5 class="card-header">Body Template</h5>
+            <div class="card-body">
+                <pre class="mb-0"><code>{{ object.body_template }}</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if object.css_template %}
+<div class="row mb-3">
+    <div class="col col-md-12">
+        <div class="card">
+            <h5 class="card-header">CSS Template</h5>
+            <div class="card-body">
+                <pre class="mb-0"><code>{{ object.css_template }}</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if object.include_ical and object.ical_template %}
+<div class="row mb-3">
+    <div class="col col-md-12">
+        <div class="card">
+            <h5 class="card-header">iCal Template</h5>
+            <div class="card-body">
+                <pre class="mb-0"><code>{{ object.ical_template }}</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if object.headers_template %}
+<div class="row mb-3">
+    <div class="col col-md-12">
+        <div class="card">
+            <h5 class="card-header">Headers Template</h5>
+            <div class="card-body">
+                <pre class="mb-0"><code>{{ object.headers_template }}</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mb-3">
+    <div class="col col-md-12">
+        <div class="card">
+            <h5 class="card-header">Template Scopes</h5>
+            {% if scopes %}
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Object Type</th>
+                            <th>Object</th>
+                            <th>Event Type</th>
+                            <th>Event Status</th>
+                            <th>Weight</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for scope in scopes %}
+                        <tr>
+                            <td>{{ scope.content_type }}</td>
+                            <td>
+                                {% if scope.object %}
+                                    {% if scope.object.get_absolute_url %}
+                                        <a href="{{ scope.object.get_absolute_url }}">{{ scope.object }}</a>
+                                    {% else %}
+                                        {{ scope.object }}
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">All</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ scope.event_type|default:"-" }}</td>
+                            <td>{{ scope.event_status|default:"-" }}</td>
+                            <td>{{ scope.weight }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="card-body">
+                    <div class="text-muted">No scopes defined - this template applies globally.</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if object.is_base_template and children %}
+<div class="row mb-3">
+    <div class="col col-md-12">
+        <div class="card">
+            <h5 class="card-header">Child Templates</h5>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Event Type</th>
+                        <th>Granularity</th>
+                        <th>Weight</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for child in children %}
+                    <tr>
+                        <td>{{ child|linkify }}</td>
+                        <td>{% badge child.get_event_type_display %}</td>
+                        <td>{% badge child.get_granularity_display %}</td>
+                        <td>{{ child.weight }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if prepared_messages %}
+<div class="row mb-3">
+    <div class="col col-md-12">
+        <div class="card">
+            <h5 class="card-header">Recent Prepared Messages</h5>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Approved By</th>
+                        <th>Sent At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for msg in prepared_messages %}
+                    <tr>
+                        <td>{{ msg|linkify }}</td>
+                        <td>{% badge msg.get_status_display %}</td>
+                        <td>{{ msg.approved_by|placeholder }}</td>
+                        <td>{{ msg.sent_at|placeholder }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock content %}

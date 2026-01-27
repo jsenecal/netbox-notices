@@ -11,6 +11,7 @@ class TestNavigationStructure:
         assert hasattr(navigation, "menu")
         assert hasattr(navigation, "notifications_items")
         assert hasattr(navigation, "events_items")
+        assert hasattr(navigation, "messaging_items")
 
     def test_navigation_menu_exists(self):
         """Test that navigation menu is defined"""
@@ -24,7 +25,7 @@ class TestNavigationStructure:
         """Test navigation menu groups structure"""
         from notices.navigation import menu
 
-        assert len(menu.groups) == 2
+        assert len(menu.groups) == 3
         # NetBox uses MenuGroup objects, not tuples
 
         # First group: Notifications
@@ -36,6 +37,11 @@ class TestNavigationStructure:
         events_group = menu.groups[1]
         assert events_group.label == "Events"
         assert len(events_group.items) == 3
+
+        # Third group: Messaging
+        messaging_group = menu.groups[2]
+        assert messaging_group.label == "Messaging"
+        assert len(messaging_group.items) == 2
 
     def test_menuitems_count(self):
         """Test correct number of menu items in each group"""
@@ -176,7 +182,7 @@ class TestNavigationStructure:
         assert menu.groups
 
         # Verify groups structure matches NetBox expectations
-        assert len(menu.groups) == 2
+        assert len(menu.groups) == 3
 
         for group in menu.groups:
             assert hasattr(group, "label")
@@ -187,3 +193,35 @@ class TestNavigationStructure:
                 assert isinstance(item, PluginMenuItem)
                 assert hasattr(item, "link")
                 assert hasattr(item, "link_text")
+
+    def test_messaging_menu_items(self):
+        """Test Messaging group menu items configuration"""
+        from notices.navigation import messaging_items
+
+        assert len(messaging_items) == 2
+
+        # Message Templates item
+        templates_item = messaging_items[0]
+        assert isinstance(templates_item, PluginMenuItem)
+        assert templates_item.link == "plugins:notices:messagetemplate_list"
+        assert templates_item.link_text == "Message Templates"
+        assert len(templates_item.buttons) == 1
+
+        add_button = templates_item.buttons[0]
+        assert isinstance(add_button, PluginMenuButton)
+        assert add_button.link == "plugins:notices:messagetemplate_add"
+        assert add_button.title == "Add"
+        assert add_button.icon_class == "mdi mdi-plus-thick"
+
+        # Prepared Messages item
+        messages_item = messaging_items[1]
+        assert isinstance(messages_item, PluginMenuItem)
+        assert messages_item.link == "plugins:notices:preparedmessage_list"
+        assert messages_item.link_text == "Prepared Messages"
+        assert len(messages_item.buttons) == 1
+
+        add_button = messages_item.buttons[0]
+        assert isinstance(add_button, PluginMenuButton)
+        assert add_button.link == "plugins:notices:preparedmessage_add"
+        assert add_button.title == "Add"
+        assert add_button.icon_class == "mdi mdi-plus-thick"

@@ -137,4 +137,68 @@ urlpatterns = (
         views.MaintenanceICalView.as_view(),
         name="ical_maintenances",
     ),
+    # MessageTemplate URLs
+    path(
+        "message-templates/",
+        views.MessageTemplateListView.as_view(),
+        name="messagetemplate_list",
+    ),
+    path(
+        "message-templates/add/",
+        views.MessageTemplateEditView.as_view(),
+        name="messagetemplate_add",
+    ),
+    path(
+        "message-templates/<int:pk>/",
+        views.MessageTemplateView.as_view(),
+        name="messagetemplate",
+    ),
+    path(
+        "message-templates/<int:pk>/edit/",
+        views.MessageTemplateEditView.as_view(),
+        name="messagetemplate_edit",
+    ),
+    path(
+        "message-templates/<int:pk>/delete/",
+        views.MessageTemplateDeleteView.as_view(),
+        name="messagetemplate_delete",
+    ),
+    path(
+        "message-templates/<int:pk>/changelog/",
+        ObjectChangeLogView.as_view(),
+        name="messagetemplate_changelog",
+        kwargs={"model": models.MessageTemplate},
+    ),
+    # PreparedMessage URLs
+    path(
+        "prepared-messages/",
+        views.PreparedMessageListView.as_view(),
+        name="preparedmessage_list",
+    ),
+    path(
+        "prepared-messages/add/",
+        views.PreparedMessageEditView.as_view(),
+        name="preparedmessage_add",
+    ),
+    path(
+        "prepared-messages/<int:pk>/",
+        views.PreparedMessageView.as_view(),
+        name="preparedmessage",
+    ),
+    path(
+        "prepared-messages/<int:pk>/edit/",
+        views.PreparedMessageEditView.as_view(),
+        name="preparedmessage_edit",
+    ),
+    path(
+        "prepared-messages/<int:pk>/delete/",
+        views.PreparedMessageDeleteView.as_view(),
+        name="preparedmessage_delete",
+    ),
+    path(
+        "prepared-messages/<int:pk>/changelog/",
+        ObjectChangeLogView.as_view(),
+        name="preparedmessage_changelog",
+        kwargs={"model": models.PreparedMessage},
+    ),
 )

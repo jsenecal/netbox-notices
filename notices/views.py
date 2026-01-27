@@ -21,7 +21,7 @@ from rest_framework import exceptions
 
 from . import filtersets, forms, models, tables
 from .ical_utils import calculate_etag, generate_maintenance_ical
-from .models import Maintenance, Outage
+from .models import Maintenance, MessageTemplate, Outage, PreparedMessage
 from .timeline_utils import build_timeline_item, get_timeline_changes
 
 
@@ -535,3 +535,69 @@ class MaintenanceICalView(View):
                 queryset = queryset.filter(status__in=filtered_statuses)
 
         return queryset
+
+
+# MessageTemplate Views
+class MessageTemplateListView(generic.ObjectListView):
+    queryset = MessageTemplate.objects.prefetch_related("scopes", "contact_roles")
+    table = tables.MessageTemplateTable
+    filterset = filtersets.MessageTemplateFilterSet
+    filterset_form = forms.MessageTemplateFilterForm
+
+
+class MessageTemplateView(generic.ObjectView):
+    queryset = MessageTemplate.objects.prefetch_related("scopes", "contact_roles", "children")
+
+    def get_extra_context(self, request, instance):
+        # Load scopes for this template
+        scopes = instance.scopes.select_related("content_type").all()
+
+        # Load child templates (if this is a base template)
+        children = instance.children.all() if instance.is_base_template else []
+
+        # Load prepared messages using this template
+        prepared_messages = instance.prepared_messages.select_related("approved_by").order_by("-created")[:10]
+
+        return {
+            "scopes": scopes,
+            "children": children,
+            "prepared_messages": prepared_messages,
+        }
+
+
+class MessageTemplateEditView(generic.ObjectEditView):
+    queryset = MessageTemplate.objects.all()
+    form = forms.MessageTemplateForm
+
+
+class MessageTemplateDeleteView(generic.ObjectDeleteView):
+    queryset = MessageTemplate.objects.all()
+
+
+# PreparedMessage Views
+class PreparedMessageListView(generic.ObjectListView):
+    queryset = PreparedMessage.objects.select_related("template", "approved_by")
+    table = tables.PreparedMessageTable
+    filterset = filtersets.PreparedMessageFilterSet
+    filterset_form = forms.PreparedMessageFilterForm
+
+
+class PreparedMessageView(generic.ObjectView):
+    queryset = PreparedMessage.objects.select_related("template", "approved_by").prefetch_related("contacts")
+
+    def get_extra_context(self, request, instance):
+        # Load contacts
+        contacts = instance.contacts.all()
+
+        return {
+            "contacts": contacts,
+        }
+
+
+class PreparedMessageEditView(generic.ObjectEditView):
+    queryset = PreparedMessage.objects.all()
+    form = forms.PreparedMessageForm
+
+
+class PreparedMessageDeleteView(generic.ObjectDeleteView):
+    queryset = PreparedMessage.objects.all()

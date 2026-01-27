@@ -11,8 +11,16 @@ from utilities.forms.fields import DynamicModelChoiceField
 from utilities.forms.rendering import FieldSet
 from utilities.forms.widgets import DateTimePicker, HTMXSelect
 
-from .choices import MaintenanceTypeChoices, OutageStatusChoices, TimeZoneChoices
-from .models import EventNotification, Impact, Maintenance, Outage
+from .choices import (
+    BodyFormatChoices,
+    MaintenanceTypeChoices,
+    MessageEventTypeChoices,
+    MessageGranularityChoices,
+    OutageStatusChoices,
+    PreparedMessageStatusChoices,
+    TimeZoneChoices,
+)
+from .models import EventNotification, Impact, Maintenance, MessageTemplate, Outage, PreparedMessage
 from .utils import get_allowed_content_types
 
 
@@ -455,3 +463,153 @@ class OutageFilterForm(NetBoxModelFilterSetForm):
     end = forms.CharField(required=False)
     acknowledged = forms.BooleanField(required=False)
     internal_ticket = forms.CharField(required=False)
+
+
+# MessageTemplate Forms
+class MessageTemplateForm(NetBoxModelForm):
+    """Form for creating/editing MessageTemplate records."""
+
+    from tenancy.models import Contact, ContactRole
+    from utilities.forms.fields import DynamicModelMultipleChoiceField
+
+    contact_roles = DynamicModelMultipleChoiceField(
+        queryset=ContactRole.objects.all(),
+        required=False,
+    )
+    extends = DynamicModelChoiceField(
+        queryset=MessageTemplate.objects.filter(is_base_template=True),
+        required=False,
+        label="Extends Template",
+        help_text="Parent template to extend (for Jinja block inheritance).",
+    )
+
+    fieldsets = (
+        FieldSet("name", "slug", "description", "weight", name="Template"),
+        FieldSet("event_type", "granularity", name="Targeting"),
+        FieldSet(
+            "subject_template",
+            "body_template",
+            "body_format",
+            "css_template",
+            "headers_template",
+            name="Content",
+        ),
+        FieldSet("include_ical", "ical_template", name="iCal"),
+        FieldSet("contact_roles", "contact_priorities", name="Recipients"),
+        FieldSet("is_base_template", "extends", name="Inheritance"),
+        FieldSet("tags", name="Tags"),
+    )
+
+    class Meta:
+        model = MessageTemplate
+        fields = [
+            "name",
+            "slug",
+            "description",
+            "weight",
+            "event_type",
+            "granularity",
+            "subject_template",
+            "body_template",
+            "body_format",
+            "css_template",
+            "headers_template",
+            "include_ical",
+            "ical_template",
+            "contact_roles",
+            "contact_priorities",
+            "is_base_template",
+            "extends",
+            "tags",
+        ]
+        widgets = {
+            "body_template": forms.Textarea(attrs={"rows": 10, "class": "font-monospace"}),
+            "ical_template": forms.Textarea(attrs={"rows": 10, "class": "font-monospace"}),
+            "css_template": forms.Textarea(attrs={"rows": 5, "class": "font-monospace"}),
+            "subject_template": forms.TextInput(attrs={"class": "font-monospace"}),
+        }
+
+
+class MessageTemplateFilterForm(NetBoxModelFilterSetForm):
+    model = MessageTemplate
+
+    event_type = forms.MultipleChoiceField(
+        choices=MessageEventTypeChoices,
+        required=False,
+    )
+    granularity = forms.MultipleChoiceField(
+        choices=MessageGranularityChoices,
+        required=False,
+    )
+    body_format = forms.MultipleChoiceField(
+        choices=BodyFormatChoices,
+        required=False,
+    )
+    is_base_template = forms.NullBooleanField(
+        required=False,
+        widget=forms.Select(
+            choices=[
+                ("", "---------"),
+                (True, "Yes"),
+                (False, "No"),
+            ]
+        ),
+    )
+
+
+# PreparedMessage Forms
+class PreparedMessageForm(NetBoxModelForm):
+    """Form for creating/editing PreparedMessage records."""
+
+    from tenancy.models import Contact
+    from utilities.forms.fields import DynamicModelMultipleChoiceField
+
+    template = DynamicModelChoiceField(
+        queryset=MessageTemplate.objects.all(),
+    )
+    contacts = DynamicModelMultipleChoiceField(
+        queryset=Contact.objects.all(),
+        required=False,
+    )
+
+    fieldsets = (
+        FieldSet("template", "status", name="Message"),
+        FieldSet("contacts", name="Recipients"),
+        FieldSet("subject", "body_text", "body_html", name="Content"),
+        FieldSet("tags", name="Tags"),
+    )
+
+    class Meta:
+        model = PreparedMessage
+        fields = [
+            "template",
+            "status",
+            "contacts",
+            "subject",
+            "body_text",
+            "body_html",
+            "headers",
+            "css",
+            "ical_content",
+            "tags",
+        ]
+        widgets = {
+            "body_text": forms.Textarea(attrs={"rows": 10}),
+            "body_html": forms.Textarea(attrs={"rows": 10}),
+        }
+
+
+class PreparedMessageFilterForm(NetBoxModelFilterSetForm):
+    model = PreparedMessage
+
+    from utilities.forms.fields import DynamicModelMultipleChoiceField
+
+    status = forms.MultipleChoiceField(
+        choices=PreparedMessageStatusChoices,
+        required=False,
+    )
+    template_id = DynamicModelMultipleChoiceField(
+        queryset=MessageTemplate.objects.all(),
+        required=False,
+        label="Template",
+    )
