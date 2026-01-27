@@ -21,7 +21,7 @@ from rest_framework import exceptions
 
 from . import filtersets, forms, models, tables
 from .ical_utils import calculate_etag, generate_maintenance_ical
-from .models import Maintenance, MessageTemplate, Outage, PreparedMessage
+from .models import Maintenance, MessageTemplate, Outage, PreparedMessage, TemplateScope
 from .timeline_utils import build_timeline_item, get_timeline_changes
 
 
@@ -615,3 +615,37 @@ class PreparedMessageBulkDeleteView(generic.BulkDeleteView):
     queryset = PreparedMessage.objects.all()
     filterset = filtersets.PreparedMessageFilterSet
     table = tables.PreparedMessageTable
+
+
+# TemplateScope Views
+class TemplateScopeEditView(generic.ObjectEditView):
+    """Add or edit a TemplateScope."""
+
+    queryset = TemplateScope.objects.all()
+    form = forms.TemplateScopeForm
+    template_name = "notices/templatescope_edit.html"
+
+    def alter_object(self, obj, request, url_args, url_kwargs):
+        """Pre-populate template from URL parameter when adding new scope."""
+        if not obj.pk and "template" in request.GET:
+            template_id = request.GET.get("template")
+            obj.template = get_object_or_404(MessageTemplate, pk=template_id)
+        return obj
+
+    def get_return_url(self, request, obj=None):
+        """Return to the parent MessageTemplate after save."""
+        if obj and obj.template:
+            return obj.template.get_absolute_url()
+        return super().get_return_url(request, obj)
+
+
+class TemplateScopeDeleteView(generic.ObjectDeleteView):
+    """Delete a TemplateScope."""
+
+    queryset = TemplateScope.objects.all()
+
+    def get_return_url(self, request, obj=None):
+        """Return to the parent MessageTemplate after delete."""
+        if obj and obj.template:
+            return obj.template.get_absolute_url()
+        return super().get_return_url(request, obj)

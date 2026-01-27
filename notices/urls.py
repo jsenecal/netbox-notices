@@ -169,6 +169,22 @@ urlpatterns = (
         name="messagetemplate_changelog",
         kwargs={"model": models.MessageTemplate},
     ),
+    # TemplateScope URLs
+    path(
+        "template-scope/add/",
+        views.TemplateScopeEditView.as_view(),
+        name="templatescope_add",
+    ),
+    path(
+        "template-scope/<int:pk>/edit/",
+        views.TemplateScopeEditView.as_view(),
+        name="templatescope_edit",
+    ),
+    path(
+        "template-scope/<int:pk>/delete/",
+        views.TemplateScopeDeleteView.as_view(),
+        name="templatescope_delete",
+    ),
     # PreparedMessage URLs
     path(
         "prepared-messages/",

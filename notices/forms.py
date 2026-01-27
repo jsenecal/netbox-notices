@@ -20,7 +20,7 @@ from .choices import (
     PreparedMessageStatusChoices,
     TimeZoneChoices,
 )
-from .models import EventNotification, Impact, Maintenance, MessageTemplate, Outage, PreparedMessage
+from .models import EventNotification, Impact, Maintenance, MessageTemplate, Outage, PreparedMessage, TemplateScope
 from .utils import get_allowed_content_types
 
 
@@ -633,3 +633,130 @@ class PreparedMessageBulkEditForm(NetBoxModelForm):
         model = PreparedMessage
         fields = ["pk", "status"]
         nullable_fields = []
+
+
+# TemplateScope Forms
+class TemplateScopeForm(GenericForeignKeyFormMixin, forms.ModelForm):
+    """
+    Form for creating/editing TemplateScope records.
+    Uses GenericForeignKeyFormMixin for HTMX-based object picker.
+    """
+
+    # Register GenericFK field with mixin
+    generic_fk_fields = [
+        ("scope", "content_type", "object_id"),
+    ]
+
+    fieldsets = (
+        FieldSet("template", name="Template"),
+        FieldSet("content_type", "scope_choice", name="Scope Target"),
+        FieldSet("event_type", "event_status", name="Event Filtering"),
+        FieldSet("weight", name="Priority"),
+    )
+
+    class Meta:
+        model = TemplateScope
+        fields = [
+            "template",
+            "content_type",
+            "object_id",
+            "event_type",
+            "event_status",
+            "weight",
+        ]
+        widgets = {
+            "content_type": HTMXSelect(),
+            "object_id": forms.HiddenInput,
+            "template": forms.HiddenInput,
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Get allowed content types from plugin configuration + event types
+        allowed_types = get_allowed_content_types()
+        content_type_pks = []
+
+        # Add configured allowed types (circuits, devices, etc.)
+        for type_string in allowed_types:
+            try:
+                app_label, model = type_string.lower().split(".")
+                ct = ContentType.objects.filter(app_label=app_label, model=model).first()
+                if ct:
+                    content_type_pks.append(ct.pk)
+            except (ValueError, AttributeError):
+                continue
+
+        # Also add Provider content type (commonly used for scoping)
+        provider_ct = ContentType.objects.filter(app_label="circuits", model="provider").first()
+        if provider_ct:
+            content_type_pks.append(provider_ct.pk)
+
+        # Add event types (Maintenance, Outage)
+        event_cts = ContentType.objects.filter(app_label="notices", model__in=["maintenance", "outage"])
+        content_type_pks.extend([ct.pk for ct in event_cts])
+
+        self.fields["content_type"].queryset = ContentType.objects.filter(pk__in=content_type_pks)
+        self.fields["content_type"].label = "Scope Type"
+        self.fields["content_type"].help_text = "Type of object this scope applies to"
+
+        self.fields["object_id"].required = False
+
+        # Event filtering fields
+        self.fields["event_type"].required = False
+        self.fields["event_status"].required = False
+
+        # Determine content type from form state
+        ct_id = get_field_value(self, "content_type")
+        if ct_id:
+            self.init_generic_choice("scope", ct_id)
+
+    def init_generic_choice(self, field_prefix, content_type_id):
+        """Override to make the object field optional (null = all objects of type)."""
+        if isinstance(content_type_id, list):
+            content_type_id = content_type_id[0] if content_type_id else None
+
+        if not content_type_id:
+            return
+
+        initial = None
+        try:
+            content_type = ContentType.objects.get(pk=content_type_id)
+            model_class = content_type.model_class()
+
+            # Get initial value if editing existing object
+            object_id_field = "object_id"
+            object_id = get_field_value(self, object_id_field)
+
+            if isinstance(object_id, list):
+                object_id = object_id[0] if object_id else None
+
+            if object_id:
+                initial = model_class.objects.get(pk=object_id)
+
+            # Create dynamic choice field with model-specific queryset
+            choice_field_name = f"{field_prefix}_choice"
+            self.fields[choice_field_name] = DynamicModelChoiceField(
+                label=f"Specific {content_type.model.title()} (optional)",
+                queryset=model_class.objects.all(),
+                required=False,  # Optional - null means "all of this type"
+                initial=initial,
+                help_text="Leave blank to match all objects of this type",
+            )
+        except (ContentType.DoesNotExist, ObjectDoesNotExist):
+            pass
+
+    def clean(self):
+        """Extract ContentType and object ID from selected object."""
+        cleaned_data = super(forms.ModelForm, self).clean()
+
+        # Handle the optional scope_choice field
+        choice_object = cleaned_data.get("scope_choice")
+        if choice_object:
+            cleaned_data["content_type"] = ContentType.objects.get_for_model(choice_object)
+            cleaned_data["object_id"] = choice_object.id
+        else:
+            # Keep content_type but set object_id to None (matches all of type)
+            cleaned_data["object_id"] = None
+
+        return cleaned_data

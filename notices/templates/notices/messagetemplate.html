@@ -169,7 +169,14 @@
 <div class="row mb-3">
     <div class="col col-md-12">
         <div class="card">
-            <h5 class="card-header">Template Scopes</h5>
+            <h5 class="card-header d-flex justify-content-between align-items-center">
+                Template Scopes
+                {% if perms.notices.add_templatescope %}
+                <a href="{% url 'plugins:notices:templatescope_add' %}?template={{ object.pk }}&return_url={{ object.get_absolute_url }}" class="btn btn-sm btn-primary">
+                    <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Add Scope
+                </a>
+                {% endif %}
+            </h5>
             {% if scopes %}
                 <table class="table table-hover">
                     <thead>
@@ -179,6 +186,7 @@
                             <th>Event Type</th>
                             <th>Event Status</th>
                             <th>Weight</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -199,6 +207,18 @@
                             <td>{{ scope.event_type|default:"-" }}</td>
                             <td>{{ scope.event_status|default:"-" }}</td>
                             <td>{{ scope.weight }}</td>
+                            <td class="text-end">
+                                {% if perms.notices.change_templatescope %}
+                                <a href="{% url 'plugins:notices:templatescope_edit' pk=scope.pk %}?return_url={{ object.get_absolute_url }}" class="btn btn-sm btn-warning">
+                                    <span class="mdi mdi-pencil" aria-hidden="true"></span>
+                                </a>
+                                {% endif %}
+                                {% if perms.notices.delete_templatescope %}
+                                <a href="{% url 'plugins:notices:templatescope_delete' pk=scope.pk %}?return_url={{ object.get_absolute_url }}" class="btn btn-sm btn-danger">
+                                    <span class="mdi mdi-trash-can-outline" aria-hidden="true"></span>
+                                </a>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
