@@ -338,3 +338,6 @@ class SentNotification(PreparedNotification):
         proxy = True
         verbose_name = "Sent Notification"
         verbose_name_plural = "Sent Notifications"
+
+    def get_absolute_url(self):
+        return reverse("plugins:notices:sentnotification", args=[self.pk])

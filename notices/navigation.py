@@ -4,7 +4,7 @@ from netbox.plugins import PluginMenu, PluginMenuButton, PluginMenuItem
 notifications_items = [
     PluginMenuItem(
         link="plugins:notices:eventnotification_list",
-        link_text="Inbound",
+        link_text="Received",
         permissions=["notices.view_eventnotification"],
         buttons=[
             PluginMenuButton(

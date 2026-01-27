@@ -593,6 +593,19 @@ class SentNotificationListView(generic.ObjectListView):
     template_name = "notices/sent_list.html"
 
 
+class SentNotificationView(generic.ObjectView):
+    """Detail view for a sent notification."""
+
+    queryset = SentNotification.objects.select_related("template", "approved_by").prefetch_related("contacts")
+    template_name = "notices/preparednotification.html"
+
+    def get_extra_context(self, request, instance):
+        contacts = instance.contacts.all()
+        return {
+            "contacts": contacts,
+        }
+
+
 class PreparedNotificationView(generic.ObjectView):
     queryset = PreparedNotification.objects.select_related("template", "approved_by").prefetch_related("contacts")
 

@@ -191,6 +191,17 @@ urlpatterns = (
         views.SentNotificationListView.as_view(),
         name="sentnotification_list",
     ),
+    path(
+        "sent/<int:pk>/",
+        views.SentNotificationView.as_view(),
+        name="sentnotification",
+    ),
+    path(
+        "sent/<int:pk>/changelog/",
+        ObjectChangeLogView.as_view(),
+        name="sentnotification_changelog",
+        kwargs={"model": models.PreparedNotification},
+    ),
     # PreparedNotification URLs
     path(
         "prepared-notifications/",

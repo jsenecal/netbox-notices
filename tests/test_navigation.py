@@ -31,7 +31,7 @@ class TestNavigationStructure:
         # First group: Notifications
         notifications_group = menu.groups[0]
         assert notifications_group.label == "Notifications"
-        assert len(notifications_group.items) == 2  # Inbound and Outbound
+        assert len(notifications_group.items) == 2  # Received and Sent
 
         # Second group: Events
         events_group = menu.groups[1]
@@ -47,21 +47,21 @@ class TestNavigationStructure:
         """Test correct number of menu items in each group"""
         from notices.navigation import events_items, notifications_items
 
-        assert len(notifications_items) == 2  # Inbound and Outbound
+        assert len(notifications_items) == 2  # Received and Sent
         assert len(events_items) == 3
 
-    def test_inbound_menu_item(self):
-        """Test Inbound (EventNotifications) menu item configuration"""
+    def test_received_menu_item(self):
+        """Test Received (EventNotifications) menu item configuration"""
         from notices.navigation import notifications_items
 
-        inbound_item = notifications_items[0]
-        assert isinstance(inbound_item, PluginMenuItem)
-        assert inbound_item.link == "plugins:notices:eventnotification_list"
-        assert inbound_item.link_text == "Inbound"
-        assert len(inbound_item.buttons) == 1
+        received_item = notifications_items[0]
+        assert isinstance(received_item, PluginMenuItem)
+        assert received_item.link == "plugins:notices:eventnotification_list"
+        assert received_item.link_text == "Received"
+        assert len(received_item.buttons) == 1
 
         # Check the add button
-        add_button = inbound_item.buttons[0]
+        add_button = received_item.buttons[0]
         assert isinstance(add_button, PluginMenuButton)
         assert add_button.link == "plugins:notices:eventnotification_add"
         assert add_button.title == "Add"
@@ -164,7 +164,7 @@ class TestNavigationStructure:
         from notices.navigation import events_items, notifications_items
 
         # Notifications group order
-        assert notifications_items[0].link_text == "Inbound"
+        assert notifications_items[0].link_text == "Received"
         assert notifications_items[1].link_text == "Sent"
 
         # Events group order
