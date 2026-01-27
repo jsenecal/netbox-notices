@@ -6,14 +6,14 @@ from rest_framework import serializers
 from tenancy.api.serializers import ContactRoleSerializer, ContactSerializer
 from tenancy.models import Contact
 
-from notices.models import MessageTemplate, PreparedMessage, TemplateScope
-from notices.validators import PreparedMessageStateMachine
+from notices.models import NotificationTemplate, PreparedNotification, TemplateScope
+from notices.validators import PreparedNotificationStateMachine
 
 __all__ = (
-    "MessageTemplateSerializer",
-    "NestedMessageTemplateSerializer",
+    "NotificationTemplateSerializer",
+    "NestedNotificationTemplateSerializer",
     "TemplateScopeSerializer",
-    "PreparedMessageSerializer",
+    "PreparedNotificationSerializer",
 )
 
 
@@ -45,22 +45,22 @@ class TemplateScopeSerializer(serializers.ModelSerializer):
         return f"All {obj.content_type.model}s"
 
 
-class MessageTemplateSerializer(NetBoxModelSerializer):
-    """Serializer for MessageTemplate."""
+class NotificationTemplateSerializer(NetBoxModelSerializer):
+    """Serializer for NotificationTemplate."""
 
     url = serializers.HyperlinkedIdentityField(
-        view_name="plugins-api:notices-api:messagetemplate-detail",
+        view_name="plugins-api:notices-api:notificationtemplate-detail",
     )
     scopes = TemplateScopeSerializer(many=True, required=False)
     contact_roles = ContactRoleSerializer(many=True, required=False, nested=True)
     extends = serializers.PrimaryKeyRelatedField(
-        queryset=MessageTemplate.objects.all(),
+        queryset=NotificationTemplate.objects.all(),
         required=False,
         allow_null=True,
     )
 
     class Meta:
-        model = MessageTemplate
+        model = NotificationTemplate
         fields = [
             "id",
             "url",
@@ -133,27 +133,27 @@ class MessageTemplateSerializer(NetBoxModelSerializer):
         return instance
 
 
-class NestedMessageTemplateSerializer(WritableNestedSerializer):
-    """Nested serializer for MessageTemplate."""
+class NestedNotificationTemplateSerializer(WritableNestedSerializer):
+    """Nested serializer for NotificationTemplate."""
 
     url = serializers.HyperlinkedIdentityField(
-        view_name="plugins-api:notices-api:messagetemplate-detail",
+        view_name="plugins-api:notices-api:notificationtemplate-detail",
     )
 
     class Meta:
-        model = MessageTemplate
+        model = NotificationTemplate
         fields = ["id", "url", "display", "name", "slug"]
 
 
-class PreparedMessageSerializer(NetBoxModelSerializer):
-    """Serializer for PreparedMessage."""
+class PreparedNotificationSerializer(NetBoxModelSerializer):
+    """Serializer for PreparedNotification."""
 
     url = serializers.HyperlinkedIdentityField(
-        view_name="plugins-api:notices-api:preparedmessage-detail",
+        view_name="plugins-api:notices-api:preparednotification-detail",
     )
-    template = NestedMessageTemplateSerializer(read_only=True)
+    template = NestedNotificationTemplateSerializer(read_only=True)
     template_id = serializers.PrimaryKeyRelatedField(
-        queryset=MessageTemplate.objects.all(),
+        queryset=NotificationTemplate.objects.all(),
         source="template",
         write_only=True,
     )
@@ -176,7 +176,7 @@ class PreparedMessageSerializer(NetBoxModelSerializer):
     )
 
     class Meta:
-        model = PreparedMessage
+        model = PreparedNotification
         fields = [
             "id",
             "url",
@@ -221,7 +221,7 @@ class PreparedMessageSerializer(NetBoxModelSerializer):
         if self.instance and "status" in data:
             new_status = data["status"]
             if new_status != self.instance.status:
-                sm = PreparedMessageStateMachine(self.instance)
+                sm = PreparedNotificationStateMachine(self.instance)
                 if not sm.can_transition_to(new_status):
                     valid = sm.get_valid_transitions()
                     raise serializers.ValidationError(
@@ -242,7 +242,7 @@ class PreparedMessageSerializer(NetBoxModelSerializer):
             request = self.context.get("request")
             user = request.user if request else None
 
-            sm = PreparedMessageStateMachine(instance, user=user)
+            sm = PreparedNotificationStateMachine(instance, user=user)
             try:
                 sm.transition_to(new_status, message_text=message_text, timestamp=timestamp)
             except DjangoValidationError as e:

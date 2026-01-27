@@ -12,19 +12,20 @@ from ..choices import (
     ContactPriorityChoices,
     MessageEventTypeChoices,
     MessageGranularityChoices,
-    PreparedMessageStatusChoices,
+    PreparedNotificationStatusChoices,
 )
 
 User = get_user_model()
 
 __all__ = (
-    "MessageTemplate",
+    "NotificationTemplate",
     "TemplateScope",
-    "PreparedMessage",
+    "PreparedNotification",
+    "SentNotification",
 )
 
 
-class MessageTemplate(NetBoxModel):
+class NotificationTemplate(NetBoxModel):
     """
     A Jinja template for generating outgoing notifications.
 
@@ -54,7 +55,7 @@ class MessageTemplate(NetBoxModel):
         max_length=20,
         choices=MessageGranularityChoices,
         default=MessageGranularityChoices.PER_TENANT,
-        help_text="How messages are grouped when generated from events.",
+        help_text="How notifications are grouped when generated from events.",
     )
 
     # Content templates
@@ -62,7 +63,7 @@ class MessageTemplate(NetBoxModel):
         help_text="Jinja template for the email subject line.",
     )
     body_template = models.TextField(
-        help_text="Jinja template for the message body. Supports {% block %} inheritance.",
+        help_text="Jinja template for the notification body. Supports {% block %} inheritance.",
     )
     body_format = models.CharField(
         max_length=20,
@@ -94,7 +95,7 @@ class MessageTemplate(NetBoxModel):
     contact_roles = models.ManyToManyField(
         to=ContactRole,
         blank=True,
-        related_name="message_templates",
+        related_name="notification_templates",
         help_text="Contact roles to include when discovering recipients.",
     )
     contact_priorities = ArrayField(
@@ -126,26 +127,26 @@ class MessageTemplate(NetBoxModel):
 
     class Meta:
         ordering = ["name"]
-        verbose_name = "Message Template"
-        verbose_name_plural = "Message Templates"
+        verbose_name = "Notification Template"
+        verbose_name_plural = "Notification Templates"
 
     def __str__(self):
         return self.name
 
     def get_absolute_url(self):
-        return reverse("plugins:notices:messagetemplate", args=[self.pk])
+        return reverse("plugins:notices:notificationtemplate", args=[self.pk])
 
 
 class TemplateScope(models.Model):
     """
-    Links a MessageTemplate to NetBox objects for Config Context-like matching.
+    Links a NotificationTemplate to NetBox objects for Config Context-like matching.
 
-    When generating messages, templates with matching scopes are selected
+    When generating notifications, templates with matching scopes are selected
     and merged by weight.
     """
 
     template = models.ForeignKey(
-        to=MessageTemplate,
+        to=NotificationTemplate,
         on_delete=models.CASCADE,
         related_name="scopes",
     )
@@ -199,9 +200,9 @@ class TemplateScope(models.Model):
         return f"{self.template.name} → {obj_str}"
 
 
-class PreparedMessage(NetBoxModel):
+class PreparedNotification(NetBoxModel):
     """
-    A rendered message ready for delivery.
+    A rendered notification ready for delivery.
 
     Stores a snapshot of rendered content and recipients at generation time.
     Status transitions are validated via state machine.
@@ -209,9 +210,9 @@ class PreparedMessage(NetBoxModel):
 
     # Source template
     template = models.ForeignKey(
-        to=MessageTemplate,
+        to=NotificationTemplate,
         on_delete=models.PROTECT,
-        related_name="prepared_messages",
+        related_name="prepared_notifications",
     )
 
     # Linked event (optional)
@@ -231,16 +232,16 @@ class PreparedMessage(NetBoxModel):
     # Status
     status = models.CharField(
         max_length=20,
-        choices=PreparedMessageStatusChoices,
-        default=PreparedMessageStatusChoices.DRAFT,
+        choices=PreparedNotificationStatusChoices,
+        default=PreparedNotificationStatusChoices.DRAFT,
     )
 
     # Recipients
     contacts = models.ManyToManyField(
         to=Contact,
         blank=True,
-        related_name="prepared_messages",
-        help_text="Contacts to receive this message.",
+        related_name="prepared_notifications",
+        help_text="Contacts to receive this notification.",
     )
     recipients = models.JSONField(
         default=list,
@@ -294,14 +295,14 @@ class PreparedMessage(NetBoxModel):
 
     class Meta:
         ordering = ["-created"]
-        verbose_name = "Prepared Message"
-        verbose_name_plural = "Prepared Messages"
+        verbose_name = "Prepared Notification"
+        verbose_name_plural = "Prepared Notifications"
 
     def __str__(self):
         return f"{self.subject[:50]}..." if len(self.subject) > 50 else self.subject
 
     def get_absolute_url(self):
-        return reverse("plugins:notices:preparedmessage", args=[self.pk])
+        return reverse("plugins:notices:preparednotification", args=[self.pk])
 
     @property
     def event_type_name(self):
@@ -309,3 +310,30 @@ class PreparedMessage(NetBoxModel):
         if self.event_content_type:
             return self.event_content_type.model
         return None
+
+
+class SentNotificationManager(models.Manager):
+    """Manager that filters to only sent/delivered notifications."""
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                status__in=[
+                    PreparedNotificationStatusChoices.SENT,
+                    PreparedNotificationStatusChoices.DELIVERED,
+                ]
+            )
+        )
+
+
+class SentNotification(PreparedNotification):
+    """Proxy model for sent/delivered notifications."""
+
+    objects = SentNotificationManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = "Sent Notification"
+        verbose_name_plural = "Sent Notifications"

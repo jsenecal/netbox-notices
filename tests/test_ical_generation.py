@@ -17,7 +17,7 @@ SIMPLE_TEST_TEMPLATE = "UID:{{ maintenance.pk }}@netbox"
 
 
 class MockTemplate:
-    """Mock MessageTemplate for testing."""
+    """Mock NotificationTemplate for testing."""
 
     def __init__(
         self,
@@ -533,9 +533,9 @@ class TestICalGenerationServiceWithRealModels:
     def test_with_real_maintenance_model(self, maintenance):
         """Test with real Maintenance model instance."""
         from notices.choices import MessageEventTypeChoices
-        from notices.models import MessageTemplate
+        from notices.models import NotificationTemplate
 
-        template = MessageTemplate(
+        template = NotificationTemplate(
             name="Test",
             slug="test-ical",
             event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -554,9 +554,9 @@ class TestICalGenerationServiceWithRealModels:
     def test_with_real_tenant(self, maintenance, tenant):
         """Test with real Tenant model instance."""
         from notices.choices import MessageEventTypeChoices
-        from notices.models import MessageTemplate
+        from notices.models import NotificationTemplate
 
-        template = MessageTemplate(
+        template = NotificationTemplate(
             name="Test",
             slug="test-ical-tenant",
             event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -574,9 +574,9 @@ class TestICalGenerationServiceWithRealModels:
     def test_generate_ical_with_real_models(self, maintenance):
         """Test generate_ical convenience function with real models."""
         from notices.choices import MessageEventTypeChoices
-        from notices.models import MessageTemplate
+        from notices.models import NotificationTemplate
 
-        template = MessageTemplate(
+        template = NotificationTemplate(
             name="Test",
             slug="test-gen-ical",
             event_type=MessageEventTypeChoices.MAINTENANCE,

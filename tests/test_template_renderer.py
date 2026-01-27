@@ -118,9 +118,9 @@ class TestTemplateRenderer:
     def test_build_context_minimal(self):
         """Test building minimal context."""
         from notices.choices import MessageEventTypeChoices
-        from notices.models import MessageTemplate
+        from notices.models import NotificationTemplate
 
-        template = MessageTemplate(
+        template = NotificationTemplate(
             name="Test",
             slug="test",
             event_type=MessageEventTypeChoices.NONE,
@@ -143,9 +143,9 @@ class TestTemplateRendererWithEvent:
     def test_build_context_with_maintenance(self, maintenance):
         """Test building context with maintenance event."""
         from notices.choices import MessageEventTypeChoices
-        from notices.models import MessageTemplate
+        from notices.models import NotificationTemplate
 
-        template = MessageTemplate(
+        template = NotificationTemplate(
             name="Test",
             slug="test",
             event_type=MessageEventTypeChoices.MAINTENANCE,

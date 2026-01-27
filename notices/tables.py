@@ -1,7 +1,7 @@
 import django_tables2 as tables
 from netbox.tables import NetBoxTable, columns
 
-from .models import EventNotification, Impact, Maintenance, MessageTemplate, Outage, PreparedMessage
+from .models import EventNotification, Impact, Maintenance, NotificationTemplate, Outage, PreparedNotification
 
 
 class MaintenanceTable(NetBoxTable):
@@ -268,8 +268,8 @@ class EventNotificationTable(NetBoxTable):
         )
 
 
-class MessageTemplateTable(NetBoxTable):
-    """Table for displaying MessageTemplate records."""
+class NotificationTemplateTable(NetBoxTable):
+    """Table for displaying NotificationTemplate records."""
 
     name = tables.Column(linkify=True)
     event_type = columns.ChoiceFieldColumn()
@@ -280,7 +280,7 @@ class MessageTemplateTable(NetBoxTable):
     actions = columns.ActionsColumn()
 
     class Meta(NetBoxTable.Meta):
-        model = MessageTemplate
+        model = NotificationTemplate
         fields = (
             "pk",
             "id",
@@ -304,8 +304,8 @@ class MessageTemplateTable(NetBoxTable):
         )
 
 
-class PreparedMessageTable(NetBoxTable):
-    """Table for displaying PreparedMessage records."""
+class PreparedNotificationTable(NetBoxTable):
+    """Table for displaying PreparedNotification records."""
 
     subject = tables.Column(linkify=True)
     template = tables.Column(linkify=True)
@@ -316,7 +316,7 @@ class PreparedMessageTable(NetBoxTable):
     actions = columns.ActionsColumn()
 
     class Meta(NetBoxTable.Meta):
-        model = PreparedMessage
+        model = PreparedNotification
         fields = (
             "pk",
             "id",

@@ -6,15 +6,15 @@ from utilities.filters import ContentTypeFilter
 from .choices import (
     MessageEventTypeChoices,
     MessageGranularityChoices,
-    PreparedMessageStatusChoices,
+    PreparedNotificationStatusChoices,
 )
 from .models import (
     EventNotification,
     Impact,
     Maintenance,
-    MessageTemplate,
+    NotificationTemplate,
     Outage,
-    PreparedMessage,
+    PreparedNotification,
 )
 
 
@@ -157,8 +157,8 @@ class EventNotificationFilterSet(NetBoxModelFilterSet):
         )
 
 
-class MessageTemplateFilterSet(NetBoxModelFilterSet):
-    """Filterset for MessageTemplate."""
+class NotificationTemplateFilterSet(NetBoxModelFilterSet):
+    """Filterset for NotificationTemplate."""
 
     event_type = django_filters.MultipleChoiceFilter(
         choices=MessageEventTypeChoices,
@@ -173,7 +173,7 @@ class MessageTemplateFilterSet(NetBoxModelFilterSet):
     )
 
     class Meta:
-        model = MessageTemplate
+        model = NotificationTemplate
         fields = ["id", "name", "slug", "event_type", "granularity", "is_base_template"]
 
     def search(self, queryset, name, value):
@@ -182,14 +182,14 @@ class MessageTemplateFilterSet(NetBoxModelFilterSet):
         return queryset.filter(Q(name__icontains=value) | Q(slug__icontains=value) | Q(description__icontains=value))
 
 
-class PreparedMessageFilterSet(NetBoxModelFilterSet):
-    """Filterset for PreparedMessage."""
+class PreparedNotificationFilterSet(NetBoxModelFilterSet):
+    """Filterset for PreparedNotification."""
 
     status = django_filters.MultipleChoiceFilter(
-        choices=PreparedMessageStatusChoices,
+        choices=PreparedNotificationStatusChoices,
     )
     template_id = django_filters.ModelMultipleChoiceFilter(
-        queryset=MessageTemplate.objects.all(),
+        queryset=NotificationTemplate.objects.all(),
         field_name="template",
     )
     q = django_filters.CharFilter(
@@ -198,7 +198,7 @@ class PreparedMessageFilterSet(NetBoxModelFilterSet):
     )
 
     class Meta:
-        model = PreparedMessage
+        model = PreparedNotification
         fields = ["id", "status", "template_id"]
 
     def search(self, queryset, name, value):

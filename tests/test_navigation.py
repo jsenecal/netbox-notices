@@ -67,16 +67,16 @@ class TestNavigationStructure:
         assert add_button.title == "Add"
         assert add_button.icon_class == "mdi mdi-plus-thick"
 
-    def test_outbound_menu_item(self):
-        """Test Outbound (sent/delivered messages) menu item configuration"""
+    def test_sent_menu_item(self):
+        """Test Sent (sent/delivered notifications) menu item configuration"""
         from notices.navigation import notifications_items
 
-        outbound_item = notifications_items[1]
-        assert isinstance(outbound_item, PluginMenuItem)
-        assert outbound_item.link == "plugins:notices:outbound_list"
-        assert outbound_item.link_text == "Outbound"
-        # Outbound is view-only (no add button - messages are created via workflow)
-        assert outbound_item.buttons == []
+        sent_item = notifications_items[1]
+        assert isinstance(sent_item, PluginMenuItem)
+        assert sent_item.link == "plugins:notices:sentnotification_list"
+        assert sent_item.link_text == "Sent"
+        # Sent is view-only (no add button - notifications are created via workflow)
+        assert sent_item.buttons == []
 
     def test_maintenance_menu_item(self):
         """Test Planned Maintenances menu item configuration"""
@@ -165,7 +165,7 @@ class TestNavigationStructure:
 
         # Notifications group order
         assert notifications_items[0].link_text == "Inbound"
-        assert notifications_items[1].link_text == "Outbound"
+        assert notifications_items[1].link_text == "Sent"
 
         # Events group order
         assert events_items[0].link_text == "Planned Maintenances"
@@ -212,28 +212,28 @@ class TestNavigationStructure:
 
         assert len(messaging_items) == 2
 
-        # Message Templates item
+        # Notification Templates item
         templates_item = messaging_items[0]
         assert isinstance(templates_item, PluginMenuItem)
-        assert templates_item.link == "plugins:notices:messagetemplate_list"
-        assert templates_item.link_text == "Message Templates"
+        assert templates_item.link == "plugins:notices:notificationtemplate_list"
+        assert templates_item.link_text == "Notification Templates"
         assert len(templates_item.buttons) == 1
 
         add_button = templates_item.buttons[0]
         assert isinstance(add_button, PluginMenuButton)
-        assert add_button.link == "plugins:notices:messagetemplate_add"
+        assert add_button.link == "plugins:notices:notificationtemplate_add"
         assert add_button.title == "Add"
         assert add_button.icon_class == "mdi mdi-plus-thick"
 
-        # Prepared Messages item
-        messages_item = messaging_items[1]
-        assert isinstance(messages_item, PluginMenuItem)
-        assert messages_item.link == "plugins:notices:preparedmessage_list"
-        assert messages_item.link_text == "Prepared Messages"
-        assert len(messages_item.buttons) == 1
+        # Prepared Notifications item
+        notifications_item = messaging_items[1]
+        assert isinstance(notifications_item, PluginMenuItem)
+        assert notifications_item.link == "plugins:notices:preparednotification_list"
+        assert notifications_item.link_text == "Prepared Notifications"
+        assert len(notifications_item.buttons) == 1
 
-        add_button = messages_item.buttons[0]
+        add_button = notifications_item.buttons[0]
         assert isinstance(add_button, PluginMenuButton)
-        assert add_button.link == "plugins:notices:preparedmessage_add"
+        assert add_button.link == "plugins:notices:preparednotification_add"
         assert add_button.title == "Add"
         assert add_button.icon_class == "mdi mdi-plus-thick"

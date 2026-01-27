@@ -1,12 +1,12 @@
-"""Tests for MessageTemplate and PreparedMessage API endpoints."""
+"""Tests for NotificationTemplate and PreparedNotification API endpoints."""
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from notices.choices import PreparedMessageStatusChoices
-from notices.models import MessageTemplate, PreparedMessage
+from notices.choices import PreparedNotificationStatusChoices
+from notices.models import NotificationTemplate, PreparedNotification
 
 User = get_user_model()
 
@@ -30,9 +30,9 @@ def api_client(superuser):
 
 
 @pytest.fixture
-def message_template():
-    """Create a test message template."""
-    return MessageTemplate.objects.create(
+def notification_template():
+    """Create a test notification template."""
+    return NotificationTemplate.objects.create(
         name="Test Template",
         slug="test-template",
         event_type="maintenance",
@@ -45,37 +45,37 @@ def message_template():
 
 
 @pytest.fixture
-def prepared_message(message_template, contact):
-    """Create a test prepared message."""
-    msg = PreparedMessage.objects.create(
-        template=message_template,
-        status=PreparedMessageStatusChoices.DRAFT,
+def prepared_notification(notification_template, contact):
+    """Create a test prepared notification."""
+    notification = PreparedNotification.objects.create(
+        template=notification_template,
+        status=PreparedNotificationStatusChoices.DRAFT,
         subject="Test Subject",
         body_text="Test body content",
     )
-    msg.contacts.add(contact)
-    return msg
+    notification.contacts.add(contact)
+    return notification
 
 
 @pytest.mark.django_db
-class TestMessageTemplateAPI:
-    """Test MessageTemplate API endpoints."""
+class TestNotificationTemplateAPI:
+    """Test NotificationTemplate API endpoints."""
 
-    def test_list_templates(self, api_client, message_template):
-        """Test listing message templates."""
-        response = api_client.get("/api/plugins/notices/message-templates/")
+    def test_list_templates(self, api_client, notification_template):
+        """Test listing notification templates."""
+        response = api_client.get("/api/plugins/notices/notification-templates/")
         assert response.status_code == 200
         assert len(response.data["results"]) >= 1
 
-    def test_get_template(self, api_client, message_template):
+    def test_get_template(self, api_client, notification_template):
         """Test retrieving a single template."""
-        response = api_client.get(f"/api/plugins/notices/message-templates/{message_template.pk}/")
+        response = api_client.get(f"/api/plugins/notices/notification-templates/{notification_template.pk}/")
         assert response.status_code == 200
         assert response.data["name"] == "Test Template"
         assert response.data["slug"] == "test-template"
 
     def test_create_template(self, api_client):
-        """Test creating a message template."""
+        """Test creating a notification template."""
         data = {
             "name": "New Template",
             "slug": "new-template",
@@ -86,97 +86,97 @@ class TestMessageTemplateAPI:
             "body_format": "markdown",
             "weight": 500,
         }
-        response = api_client.post("/api/plugins/notices/message-templates/", data, format="json")
+        response = api_client.post("/api/plugins/notices/notification-templates/", data, format="json")
         assert response.status_code == 201
         assert response.data["name"] == "New Template"
-        assert MessageTemplate.objects.filter(slug="new-template").exists()
+        assert NotificationTemplate.objects.filter(slug="new-template").exists()
 
-    def test_update_template(self, api_client, message_template):
-        """Test updating a message template."""
+    def test_update_template(self, api_client, notification_template):
+        """Test updating a notification template."""
         data = {"name": "Updated Template"}
         response = api_client.patch(
-            f"/api/plugins/notices/message-templates/{message_template.pk}/",
+            f"/api/plugins/notices/notification-templates/{notification_template.pk}/",
             data,
             format="json",
         )
         assert response.status_code == 200
-        message_template.refresh_from_db()
-        assert message_template.name == "Updated Template"
+        notification_template.refresh_from_db()
+        assert notification_template.name == "Updated Template"
 
-    def test_delete_template(self, api_client, message_template):
-        """Test deleting a message template."""
-        pk = message_template.pk
-        response = api_client.delete(f"/api/plugins/notices/message-templates/{pk}/")
+    def test_delete_template(self, api_client, notification_template):
+        """Test deleting a notification template."""
+        pk = notification_template.pk
+        response = api_client.delete(f"/api/plugins/notices/notification-templates/{pk}/")
         assert response.status_code == 204
-        assert not MessageTemplate.objects.filter(pk=pk).exists()
+        assert not NotificationTemplate.objects.filter(pk=pk).exists()
 
 
 @pytest.mark.django_db
-class TestPreparedMessageAPI:
-    """Test PreparedMessage API endpoints."""
+class TestPreparedNotificationAPI:
+    """Test PreparedNotification API endpoints."""
 
-    def test_list_messages(self, api_client, prepared_message):
-        """Test listing prepared messages."""
-        response = api_client.get("/api/plugins/notices/prepared-messages/")
+    def test_list_notifications(self, api_client, prepared_notification):
+        """Test listing prepared notifications."""
+        response = api_client.get("/api/plugins/notices/prepared-notifications/")
         assert response.status_code == 200
         assert len(response.data["results"]) >= 1
 
-    def test_filter_by_status(self, api_client, prepared_message):
-        """Test filtering prepared messages by status."""
-        response = api_client.get("/api/plugins/notices/prepared-messages/?status=draft")
+    def test_filter_by_status(self, api_client, prepared_notification):
+        """Test filtering prepared notifications by status."""
+        response = api_client.get("/api/plugins/notices/prepared-notifications/?status=draft")
         assert response.status_code == 200
-        for msg in response.data["results"]:
-            assert msg["status"] == "draft"
+        for notification in response.data["results"]:
+            assert notification["status"] == "draft"
 
-    def test_get_message(self, api_client, prepared_message):
-        """Test retrieving a single prepared message."""
-        response = api_client.get(f"/api/plugins/notices/prepared-messages/{prepared_message.pk}/")
+    def test_get_notification(self, api_client, prepared_notification):
+        """Test retrieving a single prepared notification."""
+        response = api_client.get(f"/api/plugins/notices/prepared-notifications/{prepared_notification.pk}/")
         assert response.status_code == 200
         assert response.data["subject"] == "Test Subject"
         assert response.data["status"] == "draft"
 
-    def test_create_message(self, api_client, message_template, contact):
-        """Test creating a prepared message."""
+    def test_create_notification(self, api_client, notification_template, contact):
+        """Test creating a prepared notification."""
         data = {
-            "template_id": message_template.pk,
-            "subject": "New Message Subject",
-            "body_text": "New message body",
+            "template_id": notification_template.pk,
+            "subject": "New Notification Subject",
+            "body_text": "New notification body",
             "contact_ids": [contact.pk],
         }
-        response = api_client.post("/api/plugins/notices/prepared-messages/", data, format="json")
+        response = api_client.post("/api/plugins/notices/prepared-notifications/", data, format="json")
         assert response.status_code == 201
-        assert response.data["subject"] == "New Message Subject"
+        assert response.data["subject"] == "New Notification Subject"
         assert response.data["status"] == "draft"
 
-    def test_update_message_status_to_ready(self, api_client, prepared_message, superuser):
-        """Test transitioning message status from draft to ready."""
+    def test_update_notification_status_to_ready(self, api_client, prepared_notification, superuser):
+        """Test transitioning notification status from draft to ready."""
         response = api_client.patch(
-            f"/api/plugins/notices/prepared-messages/{prepared_message.pk}/",
+            f"/api/plugins/notices/prepared-notifications/{prepared_notification.pk}/",
             {"status": "ready", "message": "Approved for delivery"},
             format="json",
         )
         assert response.status_code == 200
-        prepared_message.refresh_from_db()
-        assert prepared_message.status == PreparedMessageStatusChoices.READY
-        assert prepared_message.approved_by == superuser
-        assert prepared_message.approved_at is not None
+        prepared_notification.refresh_from_db()
+        assert prepared_notification.status == PreparedNotificationStatusChoices.READY
+        assert prepared_notification.approved_by == superuser
+        assert prepared_notification.approved_at is not None
 
-    def test_invalid_status_transition(self, api_client, prepared_message):
+    def test_invalid_status_transition(self, api_client, prepared_notification):
         """Test that invalid status transitions are rejected."""
         # Try to go directly from draft to sent (invalid)
         response = api_client.patch(
-            f"/api/plugins/notices/prepared-messages/{prepared_message.pk}/",
+            f"/api/plugins/notices/prepared-notifications/{prepared_notification.pk}/",
             {"status": "sent"},
             format="json",
         )
         assert response.status_code == 400
         assert "status" in response.data
 
-    def test_status_transition_with_timestamp(self, api_client, prepared_message, superuser):
+    def test_status_transition_with_timestamp(self, api_client, prepared_notification, superuser):
         """Test status transition with custom timestamp."""
         # First transition to ready
         api_client.patch(
-            f"/api/plugins/notices/prepared-messages/{prepared_message.pk}/",
+            f"/api/plugins/notices/prepared-notifications/{prepared_notification.pk}/",
             {"status": "ready"},
             format="json",
         )
@@ -184,20 +184,20 @@ class TestPreparedMessageAPI:
         # Then transition to sent with a custom timestamp
         custom_time = timezone.now().isoformat()
         response = api_client.patch(
-            f"/api/plugins/notices/prepared-messages/{prepared_message.pk}/",
+            f"/api/plugins/notices/prepared-notifications/{prepared_notification.pk}/",
             {"status": "sent", "timestamp": custom_time, "message": "Sent via batch"},
             format="json",
         )
         assert response.status_code == 200
-        prepared_message.refresh_from_db()
-        assert prepared_message.status == PreparedMessageStatusChoices.SENT
-        assert prepared_message.sent_at is not None
+        prepared_notification.refresh_from_db()
+        assert prepared_notification.status == PreparedNotificationStatusChoices.SENT
+        assert prepared_notification.sent_at is not None
 
-    def test_future_timestamp_rejected(self, api_client, prepared_message):
+    def test_future_timestamp_rejected(self, api_client, prepared_notification):
         """Test that future timestamps are rejected."""
         # First transition to ready
         api_client.patch(
-            f"/api/plugins/notices/prepared-messages/{prepared_message.pk}/",
+            f"/api/plugins/notices/prepared-notifications/{prepared_notification.pk}/",
             {"status": "ready"},
             format="json",
         )
@@ -207,60 +207,60 @@ class TestPreparedMessageAPI:
 
         future_time = (timezone.now() + timedelta(hours=1)).isoformat()
         response = api_client.patch(
-            f"/api/plugins/notices/prepared-messages/{prepared_message.pk}/",
+            f"/api/plugins/notices/prepared-notifications/{prepared_notification.pk}/",
             {"status": "sent", "timestamp": future_time},
             format="json",
         )
         assert response.status_code == 400
 
-    def test_journal_entry_created(self, api_client, prepared_message):
+    def test_journal_entry_created(self, api_client, prepared_notification):
         """Test that journal entry is created when message is provided."""
         from extras.models import JournalEntry
 
         initial_count = JournalEntry.objects.filter(
-            assigned_object_id=prepared_message.pk,
+            assigned_object_id=prepared_notification.pk,
         ).count()
 
         api_client.patch(
-            f"/api/plugins/notices/prepared-messages/{prepared_message.pk}/",
+            f"/api/plugins/notices/prepared-notifications/{prepared_notification.pk}/",
             {"status": "ready", "message": "Test journal entry"},
             format="json",
         )
 
         new_count = JournalEntry.objects.filter(
-            assigned_object_id=prepared_message.pk,
+            assigned_object_id=prepared_notification.pk,
         ).count()
         assert new_count == initial_count + 1
 
-    def test_delete_message(self, api_client, prepared_message):
-        """Test deleting a prepared message."""
-        pk = prepared_message.pk
-        response = api_client.delete(f"/api/plugins/notices/prepared-messages/{pk}/")
+    def test_delete_notification(self, api_client, prepared_notification):
+        """Test deleting a prepared notification."""
+        pk = prepared_notification.pk
+        response = api_client.delete(f"/api/plugins/notices/prepared-notifications/{pk}/")
         assert response.status_code == 204
-        assert not PreparedMessage.objects.filter(pk=pk).exists()
+        assert not PreparedNotification.objects.filter(pk=pk).exists()
 
-    def test_recipients_readonly(self, api_client, prepared_message):
+    def test_recipients_readonly(self, api_client, prepared_notification):
         """Test that recipients field is read-only."""
         response = api_client.patch(
-            f"/api/plugins/notices/prepared-messages/{prepared_message.pk}/",
+            f"/api/plugins/notices/prepared-notifications/{prepared_notification.pk}/",
             {"recipients": [{"email": "hacker@evil.com", "name": "Hacker"}]},
             format="json",
         )
         # Should succeed but recipients should not be modified
         assert response.status_code == 200
-        prepared_message.refresh_from_db()
+        prepared_notification.refresh_from_db()
         # Recipients are only populated during ready transition, not directly settable
-        assert prepared_message.recipients == []
+        assert prepared_notification.recipients == []
 
 
 @pytest.mark.django_db
-class TestPreparedMessageFullWorkflow:
-    """Test complete PreparedMessage workflow through API."""
+class TestPreparedNotificationFullWorkflow:
+    """Test complete PreparedNotification workflow through API."""
 
-    def test_full_delivery_workflow(self, api_client, prepared_message):
+    def test_full_delivery_workflow(self, api_client, prepared_notification):
         """Test the full workflow: draft -> ready -> sent -> delivered."""
-        pk = prepared_message.pk
-        url = f"/api/plugins/notices/prepared-messages/{pk}/"
+        pk = prepared_notification.pk
+        url = f"/api/plugins/notices/prepared-notifications/{pk}/"
 
         # Draft -> Ready
         response = api_client.patch(url, {"status": "ready", "message": "Approved"}, format="json")
@@ -278,15 +278,15 @@ class TestPreparedMessageFullWorkflow:
         assert response.data["status"] == "delivered"
 
         # Verify final state
-        prepared_message.refresh_from_db()
-        assert prepared_message.status == PreparedMessageStatusChoices.DELIVERED
-        assert prepared_message.sent_at is not None
-        assert prepared_message.delivered_at is not None
+        prepared_notification.refresh_from_db()
+        assert prepared_notification.status == PreparedNotificationStatusChoices.DELIVERED
+        assert prepared_notification.sent_at is not None
+        assert prepared_notification.delivered_at is not None
 
-    def test_failure_and_retry_workflow(self, api_client, prepared_message):
+    def test_failure_and_retry_workflow(self, api_client, prepared_notification):
         """Test failure and retry workflow: draft -> ready -> sent -> failed -> ready."""
-        pk = prepared_message.pk
-        url = f"/api/plugins/notices/prepared-messages/{pk}/"
+        pk = prepared_notification.pk
+        url = f"/api/plugins/notices/prepared-notifications/{pk}/"
 
         # Draft -> Ready -> Sent
         api_client.patch(url, {"status": "ready"}, format="json")

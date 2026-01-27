@@ -127,12 +127,12 @@ class TemplateRenderer:
             raise TemplateRenderError(f"Template inheritance rendering failed: {e}")
 
     @classmethod
-    def build_context(cls, message_template, event=None, tenant=None, impacts=None, **extra):
+    def build_context(cls, notification_template, event=None, tenant=None, impacts=None, **extra):
         """
         Build the full template context for rendering.
 
         Args:
-            message_template: The MessageTemplate being rendered
+            notification_template: The NotificationTemplate being rendered
             event: Optional Maintenance or Outage event
             tenant: Optional target tenant
             impacts: Optional list of Impact records

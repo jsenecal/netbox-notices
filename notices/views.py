@@ -21,7 +21,7 @@ from rest_framework import exceptions
 
 from . import filtersets, forms, models, tables
 from .ical_utils import calculate_etag, generate_maintenance_ical
-from .models import Maintenance, MessageTemplate, Outage, PreparedMessage, TemplateScope
+from .models import Maintenance, NotificationTemplate, Outage, PreparedNotification, SentNotification, TemplateScope
 from .timeline_utils import build_timeline_item, get_timeline_changes
 
 
@@ -538,16 +538,16 @@ class MaintenanceICalView(View):
         return queryset
 
 
-# MessageTemplate Views
-class MessageTemplateListView(generic.ObjectListView):
-    queryset = MessageTemplate.objects.prefetch_related("scopes", "contact_roles")
-    table = tables.MessageTemplateTable
-    filterset = filtersets.MessageTemplateFilterSet
-    filterset_form = forms.MessageTemplateFilterForm
+# NotificationTemplate Views
+class NotificationTemplateListView(generic.ObjectListView):
+    queryset = NotificationTemplate.objects.prefetch_related("scopes", "contact_roles")
+    table = tables.NotificationTemplateTable
+    filterset = filtersets.NotificationTemplateFilterSet
+    filterset_form = forms.NotificationTemplateFilterForm
 
 
-class MessageTemplateView(generic.ObjectView):
-    queryset = MessageTemplate.objects.prefetch_related("scopes", "contact_roles", "children")
+class NotificationTemplateView(generic.ObjectView):
+    queryset = NotificationTemplate.objects.prefetch_related("scopes", "contact_roles", "children")
 
     def get_extra_context(self, request, instance):
         # Load scopes for this template
@@ -556,47 +556,45 @@ class MessageTemplateView(generic.ObjectView):
         # Load child templates (if this is a base template)
         children = instance.children.all() if instance.is_base_template else []
 
-        # Load prepared messages using this template
-        prepared_messages = instance.prepared_messages.select_related("approved_by").order_by("-created")[:10]
+        # Load prepared notifications using this template
+        prepared_notifications = instance.prepared_notifications.select_related("approved_by").order_by("-created")[:10]
 
         return {
             "scopes": scopes,
             "children": children,
-            "prepared_messages": prepared_messages,
+            "prepared_notifications": prepared_notifications,
         }
 
 
-class MessageTemplateEditView(generic.ObjectEditView):
-    queryset = MessageTemplate.objects.all()
-    form = forms.MessageTemplateForm
+class NotificationTemplateEditView(generic.ObjectEditView):
+    queryset = NotificationTemplate.objects.all()
+    form = forms.NotificationTemplateForm
 
 
-class MessageTemplateDeleteView(generic.ObjectDeleteView):
-    queryset = MessageTemplate.objects.all()
+class NotificationTemplateDeleteView(generic.ObjectDeleteView):
+    queryset = NotificationTemplate.objects.all()
 
 
-# PreparedMessage Views
-class PreparedMessageListView(generic.ObjectListView):
-    queryset = PreparedMessage.objects.select_related("template", "approved_by")
-    table = tables.PreparedMessageTable
-    filterset = filtersets.PreparedMessageFilterSet
-    filterset_form = forms.PreparedMessageFilterForm
+# PreparedNotification Views
+class PreparedNotificationListView(generic.ObjectListView):
+    queryset = PreparedNotification.objects.select_related("template", "approved_by")
+    table = tables.PreparedNotificationTable
+    filterset = filtersets.PreparedNotificationFilterSet
+    filterset_form = forms.PreparedNotificationFilterForm
 
 
-class OutboundMessageListView(generic.ObjectListView):
-    """List view for sent/delivered messages (outbound notifications)."""
+class SentNotificationListView(generic.ObjectListView):
+    """List view for sent/delivered notifications."""
 
-    queryset = PreparedMessage.objects.filter(status__in=["sent", "delivered"]).select_related(
-        "template", "approved_by"
-    )
-    table = tables.PreparedMessageTable
-    filterset = filtersets.PreparedMessageFilterSet
-    filterset_form = forms.OutboundMessageFilterForm
-    template_name = "notices/outbound_list.html"
+    queryset = SentNotification.objects.select_related("template", "approved_by")
+    table = tables.PreparedNotificationTable
+    filterset = filtersets.PreparedNotificationFilterSet
+    filterset_form = forms.SentNotificationFilterForm
+    template_name = "notices/sent_list.html"
 
 
-class PreparedMessageView(generic.ObjectView):
-    queryset = PreparedMessage.objects.select_related("template", "approved_by").prefetch_related("contacts")
+class PreparedNotificationView(generic.ObjectView):
+    queryset = PreparedNotification.objects.select_related("template", "approved_by").prefetch_related("contacts")
 
     def get_extra_context(self, request, instance):
         # Load contacts
@@ -607,26 +605,26 @@ class PreparedMessageView(generic.ObjectView):
         }
 
 
-class PreparedMessageEditView(generic.ObjectEditView):
-    queryset = PreparedMessage.objects.all()
-    form = forms.PreparedMessageForm
+class PreparedNotificationEditView(generic.ObjectEditView):
+    queryset = PreparedNotification.objects.all()
+    form = forms.PreparedNotificationForm
 
 
-class PreparedMessageDeleteView(generic.ObjectDeleteView):
-    queryset = PreparedMessage.objects.all()
+class PreparedNotificationDeleteView(generic.ObjectDeleteView):
+    queryset = PreparedNotification.objects.all()
 
 
-class PreparedMessageBulkEditView(generic.BulkEditView):
-    queryset = PreparedMessage.objects.all()
-    filterset = filtersets.PreparedMessageFilterSet
-    table = tables.PreparedMessageTable
-    form = forms.PreparedMessageBulkEditForm
+class PreparedNotificationBulkEditView(generic.BulkEditView):
+    queryset = PreparedNotification.objects.all()
+    filterset = filtersets.PreparedNotificationFilterSet
+    table = tables.PreparedNotificationTable
+    form = forms.PreparedNotificationBulkEditForm
 
 
-class PreparedMessageBulkDeleteView(generic.BulkDeleteView):
-    queryset = PreparedMessage.objects.all()
-    filterset = filtersets.PreparedMessageFilterSet
-    table = tables.PreparedMessageTable
+class PreparedNotificationBulkDeleteView(generic.BulkDeleteView):
+    queryset = PreparedNotification.objects.all()
+    filterset = filtersets.PreparedNotificationFilterSet
+    table = tables.PreparedNotificationTable
 
 
 # TemplateScope Views
@@ -641,11 +639,11 @@ class TemplateScopeEditView(generic.ObjectEditView):
         """Pre-populate template from URL parameter when adding new scope."""
         if not obj.pk and "template" in request.GET:
             template_id = request.GET.get("template")
-            obj.template = get_object_or_404(MessageTemplate, pk=template_id)
+            obj.template = get_object_or_404(NotificationTemplate, pk=template_id)
         return obj
 
     def get_return_url(self, request, obj=None):
-        """Return to the parent MessageTemplate after save."""
+        """Return to the parent NotificationTemplate after save."""
         if obj and obj.template:
             return obj.template.get_absolute_url()
         return super().get_return_url(request, obj)
@@ -657,7 +655,7 @@ class TemplateScopeDeleteView(generic.ObjectDeleteView):
     queryset = TemplateScope.objects.all()
 
     def get_return_url(self, request, obj=None):
-        """Return to the parent MessageTemplate after delete."""
+        """Return to the parent NotificationTemplate after delete."""
         if obj and obj.template:
             return obj.template.get_absolute_url()
         return super().get_return_url(request, obj)

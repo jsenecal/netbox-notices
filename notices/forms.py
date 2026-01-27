@@ -17,10 +17,19 @@ from .choices import (
     MessageEventTypeChoices,
     MessageGranularityChoices,
     OutageStatusChoices,
-    PreparedMessageStatusChoices,
+    PreparedNotificationStatusChoices,
     TimeZoneChoices,
 )
-from .models import EventNotification, Impact, Maintenance, MessageTemplate, Outage, PreparedMessage, TemplateScope
+from .models import (
+    EventNotification,
+    Impact,
+    Maintenance,
+    NotificationTemplate,
+    Outage,
+    PreparedNotification,
+    SentNotification,
+    TemplateScope,
+)
 from .utils import get_allowed_content_types
 
 
@@ -475,9 +484,9 @@ class OutageFilterForm(NetBoxModelFilterSetForm):
     internal_ticket = forms.CharField(required=False)
 
 
-# MessageTemplate Forms
-class MessageTemplateForm(NetBoxModelForm):
-    """Form for creating/editing MessageTemplate records."""
+# NotificationTemplate Forms
+class NotificationTemplateForm(NetBoxModelForm):
+    """Form for creating/editing NotificationTemplate records."""
 
     from tenancy.models import Contact, ContactRole
     from utilities.forms.fields import DynamicModelMultipleChoiceField
@@ -487,7 +496,7 @@ class MessageTemplateForm(NetBoxModelForm):
         required=False,
     )
     extends = DynamicModelChoiceField(
-        queryset=MessageTemplate.objects.filter(is_base_template=True),
+        queryset=NotificationTemplate.objects.filter(is_base_template=True),
         required=False,
         label="Extends Template",
         help_text="Parent template to extend (for Jinja block inheritance).",
@@ -511,7 +520,7 @@ class MessageTemplateForm(NetBoxModelForm):
     )
 
     class Meta:
-        model = MessageTemplate
+        model = NotificationTemplate
         fields = [
             "name",
             "slug",
@@ -540,8 +549,8 @@ class MessageTemplateForm(NetBoxModelForm):
         }
 
 
-class MessageTemplateFilterForm(NetBoxModelFilterSetForm):
-    model = MessageTemplate
+class NotificationTemplateFilterForm(NetBoxModelFilterSetForm):
+    model = NotificationTemplate
 
     event_type = forms.MultipleChoiceField(
         choices=MessageEventTypeChoices,
@@ -567,15 +576,15 @@ class MessageTemplateFilterForm(NetBoxModelFilterSetForm):
     )
 
 
-# PreparedMessage Forms
-class PreparedMessageForm(NetBoxModelForm):
-    """Form for creating/editing PreparedMessage records."""
+# PreparedNotification Forms
+class PreparedNotificationForm(NetBoxModelForm):
+    """Form for creating/editing PreparedNotification records."""
 
     from tenancy.models import Contact
     from utilities.forms.fields import DynamicModelMultipleChoiceField
 
     template = DynamicModelChoiceField(
-        queryset=MessageTemplate.objects.all(),
+        queryset=NotificationTemplate.objects.all(),
     )
     contacts = DynamicModelMultipleChoiceField(
         queryset=Contact.objects.all(),
@@ -583,14 +592,14 @@ class PreparedMessageForm(NetBoxModelForm):
     )
 
     fieldsets = (
-        FieldSet("template", "status", name="Message"),
+        FieldSet("template", "status", name="Notification"),
         FieldSet("contacts", name="Recipients"),
         FieldSet("subject", "body_text", "body_html", name="Content"),
         FieldSet("tags", name="Tags"),
     )
 
     class Meta:
-        model = PreparedMessage
+        model = PreparedNotification
         fields = [
             "template",
             "status",
@@ -609,26 +618,26 @@ class PreparedMessageForm(NetBoxModelForm):
         }
 
 
-class PreparedMessageFilterForm(NetBoxModelFilterSetForm):
-    model = PreparedMessage
+class PreparedNotificationFilterForm(NetBoxModelFilterSetForm):
+    model = PreparedNotification
 
     from utilities.forms.fields import DynamicModelMultipleChoiceField
 
     status = forms.MultipleChoiceField(
-        choices=PreparedMessageStatusChoices,
+        choices=PreparedNotificationStatusChoices,
         required=False,
     )
     template_id = DynamicModelMultipleChoiceField(
-        queryset=MessageTemplate.objects.all(),
+        queryset=NotificationTemplate.objects.all(),
         required=False,
         label="Template",
     )
 
 
-class OutboundMessageFilterForm(NetBoxModelFilterSetForm):
-    """Filter form for Outbound messages (only sent/delivered statuses)."""
+class SentNotificationFilterForm(NetBoxModelFilterSetForm):
+    """Filter form for Sent notifications (only sent/delivered statuses)."""
 
-    model = PreparedMessage
+    model = SentNotification
 
     from utilities.forms.fields import DynamicModelMultipleChoiceField
 
@@ -641,28 +650,28 @@ class OutboundMessageFilterForm(NetBoxModelFilterSetForm):
         required=False,
     )
     template_id = DynamicModelMultipleChoiceField(
-        queryset=MessageTemplate.objects.all(),
+        queryset=NotificationTemplate.objects.all(),
         required=False,
         label="Template",
     )
 
 
-class PreparedMessageBulkEditForm(NetBoxModelForm):
-    """Form for bulk editing PreparedMessage records."""
+class PreparedNotificationBulkEditForm(NetBoxModelForm):
+    """Form for bulk editing PreparedNotification records."""
 
     pk = forms.ModelMultipleChoiceField(
-        queryset=PreparedMessage.objects.all(),
+        queryset=PreparedNotification.objects.all(),
         widget=forms.MultipleHiddenInput(),
     )
     status = forms.ChoiceField(
-        choices=[("", "---------")] + list(PreparedMessageStatusChoices),
+        choices=[("", "---------")] + list(PreparedNotificationStatusChoices),
         required=False,
         label="Status",
-        help_text="Set status for all selected messages (only valid transitions allowed)",
+        help_text="Set status for all selected notifications (only valid transitions allowed)",
     )
 
     class Meta:
-        model = PreparedMessage
+        model = PreparedNotification
         fields = ["pk", "status"]
         nullable_fields = []
 

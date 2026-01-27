@@ -88,18 +88,18 @@ class TemplateMatchingService:
 
     def _get_candidates_by_event_type(self):
         """Get templates filtered by event type."""
-        from notices.models import MessageTemplate
+        from notices.models import NotificationTemplate
 
         if self.event_type == "maintenance":
-            return MessageTemplate.objects.filter(
+            return NotificationTemplate.objects.filter(
                 Q(event_type=MessageEventTypeChoices.MAINTENANCE) | Q(event_type=MessageEventTypeChoices.BOTH)
             ).prefetch_related("scopes", "scopes__content_type", "contact_roles")
         elif self.event_type == "outage":
-            return MessageTemplate.objects.filter(
+            return NotificationTemplate.objects.filter(
                 Q(event_type=MessageEventTypeChoices.OUTAGE) | Q(event_type=MessageEventTypeChoices.BOTH)
             ).prefetch_related("scopes", "scopes__content_type", "contact_roles")
         else:
-            return MessageTemplate.objects.filter(event_type=MessageEventTypeChoices.NONE).prefetch_related(
+            return NotificationTemplate.objects.filter(event_type=MessageEventTypeChoices.NONE).prefetch_related(
                 "scopes", "scopes__content_type", "contact_roles"
             )
 
@@ -181,7 +181,7 @@ def merge_templates(templates):
     Higher-scored template's non-empty fields win.
 
     Args:
-        templates: List of MessageTemplate instances (highest score first)
+        templates: List of NotificationTemplate instances (highest score first)
 
     Returns:
         Dict with merged configuration

@@ -1,36 +1,36 @@
 from netbox.api.viewsets import NetBoxModelViewSet
 
-from notices.api.serializers import MessageTemplateSerializer, PreparedMessageSerializer
-from notices.filtersets import MessageTemplateFilterSet, PreparedMessageFilterSet
-from notices.models import MessageTemplate, PreparedMessage
+from notices.api.serializers import NotificationTemplateSerializer, PreparedNotificationSerializer
+from notices.filtersets import NotificationTemplateFilterSet, PreparedNotificationFilterSet
+from notices.models import NotificationTemplate, PreparedNotification
 
 __all__ = (
-    "MessageTemplateViewSet",
-    "PreparedMessageViewSet",
+    "NotificationTemplateViewSet",
+    "PreparedNotificationViewSet",
 )
 
 
-class MessageTemplateViewSet(NetBoxModelViewSet):
-    """API viewset for MessageTemplate."""
+class NotificationTemplateViewSet(NetBoxModelViewSet):
+    """API viewset for NotificationTemplate."""
 
-    queryset = MessageTemplate.objects.prefetch_related(
+    queryset = NotificationTemplate.objects.prefetch_related(
         "scopes",
         "contact_roles",
         "tags",
     )
-    serializer_class = MessageTemplateSerializer
-    filterset_class = MessageTemplateFilterSet
+    serializer_class = NotificationTemplateSerializer
+    filterset_class = NotificationTemplateFilterSet
 
 
-class PreparedMessageViewSet(NetBoxModelViewSet):
-    """API viewset for PreparedMessage."""
+class PreparedNotificationViewSet(NetBoxModelViewSet):
+    """API viewset for PreparedNotification."""
 
-    queryset = PreparedMessage.objects.select_related(
+    queryset = PreparedNotification.objects.select_related(
         "template",
         "approved_by",
     ).prefetch_related(
         "contacts",
         "tags",
     )
-    serializer_class = PreparedMessageSerializer
-    filterset_class = PreparedMessageFilterSet
+    serializer_class = PreparedNotificationSerializer
+    filterset_class = PreparedNotificationFilterSet

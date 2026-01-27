@@ -256,10 +256,10 @@ class BodyFormatChoices(ChoiceSet):
     ]
 
 
-class PreparedMessageStatusChoices(ChoiceSet):
-    """Status choices for prepared messages."""
+class PreparedNotificationStatusChoices(ChoiceSet):
+    """Status choices for prepared notifications."""
 
-    key = "PreparedMessage.Status"
+    key = "PreparedNotification.Status"
 
     DRAFT = "draft"
     READY = "ready"

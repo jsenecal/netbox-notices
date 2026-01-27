@@ -262,11 +262,11 @@
 </div>
 {% endif %}
 
-{% if prepared_messages %}
+{% if prepared_notifications %}
 <div class="row mb-3">
     <div class="col col-md-12">
         <div class="card">
-            <h5 class="card-header">Recent Prepared Messages</h5>
+            <h5 class="card-header">Recent Prepared Notifications</h5>
             <table class="table table-hover">
                 <thead>
                     <tr>
@@ -277,12 +277,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for msg in prepared_messages %}
+                    {% for notification in prepared_notifications %}
                     <tr>
-                        <td>{{ msg|linkify }}</td>
-                        <td>{% badge msg.get_status_display %}</td>
-                        <td>{{ msg.approved_by|placeholder }}</td>
-                        <td>{{ msg.sent_at|placeholder }}</td>
+                        <td>{{ notification|linkify }}</td>
+                        <td>{% badge notification.get_status_display %}</td>
+                        <td>{{ notification.approved_by|placeholder }}</td>
+                        <td>{{ notification.sent_at|placeholder }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

@@ -5,7 +5,7 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 
 from notices.choices import MessageEventTypeChoices, MessageGranularityChoices
-from notices.models import Impact, MessageTemplate
+from notices.models import Impact, NotificationTemplate
 from notices.services.recipient_discovery import RecipientDiscoveryService, discover_recipients
 
 
@@ -238,7 +238,7 @@ def impact_no_tenant(maintenance, circuit_no_tenant):
 @pytest.fixture
 def template_with_roles(contact_role):
     """Create a template with contact role filtering."""
-    template = MessageTemplate.objects.create(
+    template = NotificationTemplate.objects.create(
         name="Test Template",
         slug="test-template",
         event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -254,7 +254,7 @@ def template_with_roles(contact_role):
 @pytest.fixture
 def template_all_priorities(contact_role):
     """Create a template that accepts all priorities."""
-    template = MessageTemplate.objects.create(
+    template = NotificationTemplate.objects.create(
         name="All Priorities Template",
         slug="all-priorities-template",
         event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -270,7 +270,7 @@ def template_all_priorities(contact_role):
 @pytest.fixture
 def template_primary_only(contact_role):
     """Create a template that only accepts primary contacts."""
-    template = MessageTemplate.objects.create(
+    template = NotificationTemplate.objects.create(
         name="Primary Only Template",
         slug="primary-only-template",
         event_type=MessageEventTypeChoices.MAINTENANCE,

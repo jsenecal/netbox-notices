@@ -9,7 +9,7 @@ from notices.choices import (
     MessageEventTypeChoices,
     MessageGranularityChoices,
 )
-from notices.models import MessageTemplate, TemplateScope
+from notices.models import NotificationTemplate, TemplateScope
 from notices.services.template_matching import (
     TemplateMatchingService,
     find_matching_templates,
@@ -80,7 +80,7 @@ def outage(provider):
 @pytest.fixture
 def maintenance_template():
     """Create a basic maintenance template."""
-    return MessageTemplate.objects.create(
+    return NotificationTemplate.objects.create(
         name="Maintenance Template",
         slug="maintenance-template",
         event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -94,7 +94,7 @@ def maintenance_template():
 @pytest.fixture
 def outage_template():
     """Create a basic outage template."""
-    return MessageTemplate.objects.create(
+    return NotificationTemplate.objects.create(
         name="Outage Template",
         slug="outage-template",
         event_type=MessageEventTypeChoices.OUTAGE,
@@ -108,7 +108,7 @@ def outage_template():
 @pytest.fixture
 def both_template():
     """Create a template for both event types."""
-    return MessageTemplate.objects.create(
+    return NotificationTemplate.objects.create(
         name="Both Template",
         slug="both-template",
         event_type=MessageEventTypeChoices.BOTH,
@@ -122,7 +122,7 @@ def both_template():
 @pytest.fixture
 def standalone_template():
     """Create a standalone template (no event type)."""
-    return MessageTemplate.objects.create(
+    return NotificationTemplate.objects.create(
         name="Standalone Template",
         slug="standalone-template",
         event_type=MessageEventTypeChoices.NONE,
@@ -136,7 +136,7 @@ def standalone_template():
 @pytest.fixture
 def high_weight_template():
     """Create a high-weight template for testing priority."""
-    return MessageTemplate.objects.create(
+    return NotificationTemplate.objects.create(
         name="High Weight Template",
         slug="high-weight-template",
         event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -150,7 +150,7 @@ def high_weight_template():
 @pytest.fixture
 def template_with_css():
     """Create a template with CSS."""
-    return MessageTemplate.objects.create(
+    return NotificationTemplate.objects.create(
         name="Styled Template",
         slug="styled-template",
         event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -165,7 +165,7 @@ def template_with_css():
 @pytest.fixture
 def template_with_ical():
     """Create a template with iCal."""
-    return MessageTemplate.objects.create(
+    return NotificationTemplate.objects.create(
         name="iCal Template",
         slug="ical-template",
         event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -181,7 +181,7 @@ def template_with_ical():
 @pytest.fixture
 def template_with_headers():
     """Create a template with headers."""
-    return MessageTemplate.objects.create(
+    return NotificationTemplate.objects.create(
         name="Headers Template",
         slug="headers-template",
         event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -583,7 +583,7 @@ class TestContactRolesUnion:
 
     def test_merge_contact_roles_union(self, contact_role, contact_role_secondary):
         """Test that contact roles are unioned."""
-        template1 = MessageTemplate.objects.create(
+        template1 = NotificationTemplate.objects.create(
             name="Template 1",
             slug="template-1",
             event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -593,7 +593,7 @@ class TestContactRolesUnion:
         )
         template1.contact_roles.add(contact_role)
 
-        template2 = MessageTemplate.objects.create(
+        template2 = NotificationTemplate.objects.create(
             name="Template 2",
             slug="template-2",
             event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -611,7 +611,7 @@ class TestContactRolesUnion:
 
     def test_merge_contact_priorities_union(self):
         """Test that contact priorities are unioned."""
-        template1 = MessageTemplate.objects.create(
+        template1 = NotificationTemplate.objects.create(
             name="Template Priorities 1",
             slug="template-priorities-1",
             event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -621,7 +621,7 @@ class TestContactRolesUnion:
             contact_priorities=["primary"],
         )
 
-        template2 = MessageTemplate.objects.create(
+        template2 = NotificationTemplate.objects.create(
             name="Template Priorities 2",
             slug="template-priorities-2",
             event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -649,7 +649,7 @@ class TestTemplateInheritance:
 
     def test_merge_extends_first_nonempty_wins(self):
         """Test that first non-null extends wins."""
-        base = MessageTemplate.objects.create(
+        base = NotificationTemplate.objects.create(
             name="Base Template",
             slug="base-template-inherit",
             event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -658,7 +658,7 @@ class TestTemplateInheritance:
             is_base_template=True,
         )
 
-        child = MessageTemplate.objects.create(
+        child = NotificationTemplate.objects.create(
             name="Child Template",
             slug="child-template-inherit",
             event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -668,7 +668,7 @@ class TestTemplateInheritance:
             weight=1500,
         )
 
-        template_no_extends = MessageTemplate.objects.create(
+        template_no_extends = NotificationTemplate.objects.create(
             name="No Extends",
             slug="no-extends-template",
             event_type=MessageEventTypeChoices.MAINTENANCE,

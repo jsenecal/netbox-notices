@@ -6,18 +6,18 @@ from notices.choices import (
     BodyFormatChoices,
     MessageEventTypeChoices,
     MessageGranularityChoices,
-    PreparedMessageStatusChoices,
+    PreparedNotificationStatusChoices,
 )
-from notices.models import MessageTemplate, PreparedMessage, TemplateScope
+from notices.models import NotificationTemplate, PreparedNotification, TemplateScope
 
 
 @pytest.mark.django_db
-class TestMessageTemplate:
-    """Tests for MessageTemplate model."""
+class TestNotificationTemplate:
+    """Tests for NotificationTemplate model."""
 
     def test_create_minimal_template(self):
         """Test creating a template with minimal required fields."""
-        template = MessageTemplate.objects.create(
+        template = NotificationTemplate.objects.create(
             name="Test Template",
             slug="test-template",
             event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -31,7 +31,7 @@ class TestMessageTemplate:
 
     def test_template_str(self):
         """Test template string representation."""
-        template = MessageTemplate.objects.create(
+        template = NotificationTemplate.objects.create(
             name="My Template",
             slug="my-template",
             event_type=MessageEventTypeChoices.BOTH,
@@ -42,7 +42,7 @@ class TestMessageTemplate:
 
     def test_template_inheritance(self):
         """Test template extends relationship."""
-        base = MessageTemplate.objects.create(
+        base = NotificationTemplate.objects.create(
             name="Base Template",
             slug="base-template",
             event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -50,7 +50,7 @@ class TestMessageTemplate:
             body_template="{% block content %}{% endblock %}",
             is_base_template=True,
         )
-        child = MessageTemplate.objects.create(
+        child = NotificationTemplate.objects.create(
             name="Child Template",
             slug="child-template",
             event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -68,7 +68,7 @@ class TestTemplateScope:
 
     def test_create_scope_with_object(self, tenant):
         """Test creating a scope for a specific object."""
-        template = MessageTemplate.objects.create(
+        template = NotificationTemplate.objects.create(
             name="Scoped Template",
             slug="scoped-template",
             event_type=MessageEventTypeChoices.MAINTENANCE,
@@ -87,7 +87,7 @@ class TestTemplateScope:
 
     def test_create_scope_for_all_of_type(self, tenant):
         """Test creating a scope for all objects of a type."""
-        template = MessageTemplate.objects.create(
+        template = NotificationTemplate.objects.create(
             name="Type Scoped Template",
             slug="type-scoped-template",
             event_type=MessageEventTypeChoices.OUTAGE,
@@ -105,46 +105,46 @@ class TestTemplateScope:
 
 
 @pytest.mark.django_db
-class TestPreparedMessage:
-    """Tests for PreparedMessage model."""
+class TestPreparedNotification:
+    """Tests for PreparedNotification model."""
 
-    def test_create_prepared_message(self):
-        """Test creating a prepared message."""
-        template = MessageTemplate.objects.create(
+    def test_create_prepared_notification(self):
+        """Test creating a prepared notification."""
+        template = NotificationTemplate.objects.create(
             name="Test Template",
             slug="test-template",
             event_type=MessageEventTypeChoices.NONE,
             subject_template="Subject",
             body_template="Body",
         )
-        message = PreparedMessage.objects.create(
+        notification = PreparedNotification.objects.create(
             template=template,
             subject="Test Subject Line",
             body_text="Test body content",
         )
-        assert message.pk is not None
-        assert message.status == PreparedMessageStatusChoices.DRAFT
-        assert message.approved_by is None
+        assert notification.pk is not None
+        assert notification.status == PreparedNotificationStatusChoices.DRAFT
+        assert notification.approved_by is None
 
-    def test_prepared_message_str_short(self):
-        """Test message string representation for short subjects."""
-        template = MessageTemplate.objects.create(
+    def test_prepared_notification_str_short(self):
+        """Test notification string representation for short subjects."""
+        template = NotificationTemplate.objects.create(
             name="Test",
             slug="test",
             event_type=MessageEventTypeChoices.NONE,
             subject_template="S",
             body_template="B",
         )
-        message = PreparedMessage.objects.create(
+        notification = PreparedNotification.objects.create(
             template=template,
             subject="Short Subject",
             body_text="Body",
         )
-        assert str(message) == "Short Subject"
+        assert str(notification) == "Short Subject"
 
-    def test_prepared_message_str_truncated(self):
-        """Test message string representation for long subjects."""
-        template = MessageTemplate.objects.create(
+    def test_prepared_notification_str_truncated(self):
+        """Test notification string representation for long subjects."""
+        template = NotificationTemplate.objects.create(
             name="Test",
             slug="test2",
             event_type=MessageEventTypeChoices.NONE,
@@ -152,9 +152,9 @@ class TestPreparedMessage:
             body_template="B",
         )
         long_subject = "A" * 100
-        message = PreparedMessage.objects.create(
+        notification = PreparedNotification.objects.create(
             template=template,
             subject=long_subject,
             body_text="Body",
         )
-        assert str(message) == "A" * 50 + "..."
+        assert str(notification) == "A" * 50 + "..."
