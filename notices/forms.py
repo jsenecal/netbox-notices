@@ -613,3 +613,23 @@ class PreparedMessageFilterForm(NetBoxModelFilterSetForm):
         required=False,
         label="Template",
     )
+
+
+class PreparedMessageBulkEditForm(NetBoxModelForm):
+    """Form for bulk editing PreparedMessage records."""
+
+    pk = forms.ModelMultipleChoiceField(
+        queryset=PreparedMessage.objects.all(),
+        widget=forms.MultipleHiddenInput(),
+    )
+    status = forms.ChoiceField(
+        choices=[("", "---------")] + list(PreparedMessageStatusChoices),
+        required=False,
+        label="Status",
+        help_text="Set status for all selected messages (only valid transitions allowed)",
+    )
+
+    class Meta:
+        model = PreparedMessage
+        fields = ["pk", "status"]
+        nullable_fields = []

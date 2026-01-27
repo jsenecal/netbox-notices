@@ -1,0 +1,31 @@
+{% extends 'generic/object_list.html' %}
+{% load helpers %}
+
+{% block extra_controls %}
+<div class="btn-group" role="group" aria-label="Status filters">
+    <a href="{% url 'plugins:notices:preparedmessage_list' %}"
+       class="btn btn-sm {% if not request.GET.status %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        All
+    </a>
+    <a href="{% url 'plugins:notices:preparedmessage_list' %}?status=draft"
+       class="btn btn-sm {% if request.GET.status == 'draft' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        Draft
+    </a>
+    <a href="{% url 'plugins:notices:preparedmessage_list' %}?status=ready"
+       class="btn btn-sm {% if request.GET.status == 'ready' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        Ready
+    </a>
+    <a href="{% url 'plugins:notices:preparedmessage_list' %}?status=sent"
+       class="btn btn-sm {% if request.GET.status == 'sent' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        Sent
+    </a>
+    <a href="{% url 'plugins:notices:preparedmessage_list' %}?status=delivered"
+       class="btn btn-sm {% if request.GET.status == 'delivered' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        Delivered
+    </a>
+    <a href="{% url 'plugins:notices:preparedmessage_list' %}?status=failed"
+       class="btn btn-sm {% if request.GET.status == 'failed' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        Failed
+    </a>
+</div>
+{% endblock %}

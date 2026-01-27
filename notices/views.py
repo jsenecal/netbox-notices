@@ -580,6 +580,7 @@ class PreparedMessageListView(generic.ObjectListView):
     table = tables.PreparedMessageTable
     filterset = filtersets.PreparedMessageFilterSet
     filterset_form = forms.PreparedMessageFilterForm
+    template_name = "notices/preparedmessage_list.html"
 
 
 class PreparedMessageView(generic.ObjectView):
@@ -601,3 +602,16 @@ class PreparedMessageEditView(generic.ObjectEditView):
 
 class PreparedMessageDeleteView(generic.ObjectDeleteView):
     queryset = PreparedMessage.objects.all()
+
+
+class PreparedMessageBulkEditView(generic.BulkEditView):
+    queryset = PreparedMessage.objects.all()
+    filterset = filtersets.PreparedMessageFilterSet
+    table = tables.PreparedMessageTable
+    form = forms.PreparedMessageBulkEditForm
+
+
+class PreparedMessageBulkDeleteView(generic.BulkDeleteView):
+    queryset = PreparedMessage.objects.all()
+    filterset = filtersets.PreparedMessageFilterSet
+    table = tables.PreparedMessageTable

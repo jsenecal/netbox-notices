@@ -201,4 +201,14 @@ urlpatterns = (
         name="preparedmessage_changelog",
         kwargs={"model": models.PreparedMessage},
     ),
+    path(
+        "prepared-messages/edit/",
+        views.PreparedMessageBulkEditView.as_view(),
+        name="preparedmessage_bulk_edit",
+    ),
+    path(
+        "prepared-messages/delete/",
+        views.PreparedMessageBulkDeleteView.as_view(),
+        name="preparedmessage_bulk_delete",
+    ),
 )

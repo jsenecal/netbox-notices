@@ -1,5 +1,6 @@
 import yaml
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError as DjangoValidationError
 from netbox.api.serializers import NetBoxModelSerializer, WritableNestedSerializer
 from rest_framework import serializers
 from tenancy.api.serializers import ContactRoleSerializer, ContactSerializer
@@ -242,7 +243,10 @@ class PreparedMessageSerializer(NetBoxModelSerializer):
             user = request.user if request else None
 
             sm = PreparedMessageStateMachine(instance, user=user)
-            sm.transition_to(new_status, message_text=message_text, timestamp=timestamp)
+            try:
+                sm.transition_to(new_status, message_text=message_text, timestamp=timestamp)
+            except DjangoValidationError as e:
+                raise serializers.ValidationError({"timestamp": e.message})
 
             # Remove status from validated_data since state machine handled it
             validated_data.pop("status", None)
