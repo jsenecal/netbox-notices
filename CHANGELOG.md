@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased
+
+### New Features
+
+* **Outgoing Notifications**: New notification system for customer/stakeholder communication
+  * NotificationTemplate model with Jinja templating support
+  * Template scoping (similar to Config Contexts) for tenant/provider/site-specific templates
+  * Template inheritance for customization
+  * PreparedNotification model with approval workflow
+  * SentNotification proxy model for viewing sent/delivered notifications
+  * Recipient discovery based on contact roles and priorities
+  * iCal attachment support for maintenance notifications
+
+### API Changes
+
+* New endpoints for notification management:
+  * `/api/plugins/notices/notification-templates/` - CRUD for notification templates
+  * `/api/plugins/notices/prepared-notifications/` - CRUD with status workflow
+  * `/api/plugins/notices/sent-notifications/` - Read-only view of sent notifications
+
+### UI Changes
+
+* Renamed "Inbound" menu item to "Received" for clarity
+* New "Sent" menu item for viewing sent/delivered notifications
+* New "Notification Templates" management UI
+* New "Prepared Notifications" management UI with approval workflow
+
+---
+
 ## 0.1.0 (2025-11-18)
 
 **BREAKING CHANGE**: Complete refactor from netbox-circuitmaintenance to netbox-notices

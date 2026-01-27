@@ -279,6 +279,42 @@ PATCH  /api/plugins/notices/impact/{id}/
 DELETE /api/plugins/notices/impact/{id}/
 ```
 
+**Event Notifications (Received):**
+
+```text
+GET    /api/plugins/notices/eventnotification/
+POST   /api/plugins/notices/eventnotification/
+GET    /api/plugins/notices/eventnotification/{id}/
+DELETE /api/plugins/notices/eventnotification/{id}/
+```
+
+**Notification Templates:**
+
+```text
+GET    /api/plugins/notices/notification-templates/
+POST   /api/plugins/notices/notification-templates/
+GET    /api/plugins/notices/notification-templates/{id}/
+PATCH  /api/plugins/notices/notification-templates/{id}/
+DELETE /api/plugins/notices/notification-templates/{id}/
+```
+
+**Prepared Notifications:**
+
+```text
+GET    /api/plugins/notices/prepared-notifications/
+POST   /api/plugins/notices/prepared-notifications/
+GET    /api/plugins/notices/prepared-notifications/{id}/
+PATCH  /api/plugins/notices/prepared-notifications/{id}/
+DELETE /api/plugins/notices/prepared-notifications/{id}/
+```
+
+**Sent Notifications (read-only):**
+
+```text
+GET    /api/plugins/notices/sent-notifications/
+GET    /api/plugins/notices/sent-notifications/{id}/
+```
+
 ### Example: Creating an Outage
 
 ```json
@@ -317,9 +353,40 @@ POST /api/plugins/notices/impact/
 }
 ```
 
+## Outgoing Notifications
+
+The plugin supports generating and tracking outgoing notifications to customers and stakeholders about maintenance and outage events.
+
+### Key Features
+
+- **Notification Templates**: Define Jinja templates for different event types and scenarios
+- **Template Scoping**: Scope templates to specific tenants, providers, sites, etc. (similar to Config Contexts)
+- **Template Inheritance**: Base templates can be extended for customization
+- **Recipient Discovery**: Automatically discover contacts based on roles and priorities
+- **Approval Workflow**: Notifications go through draft → ready → approved → sent states
+- **Delivery Tracking**: Track when notifications are sent, delivered, and viewed
+- **iCal Support**: Generate iCal attachments for maintenance notifications
+
+### Notification Status Workflow
+
+1. **Draft**: Initial state, notification content can be edited
+2. **Ready**: Content finalized, awaiting approval
+3. **Approved**: Approved by user, ready to send
+4. **Sent**: Dispatched to recipients
+5. **Delivered**: Confirmed delivery
+6. **Failed**: Delivery failed (can be retried)
+
+### Navigation Structure
+
+| Group | Menu Items |
+|-------|------------|
+| **Notifications** | Received, Sent |
+| **Events** | Planned Maintenances, Outages, Calendar |
+| **Messaging** | Notification Templates, Prepared Notifications |
+
 ## Data Models
 
-The plugin uses four main models to track maintenance and outage events:
+The plugin uses several models to track maintenance, outage, and notification events:
 
 ### Maintenance
 
@@ -367,6 +434,34 @@ Stores raw email notifications received from providers:
 - `subject`: Email subject line
 - `email_from`: Sender address
 - `email_received`: Receipt timestamp
+
+### NotificationTemplate
+
+Jinja templates for generating outgoing notifications to customers/stakeholders:
+
+- `name`, `slug`: Template identifier
+- `event_type`: Which event types this template applies to (maintenance, outage, or none)
+- `granularity`: How notifications are grouped (per-event, per-tenant, per-contact)
+- `subject_template`, `body_template`: Jinja templates for email content
+- `body_format`: Output format (markdown, html, plain text)
+- `contact_roles`, `contact_priorities`: Recipient discovery configuration
+- `is_base_template`, `extends`: Template inheritance support
+- `weight`: Priority for template matching
+
+### PreparedNotification
+
+A rendered notification ready for delivery:
+
+- `template`: Source NotificationTemplate
+- `status`: Draft, Ready, Approved, Sent, Delivered, Failed
+- `subject`, `body_text`, `body_html`: Rendered content snapshot
+- `contacts`, `recipients`: Recipient list
+- `approved_by`, `approved_at`: Approval tracking
+- `sent_at`, `delivered_at`, `viewed_at`: Delivery tracking
+
+### SentNotification
+
+A read-only view of PreparedNotifications that have been sent or delivered. This is a proxy model that filters to only show notifications with status "sent" or "delivered".
 
 ## Screenshots
 
