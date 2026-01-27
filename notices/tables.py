@@ -1,7 +1,15 @@
 import django_tables2 as tables
 from netbox.tables import NetBoxTable, columns
 
-from .models import EventNotification, Impact, Maintenance, NotificationTemplate, Outage, PreparedNotification
+from .models import (
+    EventNotification,
+    Impact,
+    Maintenance,
+    NotificationTemplate,
+    Outage,
+    PreparedNotification,
+    SentNotification,
+)
 
 
 class MaintenanceTable(NetBoxTable):
@@ -335,4 +343,39 @@ class PreparedNotificationTable(NetBoxTable):
             "template",
             "status",
             "sent_at",
+        )
+
+
+class SentNotificationTable(NetBoxTable):
+    """Table for displaying SentNotification records (sent/delivered only)."""
+
+    subject = tables.Column(linkify=True)
+    template = tables.Column(linkify=True)
+    status = columns.ChoiceFieldColumn()
+    approved_by = tables.Column(linkify=True)
+    sent_at = columns.DateTimeColumn()
+    delivered_at = columns.DateTimeColumn()
+    actions = columns.ActionsColumn()
+
+    class Meta(NetBoxTable.Meta):
+        model = SentNotification
+        fields = (
+            "pk",
+            "id",
+            "subject",
+            "template",
+            "status",
+            "approved_by",
+            "approved_at",
+            "sent_at",
+            "delivered_at",
+            "created",
+            "actions",
+        )
+        default_columns = (
+            "subject",
+            "template",
+            "status",
+            "sent_at",
+            "delivered_at",
         )

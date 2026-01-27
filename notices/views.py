@@ -587,7 +587,7 @@ class SentNotificationListView(generic.ObjectListView):
     """List view for sent/delivered notifications."""
 
     queryset = SentNotification.objects.select_related("template", "approved_by")
-    table = tables.PreparedNotificationTable
+    table = tables.SentNotificationTable
     filterset = filtersets.PreparedNotificationFilterSet
     filterset_form = forms.SentNotificationFilterForm
     template_name = "notices/sent_list.html"
