@@ -7,8 +7,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from netbox.forms import NetBoxModelFilterSetForm, NetBoxModelForm
 from utilities.forms import get_field_value
-from utilities.forms.rendering import FieldSet
 from utilities.forms.fields import DynamicModelChoiceField
+from utilities.forms.rendering import FieldSet
 from utilities.forms.widgets import DateTimePicker, HTMXSelect
 
 from .choices import MaintenanceTypeChoices, OutageStatusChoices, TimeZoneChoices
@@ -93,9 +93,7 @@ class GenericForeignKeyFormMixin:
 
             if choice_object:
                 # Populate GenericForeignKey fields
-                self.cleaned_data[content_type_field] = (
-                    ContentType.objects.get_for_model(choice_object)
-                )
+                self.cleaned_data[content_type_field] = ContentType.objects.get_for_model(choice_object)
                 self.cleaned_data[object_id_field] = choice_object.id
 
         return self.cleaned_data
@@ -142,11 +140,7 @@ class MaintenanceForm(NetBoxModelForm):
 
         # On edit, change help text since we don't convert
         if self.instance and self.instance.pk:
-            self.fields[
-                "original_timezone"
-            ].help_text = (
-                "Original timezone from provider notification (reference only)"
-            )
+            self.fields["original_timezone"].help_text = "Original timezone from provider notification (reference only)"
             self.fields["original_timezone"].label = "Original Timezone"
 
     def save(self, commit=True):
@@ -163,14 +157,10 @@ class MaintenanceForm(NetBoxModelForm):
                 if instance.start:
                     # Make the datetime aware in the original timezone if it's naive
                     if timezone.is_naive(instance.start):
-                        start_in_original_tz = instance.start.replace(
-                            tzinfo=original_tz
-                        )
+                        start_in_original_tz = instance.start.replace(tzinfo=original_tz)
                     else:
                         # If already aware, interpret it as being in the original timezone
-                        start_in_original_tz = instance.start.replace(
-                            tzinfo=original_tz
-                        )
+                        start_in_original_tz = instance.start.replace(tzinfo=original_tz)
                     # Convert to system timezone
                     instance.start = start_in_original_tz.astimezone(system_tz)
 
@@ -200,9 +190,7 @@ class MaintenanceFilterForm(NetBoxModelFilterSetForm):
 
     summary = forms.CharField(required=False)
 
-    provider = forms.ModelMultipleChoiceField(
-        queryset=Provider.objects.all(), required=False
-    )
+    provider = forms.ModelMultipleChoiceField(queryset=Provider.objects.all(), required=False)
 
     status = forms.MultipleChoiceField(choices=MaintenanceTypeChoices, required=False)
 
@@ -259,9 +247,7 @@ class ImpactForm(GenericForeignKeyFormMixin, NetBoxModelForm):
             app_label="notices", model__in=["maintenance", "outage"]
         )
         self.fields["event_content_type"].label = "Event Type"
-        self.fields[
-            "event_content_type"
-        ].help_text = "Type of event (Maintenance or Outage)"
+        self.fields["event_content_type"].help_text = "Type of event (Maintenance or Outage)"
 
         # Customize auto-generated target_content_type field
         self.fields["target_content_type"].label = "Target Type"
@@ -269,15 +255,11 @@ class ImpactForm(GenericForeignKeyFormMixin, NetBoxModelForm):
 
         # Customize object_id fields (labels and help text)
         self.fields["event_object_id"].label = "Event"
-        self.fields[
-            "event_object_id"
-        ].help_text = "Select a specific maintenance or outage event"
+        self.fields["event_object_id"].help_text = "Select a specific maintenance or outage event"
         self.fields["event_object_id"].required = False
 
         self.fields["target_object_id"].label = "Target Object"
-        self.fields[
-            "target_object_id"
-        ].help_text = "Select the specific object affected by this event"
+        self.fields["target_object_id"].help_text = "Select the specific object affected by this event"
         self.fields["target_object_id"].required = False
 
         # Get allowed content types for targets from plugin configuration
@@ -286,9 +268,7 @@ class ImpactForm(GenericForeignKeyFormMixin, NetBoxModelForm):
         for type_string in allowed_types:
             try:
                 app_label, model = type_string.lower().split(".")
-                ct = ContentType.objects.filter(
-                    app_label=app_label, model=model
-                ).first()
+                ct = ContentType.objects.filter(app_label=app_label, model=model).first()
                 if ct:
                     target_content_types.append(ct.pk)
             except (ValueError, AttributeError):
@@ -296,9 +276,7 @@ class ImpactForm(GenericForeignKeyFormMixin, NetBoxModelForm):
                 continue
 
         # Update target_content_type queryset based on allowed types
-        self.fields["target_content_type"].queryset = ContentType.objects.filter(
-            pk__in=target_content_types
-        )
+        self.fields["target_content_type"].queryset = ContentType.objects.filter(pk__in=target_content_types)
 
         # Determine event content type from form state (instance, initial, or GET/POST)
         event_ct_id = get_field_value(self, "event_content_type")
@@ -359,9 +337,7 @@ class EventNotificationForm(GenericForeignKeyFormMixin, NetBoxModelForm):
             app_label="notices", model__in=["maintenance", "outage"]
         )
         self.fields["event_content_type"].label = "Event Type"
-        self.fields[
-            "event_content_type"
-        ].help_text = "Type of event (Maintenance or Outage)"
+        self.fields["event_content_type"].help_text = "Type of event (Maintenance or Outage)"
 
         # Make hidden object_id field not required
         self.fields["event_object_id"].required = False
@@ -412,11 +388,7 @@ class OutageForm(NetBoxModelForm):
 
         # On edit, change help text since we don't convert
         if self.instance and self.instance.pk:
-            self.fields[
-                "original_timezone"
-            ].help_text = (
-                "Original timezone from provider notification (reference only)"
-            )
+            self.fields["original_timezone"].help_text = "Original timezone from provider notification (reference only)"
             self.fields["original_timezone"].label = "Original Timezone"
 
     def save(self, commit=True):
@@ -432,28 +404,18 @@ class OutageForm(NetBoxModelForm):
                 # Convert start time if provided
                 if instance.start:
                     if timezone.is_naive(instance.start):
-                        start_in_original_tz = instance.start.replace(
-                            tzinfo=original_tz
-                        )
+                        start_in_original_tz = instance.start.replace(tzinfo=original_tz)
                     else:
-                        start_in_original_tz = instance.start.replace(
-                            tzinfo=original_tz
-                        )
+                        start_in_original_tz = instance.start.replace(tzinfo=original_tz)
                     instance.start = start_in_original_tz.astimezone(system_tz)
 
                 # Convert reported_at time if provided
                 if instance.reported_at:
                     if timezone.is_naive(instance.reported_at):
-                        reported_at_in_original_tz = instance.reported_at.replace(
-                            tzinfo=original_tz
-                        )
+                        reported_at_in_original_tz = instance.reported_at.replace(tzinfo=original_tz)
                     else:
-                        reported_at_in_original_tz = instance.reported_at.replace(
-                            tzinfo=original_tz
-                        )
-                    instance.reported_at = reported_at_in_original_tz.astimezone(
-                        system_tz
-                    )
+                        reported_at_in_original_tz = instance.reported_at.replace(tzinfo=original_tz)
+                    instance.reported_at = reported_at_in_original_tz.astimezone(system_tz)
 
                 # Convert end time if provided
                 if instance.end:
@@ -466,16 +428,10 @@ class OutageForm(NetBoxModelForm):
                 # Convert ETR time if provided
                 if instance.estimated_time_to_repair:
                     if timezone.is_naive(instance.estimated_time_to_repair):
-                        etr_in_original_tz = instance.estimated_time_to_repair.replace(
-                            tzinfo=original_tz
-                        )
+                        etr_in_original_tz = instance.estimated_time_to_repair.replace(tzinfo=original_tz)
                     else:
-                        etr_in_original_tz = instance.estimated_time_to_repair.replace(
-                            tzinfo=original_tz
-                        )
-                    instance.estimated_time_to_repair = etr_in_original_tz.astimezone(
-                        system_tz
-                    )
+                        etr_in_original_tz = instance.estimated_time_to_repair.replace(tzinfo=original_tz)
+                    instance.estimated_time_to_repair = etr_in_original_tz.astimezone(system_tz)
 
             except (zoneinfo.ZoneInfoNotFoundError, ValueError):
                 # If timezone is invalid, just save without conversion
@@ -493,9 +449,7 @@ class OutageFilterForm(NetBoxModelFilterSetForm):
 
     name = forms.CharField(required=False)
     summary = forms.CharField(required=False)
-    provider = forms.ModelMultipleChoiceField(
-        queryset=Provider.objects.all(), required=False
-    )
+    provider = forms.ModelMultipleChoiceField(queryset=Provider.objects.all(), required=False)
     status = forms.MultipleChoiceField(choices=OutageStatusChoices, required=False)
     start = forms.CharField(required=False)
     end = forms.CharField(required=False)

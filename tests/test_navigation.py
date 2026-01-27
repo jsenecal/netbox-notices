@@ -39,7 +39,7 @@ class TestNavigationStructure:
 
     def test_menuitems_count(self):
         """Test correct number of menu items in each group"""
-        from notices.navigation import notifications_items, events_items
+        from notices.navigation import events_items, notifications_items
 
         assert len(notifications_items) == 1
         assert len(events_items) == 3
@@ -144,7 +144,7 @@ class TestNavigationStructure:
 
     def test_menu_item_ordering(self):
         """Test that menu items are in the expected order"""
-        from notices.navigation import notifications_items, events_items
+        from notices.navigation import events_items, notifications_items
 
         # Notifications group order
         assert notifications_items[0].link_text == "Inbound"
@@ -156,7 +156,7 @@ class TestNavigationStructure:
 
     def test_all_buttons_have_icons(self):
         """Test that all menu buttons have icons configured"""
-        from notices.navigation import notifications_items, events_items
+        from notices.navigation import events_items, notifications_items
 
         all_items = notifications_items + events_items
 

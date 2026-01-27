@@ -1,28 +1,28 @@
 from datetime import timedelta
+
+from circuits.models import Provider
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db.models import Count
 from django.http import (
     HttpResponse,
-    HttpResponseForbidden,
     HttpResponseBadRequest,
+    HttpResponseForbidden,
     HttpResponseNotModified,
 )
-from django.shortcuts import get_object_or_404, render, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.generic import View
+from netbox.api.authentication import TokenAuthentication
+from netbox.config import get_config
 from netbox.views import generic
 from rest_framework import exceptions
 
-from circuits.models import Provider
-from netbox.api.authentication import TokenAuthentication
-from netbox.config import get_config
-
 from . import filtersets, forms, models, tables
-from .ical_utils import generate_maintenance_ical, calculate_etag
-from .timeline_utils import get_timeline_changes, build_timeline_item
+from .ical_utils import calculate_etag, generate_maintenance_ical
 from .models import Maintenance, Outage
+from .timeline_utils import build_timeline_item, get_timeline_changes
 
 
 # Maintenance Views
@@ -31,9 +31,7 @@ class MaintenanceView(generic.ObjectView):
 
     def get_extra_context(self, request, instance):
         # Load the maintenance event impact
-        impact = models.Impact.objects.filter(
-            event_content_type__model="maintenance", event_object_id=instance.pk
-        )
+        impact = models.Impact.objects.filter(event_content_type__model="maintenance", event_object_id=instance.pk)
 
         # Load the maintenance event notifications
         notification = models.EventNotification.objects.filter(
@@ -42,9 +40,7 @@ class MaintenanceView(generic.ObjectView):
 
         # Load timeline changes
         object_changes = get_timeline_changes(instance, Maintenance, limit=20)
-        timeline_items = [
-            build_timeline_item(change, "maintenance") for change in object_changes
-        ]
+        timeline_items = [build_timeline_item(change, "maintenance") for change in object_changes]
 
         return {
             "impacts": impact,
@@ -86,9 +82,7 @@ class MaintenanceRescheduleView(generic.ObjectEditView):
         """Store original maintenance during setup."""
         super().setup(request, *args, **kwargs)
         # Get original maintenance via URL parameter
-        self.original_maintenance = get_object_or_404(
-            models.Maintenance, pk=self.kwargs["pk"]
-        )
+        self.original_maintenance = get_object_or_404(models.Maintenance, pk=self.kwargs["pk"])
 
     def get_object(self, **kwargs):
         """
@@ -154,11 +148,7 @@ class MaintenanceAcknowledgeView(PermissionRequiredMixin, View):
         messages.success(request, f"Maintenance {maintenance.name} acknowledged.")
 
         # Redirect to return_url or maintenance detail
-        return_url = (
-            request.POST.get("return_url")
-            or request.GET.get("return_url")
-            or maintenance.get_absolute_url()
-        )
+        return_url = request.POST.get("return_url") or request.GET.get("return_url") or maintenance.get_absolute_url()
         return redirect(return_url)
 
 
@@ -200,11 +190,7 @@ class MaintenanceCancelView(PermissionRequiredMixin, View):
             messages.success(request, f"Maintenance {maintenance.name} cancelled.")
 
         # Redirect to return_url or maintenance detail
-        return_url = (
-            request.POST.get("return_url")
-            or request.GET.get("return_url")
-            or maintenance.get_absolute_url()
-        )
+        return_url = request.POST.get("return_url") or request.GET.get("return_url") or maintenance.get_absolute_url()
         return redirect(return_url)
 
 
@@ -220,7 +206,8 @@ class MaintenanceMarkInProgressView(PermissionRequiredMixin, View):
         if maintenance.status in ["COMPLETED", "CANCELLED"]:
             messages.error(
                 request,
-                f"Cannot mark maintenance {maintenance.name} as in-progress - it is already {maintenance.get_status_display()}.",
+                f"Cannot mark maintenance {maintenance.name} as in-progress - "
+                f"it is already {maintenance.get_status_display()}.",
             )
         else:
             # Take a snapshot for change logging
@@ -229,16 +216,10 @@ class MaintenanceMarkInProgressView(PermissionRequiredMixin, View):
 
             maintenance.status = "IN-PROCESS"
             maintenance.save(update_fields=["status"])
-            messages.success(
-                request, f"Maintenance {maintenance.name} marked as in-progress."
-            )
+            messages.success(request, f"Maintenance {maintenance.name} marked as in-progress.")
 
         # Redirect to return_url or maintenance detail
-        return_url = (
-            request.POST.get("return_url")
-            or request.GET.get("return_url")
-            or maintenance.get_absolute_url()
-        )
+        return_url = request.POST.get("return_url") or request.GET.get("return_url") or maintenance.get_absolute_url()
         return redirect(return_url)
 
 
@@ -257,9 +238,7 @@ class MaintenanceMarkCompletedView(PermissionRequiredMixin, View):
                 f"Cannot mark maintenance {maintenance.name} as completed - it is cancelled.",
             )
         elif maintenance.status == "COMPLETED":
-            messages.info(
-                request, f"Maintenance {maintenance.name} is already completed."
-            )
+            messages.info(request, f"Maintenance {maintenance.name} is already completed.")
         else:
             # Take a snapshot for change logging
             if hasattr(maintenance, "snapshot"):
@@ -270,11 +249,7 @@ class MaintenanceMarkCompletedView(PermissionRequiredMixin, View):
             messages.success(request, f"Maintenance {maintenance.name} completed.")
 
         # Redirect to return_url or maintenance detail
-        return_url = (
-            request.POST.get("return_url")
-            or request.GET.get("return_url")
-            or maintenance.get_absolute_url()
-        )
+        return_url = request.POST.get("return_url") or request.GET.get("return_url") or maintenance.get_absolute_url()
         return redirect(return_url)
 
 
@@ -291,9 +266,7 @@ class OutageView(generic.ObjectView):
 
     def get_extra_context(self, request, instance):
         # Load the outage event impact
-        impact = models.Impact.objects.filter(
-            event_content_type__model="outage", event_object_id=instance.pk
-        )
+        impact = models.Impact.objects.filter(event_content_type__model="outage", event_object_id=instance.pk)
 
         # Load the outage event notifications
         notification = models.EventNotification.objects.filter(
@@ -302,9 +275,7 @@ class OutageView(generic.ObjectView):
 
         # Load timeline changes
         object_changes = get_timeline_changes(instance, Outage, limit=20)
-        timeline_items = [
-            build_timeline_item(change, "outage") for change in object_changes
-        ]
+        timeline_items = [build_timeline_item(change, "outage") for change in object_changes]
 
         return {
             "impacts": impact,
@@ -366,9 +337,7 @@ class MaintenanceCalendarView(PermissionRequiredMixin, View):
         from netbox.config import get_config
 
         config = get_config()
-        token_placeholder = config.PLUGINS_CONFIG.get("notices", {}).get(
-            "ical_token_placeholder", "changeme"
-        )
+        token_placeholder = config.PLUGINS_CONFIG.get("notices", {}).get("ical_token_placeholder", "changeme")
 
         return render(
             request,
@@ -421,16 +390,10 @@ class MaintenanceICalView(View):
 
         # Get cache-related info
         count = queryset.count()
-        latest_modified = (
-            queryset.order_by("-last_updated")
-            .values_list("last_updated", flat=True)
-            .first()
-        )
+        latest_modified = queryset.order_by("-last_updated").values_list("last_updated", flat=True).first()
 
         # Calculate ETag
-        etag = calculate_etag(
-            count=count, latest_modified=latest_modified, params=params
-        )
+        etag = calculate_etag(count=count, latest_modified=latest_modified, params=params)
 
         # Check If-None-Match (ETag)
         if request.META.get("HTTP_IF_NONE_MATCH") == etag:
@@ -444,18 +407,14 @@ class MaintenanceICalView(View):
             # In production, use proper HTTP date parsing
             response = HttpResponseNotModified()
             response["ETag"] = etag
-            response["Last-Modified"] = latest_modified.strftime(
-                "%a, %d %b %Y %H:%M:%S GMT"
-            )
+            response["Last-Modified"] = latest_modified.strftime("%a, %d %b %Y %H:%M:%S GMT")
             return response
 
         # Generate iCal
         ical = generate_maintenance_ical(queryset, request)
 
         # Create response
-        response = HttpResponse(
-            ical.to_ical(), content_type="text/calendar; charset=utf-8"
-        )
+        response = HttpResponse(ical.to_ical(), content_type="text/calendar; charset=utf-8")
 
         # Handle download vs subscription mode
         if request.GET.get("download", "").lower() in ("true", "1", "yes"):
@@ -465,17 +424,13 @@ class MaintenanceICalView(View):
         else:
             # Subscription mode: set caching headers for feed readers
             config = get_config()
-            cache_max_age = config.PLUGINS_CONFIG.get("notices", {}).get(
-                "ical_cache_max_age", 900
-            )
+            cache_max_age = config.PLUGINS_CONFIG.get("notices", {}).get("ical_cache_max_age", 900)
 
             response["Cache-Control"] = f"public, max-age={cache_max_age}"
             response["ETag"] = etag
 
             if latest_modified:
-                response["Last-Modified"] = latest_modified.strftime(
-                    "%a, %d %b %Y %H:%M:%S GMT"
-                )
+                response["Last-Modified"] = latest_modified.strftime("%a, %d %b %Y %H:%M:%S GMT")
 
         return response
 
@@ -519,9 +474,7 @@ class MaintenanceICalView(View):
 
         # past_days
         config = get_config()
-        default_past_days = config.PLUGINS_CONFIG.get("notices", {}).get(
-            "ical_past_days_default", 30
-        )
+        default_past_days = config.PLUGINS_CONFIG.get("notices", {}).get("ical_past_days_default", 30)
 
         try:
             past_days = int(request.GET.get("past_days", default_past_days))
