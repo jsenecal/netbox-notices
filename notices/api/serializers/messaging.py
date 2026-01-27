@@ -168,6 +168,11 @@ class PreparedMessageSerializer(NetBoxModelSerializer):
 
     # Status change message (for journal entry)
     message = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    timestamp = serializers.DateTimeField(
+        write_only=True,
+        required=False,
+        help_text="Optional timestamp for the transition (for external systems with batch processing)",
+    )
 
     class Meta:
         model = PreparedMessage
@@ -181,6 +186,7 @@ class PreparedMessageSerializer(NetBoxModelSerializer):
             "event_id",
             "status",
             "message",
+            "timestamp",
             "contacts",
             "contact_ids",
             "recipients",
@@ -227,6 +233,7 @@ class PreparedMessageSerializer(NetBoxModelSerializer):
 
     def update(self, instance, validated_data):
         message_text = validated_data.pop("message", None)
+        timestamp = validated_data.pop("timestamp", None)
         new_status = validated_data.get("status")
 
         # Handle status transition with state machine
@@ -235,7 +242,7 @@ class PreparedMessageSerializer(NetBoxModelSerializer):
             user = request.user if request else None
 
             sm = PreparedMessageStateMachine(instance, user=user)
-            sm.transition_to(new_status, message_text=message_text)
+            sm.transition_to(new_status, message_text=message_text, timestamp=timestamp)
 
             # Remove status from validated_data since state machine handled it
             validated_data.pop("status", None)
