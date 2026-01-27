@@ -11,5 +11,6 @@ router.register("impact", views.ImpactViewSet)
 router.register("eventnotification", views.EventNotificationViewSet)
 router.register("notification-templates", views.NotificationTemplateViewSet)
 router.register("prepared-notifications", views.PreparedNotificationViewSet)
+router.register("sent-notifications", views.SentNotificationViewSet)
 
 urlpatterns = router.urls

@@ -6,7 +6,7 @@ from rest_framework import serializers
 from tenancy.api.serializers import ContactRoleSerializer, ContactSerializer
 from tenancy.models import Contact
 
-from notices.models import NotificationTemplate, PreparedNotification, TemplateScope
+from notices.models import NotificationTemplate, PreparedNotification, SentNotification, TemplateScope
 from notices.validators import PreparedNotificationStateMachine
 
 __all__ = (
@@ -14,6 +14,7 @@ __all__ = (
     "NestedNotificationTemplateSerializer",
     "TemplateScopeSerializer",
     "PreparedNotificationSerializer",
+    "SentNotificationSerializer",
 )
 
 
@@ -255,3 +256,43 @@ class PreparedNotificationSerializer(NetBoxModelSerializer):
             instance.refresh_from_db()
 
         return super().update(instance, validated_data)
+
+
+class SentNotificationSerializer(NetBoxModelSerializer):
+    """Read-only serializer for SentNotification (sent/delivered only)."""
+
+    url = serializers.HyperlinkedIdentityField(
+        view_name="plugins-api:notices-api:sentnotification-detail",
+    )
+    template = NestedNotificationTemplateSerializer(read_only=True)
+    contacts = ContactSerializer(many=True, read_only=True, nested=True)
+
+    class Meta:
+        model = SentNotification
+        fields = [
+            "id",
+            "url",
+            "display",
+            "template",
+            "event_content_type",
+            "event_id",
+            "status",
+            "contacts",
+            "recipients",
+            "subject",
+            "body_text",
+            "body_html",
+            "headers",
+            "css",
+            "ical_content",
+            "approved_by",
+            "approved_at",
+            "sent_at",
+            "delivered_at",
+            "viewed_at",
+            "tags",
+            "custom_fields",
+            "created",
+            "last_updated",
+        ]
+        read_only_fields = fields  # Entirely read-only

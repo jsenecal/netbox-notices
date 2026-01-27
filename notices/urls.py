@@ -187,17 +187,17 @@ urlpatterns = (
     ),
     # Sent Notifications (sent/delivered)
     path(
-        "sent/",
+        "sent-notifications/",
         views.SentNotificationListView.as_view(),
         name="sentnotification_list",
     ),
     path(
-        "sent/<int:pk>/",
+        "sent-notifications/<int:pk>/",
         views.SentNotificationView.as_view(),
         name="sentnotification",
     ),
     path(
-        "sent/<int:pk>/changelog/",
+        "sent-notifications/<int:pk>/changelog/",
         ObjectChangeLogView.as_view(),
         name="sentnotification_changelog",
         kwargs={"model": models.PreparedNotification},
