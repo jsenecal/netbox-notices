@@ -7,7 +7,12 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from netbox.forms import NetBoxModelFilterSetForm, NetBoxModelForm
 from utilities.forms import get_field_value
-from utilities.forms.fields import DynamicModelChoiceField
+from utilities.forms.fields import (
+    DynamicModelChoiceField,
+    DynamicModelMultipleChoiceField,
+    SlugField,
+    TagFilterField,
+)
 from utilities.forms.rendering import FieldSet
 from utilities.forms.widgets import DateTimePicker, HTMXSelect
 
@@ -117,13 +122,17 @@ class GenericForeignKeyFormMixin:
 
 
 class MaintenanceForm(NetBoxModelForm):
-    provider = DynamicModelChoiceField(queryset=Provider.objects.all())
+    provider = DynamicModelChoiceField(
+        queryset=Provider.objects.all(),
+        quick_add=True,
+    )
 
     replaces = DynamicModelChoiceField(
         queryset=Maintenance.objects.all(),
         required=False,
         label="Replaces",
         help_text="The maintenance this event replaces (for rescheduled events)",
+        selector=True,
     )
 
     original_timezone = forms.ChoiceField(
@@ -203,21 +212,32 @@ class MaintenanceForm(NetBoxModelForm):
 class MaintenanceFilterForm(NetBoxModelFilterSetForm):
     model = Maintenance
 
-    name = forms.CharField(required=False)
+    fieldsets = (
+        FieldSet("q", "filter_id", "tag"),
+        FieldSet("status", "provider_id", "acknowledged", name="Attributes"),
+    )
+    selector_fields = ("filter_id", "q", "provider_id", "status")
 
-    summary = forms.CharField(required=False)
-
-    provider = forms.ModelMultipleChoiceField(queryset=Provider.objects.all(), required=False)
-
-    status = forms.MultipleChoiceField(choices=MaintenanceTypeChoices, required=False)
-
-    start = forms.CharField(required=False)
-
-    end = forms.CharField(required=False)
-
-    acknowledged = forms.BooleanField(required=False)
-
-    internal_ticket = forms.CharField(required=False)
+    status = forms.MultipleChoiceField(
+        choices=MaintenanceTypeChoices,
+        required=False,
+    )
+    provider_id = DynamicModelMultipleChoiceField(
+        queryset=Provider.objects.all(),
+        required=False,
+        label="Provider",
+    )
+    acknowledged = forms.NullBooleanField(
+        required=False,
+        widget=forms.Select(
+            choices=[
+                ("", "---------"),
+                (True, "Yes"),
+                (False, "No"),
+            ]
+        ),
+    )
+    tag = TagFilterField(model)
 
 
 class ImpactForm(GenericForeignKeyFormMixin, NetBoxModelForm):
@@ -370,13 +390,21 @@ class EventNotificationFilterForm(NetBoxModelFilterSetForm):
 
     model = EventNotification
 
+    fieldsets = (
+        FieldSet("q", "filter_id"),
+        FieldSet("subject", "email_from", name="Email"),
+    )
+    selector_fields = ("filter_id", "q")
+
     subject = forms.CharField(required=False)
     email_from = forms.CharField(required=False, label="From")
-    email_received = forms.DateTimeField(required=False, label="Received", widget=DateTimePicker())
 
 
 class OutageForm(NetBoxModelForm):
-    provider = DynamicModelChoiceField(queryset=Provider.objects.all())
+    provider = DynamicModelChoiceField(
+        queryset=Provider.objects.all(),
+        quick_add=True,
+    )
 
     original_timezone = forms.ChoiceField(
         choices=TimeZoneChoices,
@@ -474,23 +502,43 @@ class OutageForm(NetBoxModelForm):
 class OutageFilterForm(NetBoxModelFilterSetForm):
     model = Outage
 
-    name = forms.CharField(required=False)
-    summary = forms.CharField(required=False)
-    provider = forms.ModelMultipleChoiceField(queryset=Provider.objects.all(), required=False)
-    status = forms.MultipleChoiceField(choices=OutageStatusChoices, required=False)
-    start = forms.CharField(required=False)
-    end = forms.CharField(required=False)
-    acknowledged = forms.BooleanField(required=False)
-    internal_ticket = forms.CharField(required=False)
+    fieldsets = (
+        FieldSet("q", "filter_id", "tag"),
+        FieldSet("status", "provider_id", "acknowledged", name="Attributes"),
+    )
+    selector_fields = ("filter_id", "q", "provider_id", "status")
+
+    status = forms.MultipleChoiceField(
+        choices=OutageStatusChoices,
+        required=False,
+    )
+    provider_id = DynamicModelMultipleChoiceField(
+        queryset=Provider.objects.all(),
+        required=False,
+        label="Provider",
+    )
+    acknowledged = forms.NullBooleanField(
+        required=False,
+        widget=forms.Select(
+            choices=[
+                ("", "---------"),
+                (True, "Yes"),
+                (False, "No"),
+            ]
+        ),
+    )
+    tag = TagFilterField(model)
 
 
 # NotificationTemplate Forms
 class NotificationTemplateForm(NetBoxModelForm):
     """Form for creating/editing NotificationTemplate records."""
 
-    from tenancy.models import Contact, ContactRole
-    from utilities.forms.fields import DynamicModelMultipleChoiceField
+    from tenancy.models import ContactRole
 
+    slug = SlugField(
+        slug_source="name",
+    )
     contact_roles = DynamicModelMultipleChoiceField(
         queryset=ContactRole.objects.all(),
         required=False,
@@ -500,6 +548,7 @@ class NotificationTemplateForm(NetBoxModelForm):
         required=False,
         label="Extends Template",
         help_text="Parent template to extend (for Jinja block inheritance).",
+        selector=True,
     )
 
     fieldsets = (
@@ -552,6 +601,12 @@ class NotificationTemplateForm(NetBoxModelForm):
 class NotificationTemplateFilterForm(NetBoxModelFilterSetForm):
     model = NotificationTemplate
 
+    fieldsets = (
+        FieldSet("q", "filter_id", "tag"),
+        FieldSet("event_type", "granularity", "body_format", "is_base_template", name="Attributes"),
+    )
+    selector_fields = ("filter_id", "q", "event_type")
+
     event_type = forms.MultipleChoiceField(
         choices=MessageEventTypeChoices,
         required=False,
@@ -574,6 +629,7 @@ class NotificationTemplateFilterForm(NetBoxModelFilterSetForm):
             ]
         ),
     )
+    tag = TagFilterField(model)
 
 
 # PreparedNotification Forms
@@ -581,10 +637,11 @@ class PreparedNotificationForm(NetBoxModelForm):
     """Form for creating/editing PreparedNotification records."""
 
     from tenancy.models import Contact
-    from utilities.forms.fields import DynamicModelMultipleChoiceField
 
     template = DynamicModelChoiceField(
         queryset=NotificationTemplate.objects.all(),
+        quick_add=True,
+        selector=True,
     )
     contacts = DynamicModelMultipleChoiceField(
         queryset=Contact.objects.all(),
@@ -621,7 +678,11 @@ class PreparedNotificationForm(NetBoxModelForm):
 class PreparedNotificationFilterForm(NetBoxModelFilterSetForm):
     model = PreparedNotification
 
-    from utilities.forms.fields import DynamicModelMultipleChoiceField
+    fieldsets = (
+        FieldSet("q", "filter_id", "tag"),
+        FieldSet("status", "template_id", name="Attributes"),
+    )
+    selector_fields = ("filter_id", "q", "status", "template_id")
 
     status = forms.MultipleChoiceField(
         choices=PreparedNotificationStatusChoices,
@@ -632,6 +693,7 @@ class PreparedNotificationFilterForm(NetBoxModelFilterSetForm):
         required=False,
         label="Template",
     )
+    tag = TagFilterField(model)
 
 
 class SentNotificationFilterForm(NetBoxModelFilterSetForm):
@@ -639,7 +701,11 @@ class SentNotificationFilterForm(NetBoxModelFilterSetForm):
 
     model = SentNotification
 
-    from utilities.forms.fields import DynamicModelMultipleChoiceField
+    fieldsets = (
+        FieldSet("q", "filter_id", "tag"),
+        FieldSet("status", "template_id", name="Attributes"),
+    )
+    selector_fields = ("filter_id", "q", "status", "template_id")
 
     # Only show sent/delivered status options
     status = forms.MultipleChoiceField(
@@ -654,6 +720,7 @@ class SentNotificationFilterForm(NetBoxModelFilterSetForm):
         required=False,
         label="Template",
     )
+    tag = TagFilterField(PreparedNotification)  # Use parent model for tags
 
 
 class PreparedNotificationBulkEditForm(NetBoxModelForm):
@@ -688,6 +755,11 @@ class TemplateScopeForm(GenericForeignKeyFormMixin, forms.ModelForm):
         ("scope", "content_type", "object_id"),
     ]
 
+    template = DynamicModelChoiceField(
+        queryset=NotificationTemplate.objects.all(),
+        selector=True,
+    )
+
     fieldsets = (
         FieldSet("template", name="Template"),
         FieldSet("content_type", "scope_choice", name="Scope Target"),
@@ -708,7 +780,6 @@ class TemplateScopeForm(GenericForeignKeyFormMixin, forms.ModelForm):
         widgets = {
             "content_type": HTMXSelect(),
             "object_id": forms.HiddenInput,
-            "template": forms.HiddenInput,
         }
 
     def __init__(self, *args, **kwargs):

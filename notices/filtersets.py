@@ -21,11 +21,18 @@ from .models import (
 class MaintenanceFilterSet(NetBoxModelFilterSet):
     """FilterSet for Maintenance events"""
 
+    from circuits.models import Provider
+
+    provider_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Provider.objects.all(),
+        field_name="provider",
+        label="Provider",
+    )
     replaces_id = django_filters.ModelMultipleChoiceFilter(
         queryset=Maintenance.objects.all(),
-        label="Replaces (ID)",
+        field_name="replaces",
+        label="Replaces",
     )
-
     has_replaces = django_filters.BooleanFilter(
         method="filter_has_replaces",
         label="Has replacement",
@@ -38,7 +45,7 @@ class MaintenanceFilterSet(NetBoxModelFilterSet):
             "name",
             "summary",
             "status",
-            "provider",
+            "provider_id",
             "start",
             "end",
             "original_timezone",
@@ -68,6 +75,14 @@ class MaintenanceFilterSet(NetBoxModelFilterSet):
 class OutageFilterSet(NetBoxModelFilterSet):
     """FilterSet for Outage events"""
 
+    from circuits.models import Provider
+
+    provider_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Provider.objects.all(),
+        field_name="provider",
+        label="Provider",
+    )
+
     class Meta:
         model = Outage
         fields = (
@@ -75,7 +90,7 @@ class OutageFilterSet(NetBoxModelFilterSet):
             "name",
             "summary",
             "status",
-            "provider",
+            "provider_id",
             "start",
             "reported_at",
             "end",
