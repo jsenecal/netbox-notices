@@ -424,11 +424,33 @@ PreparedMessage status transitions are enforced by a state machine with validati
 
 **ready -> sent:**
 
-- Sets `sent_at` if not already set
+- Sets `sent_at` to provided `timestamp` or current time
 
 **sent -> delivered:**
 
-- Sets `delivered_at` if not already set
+- Sets `delivered_at` to provided `timestamp` or current time
+
+### Optional Timestamp Parameter
+
+External delivery systems may process messages in batches or have delayed polling. The `timestamp` parameter allows specifying when a transition actually occurred:
+
+```http
+PATCH /api/plugins/notices/prepared-messages/1/
+{
+    "status": "sent",
+    "timestamp": "2026-01-27T10:00:00Z",
+    "message": "Sent via batch processor"
+}
+```
+
+**Timestamp validation:**
+
+- Cannot be in the future
+- Must respect chronological order:
+  - `sent_at` >= `approved_at`
+  - `delivered_at` >= `sent_at`
+
+If `timestamp` is not provided, the current time is used.
 
 ## REST API
 
@@ -528,6 +550,20 @@ Authorization: Token YOUR_API_TOKEN
 }
 ```
 
+**Mark as sent with custom timestamp (for batch processing):**
+
+```http
+PATCH /api/plugins/notices/prepared-messages/1/
+Content-Type: application/json
+Authorization: Token YOUR_API_TOKEN
+
+{
+    "status": "sent",
+    "timestamp": "2026-01-22T10:30:00Z",
+    "message": "Sent via batch processor"
+}
+```
+
 **Mark as delivered:**
 
 ```http
@@ -537,7 +573,7 @@ Authorization: Token YOUR_API_TOKEN
 
 {
     "status": "delivered",
-    "delivered_at": "2026-01-22T10:31:00Z",
+    "timestamp": "2026-01-22T10:31:00Z",
     "message": "Delivered to 5 recipients"
 }
 ```
@@ -602,6 +638,7 @@ When a PreparedMessage transitions to `ready` status, NetBox will POST the messa
 
 import requests
 import smtplib
+from datetime import datetime, timezone
 from email.message import EmailMessage
 
 NETBOX_URL = "https://netbox.example.com"
@@ -638,21 +675,29 @@ for msg in messages:
                 filename="maintenance.ics",
             )
 
+        # Record send time before sending
+        sent_at = datetime.now(timezone.utc).isoformat()
+
         # Send email
         with smtplib.SMTP(SMTP_HOST) as smtp:
             smtp.send_message(email)
 
-        # Update status to sent
+        # Update status to sent with timestamp
         requests.patch(
             f"{NETBOX_URL}/api/plugins/notices/prepared-messages/{msg['id']}/",
-            json={"status": "sent", "message": "Sent via SMTP"},
+            json={"status": "sent", "timestamp": sent_at, "message": "Sent via SMTP"},
             headers=headers,
         )
 
         # Update status to delivered
+        delivered_at = datetime.now(timezone.utc).isoformat()
         requests.patch(
             f"{NETBOX_URL}/api/plugins/notices/prepared-messages/{msg['id']}/",
-            json={"status": "delivered", "message": f"Delivered to {len(msg['recipients'])} recipients"},
+            json={
+                "status": "delivered",
+                "timestamp": delivered_at,
+                "message": f"Delivered to {len(msg['recipients'])} recipients",
+            },
             headers=headers,
         )
 
