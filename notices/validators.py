@@ -1,5 +1,6 @@
 # notices/validators.py
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.utils import timezone
 
 from notices.choices import PreparedMessageStatusChoices
@@ -37,6 +38,7 @@ class PreparedMessageStateMachine:
         """Return list of valid target statuses."""
         return VALID_TRANSITIONS.get(self.message.status, [])
 
+    @transaction.atomic
     def transition_to(self, new_status, message_text=None):
         """
         Transition to new status with validation and side effects.
@@ -46,7 +48,7 @@ class PreparedMessageStateMachine:
             message_text: Optional message for journal entry
 
         Returns:
-            The message instance
+            The message instance (saved)
 
         Raises:
             ValidationError: If transition is invalid
@@ -67,6 +69,9 @@ class PreparedMessageStateMachine:
             self._handle_sent_transition()
         elif new_status == PreparedMessageStatusChoices.DELIVERED:
             self._handle_delivered_transition()
+
+        # Save the message to persist changes
+        self.message.save()
 
         # Create journal entry if message provided
         if message_text:

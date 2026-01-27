@@ -75,12 +75,7 @@ class TimeZoneChoices(ChoiceSet):
         )
     ]
 
-    ATLANTIC_CHOICES = [
-        (tz, tz)
-        for tz in sorted(
-            ["Atlantic/Azores", "Atlantic/Cape_Verde", "Atlantic/Reykjavik"]
-        )
-    ]
+    ATLANTIC_CHOICES = [(tz, tz) for tz in sorted(["Atlantic/Azores", "Atlantic/Cape_Verde", "Atlantic/Reykjavik"])]
 
     AUSTRALIA_CHOICES = [
         (tz, tz)
@@ -214,6 +209,8 @@ class OutageStatusChoices(ChoiceSet):
 class MessageEventTypeChoices(ChoiceSet):
     """Event type choices for message templates."""
 
+    key = "MessageTemplate.EventType"
+
     MAINTENANCE = "maintenance"
     OUTAGE = "outage"
     BOTH = "both"
@@ -230,6 +227,8 @@ class MessageEventTypeChoices(ChoiceSet):
 class MessageGranularityChoices(ChoiceSet):
     """Granularity choices for message generation."""
 
+    key = "MessageTemplate.Granularity"
+
     PER_EVENT = "per_event"
     PER_TENANT = "per_tenant"
     PER_IMPACT = "per_impact"
@@ -244,6 +243,8 @@ class MessageGranularityChoices(ChoiceSet):
 class BodyFormatChoices(ChoiceSet):
     """Body format choices for templates."""
 
+    key = "MessageTemplate.BodyFormat"
+
     MARKDOWN = "markdown"
     HTML = "html"
     TEXT = "text"
@@ -257,6 +258,8 @@ class BodyFormatChoices(ChoiceSet):
 
 class PreparedMessageStatusChoices(ChoiceSet):
     """Status choices for prepared messages."""
+
+    key = "PreparedMessage.Status"
 
     DRAFT = "draft"
     READY = "ready"
@@ -275,6 +278,8 @@ class PreparedMessageStatusChoices(ChoiceSet):
 
 class ContactPriorityChoices(ChoiceSet):
     """Contact priority choices (mirrors NetBox's ContactPriorityChoices)."""
+
+    key = "MessageTemplate.ContactPriority"
 
     PRIMARY = "primary"
     SECONDARY = "secondary"

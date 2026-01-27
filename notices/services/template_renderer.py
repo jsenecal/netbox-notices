@@ -171,8 +171,10 @@ class TemplateRenderer:
                 impact_order = ["OUTAGE", "DEGRADED", "REDUCED-REDUNDANCY", "NO-IMPACT"]
                 highest = "NO-IMPACT"
                 for impact in impacts:
-                    if impact_order.index(impact.impact) < impact_order.index(highest):
-                        highest = impact.impact
+                    impact_level = getattr(impact, "impact", None) or "NO-IMPACT"
+                    if impact_level in impact_order:
+                        if impact_order.index(impact_level) < impact_order.index(highest):
+                            highest = impact_level
                 context["highest_impact"] = highest
 
         context.update(extra)

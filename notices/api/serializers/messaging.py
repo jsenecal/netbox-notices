@@ -204,6 +204,9 @@ class PreparedMessageSerializer(NetBoxModelSerializer):
             "recipients",
             "approved_by",
             "approved_at",
+            "sent_at",
+            "delivered_at",
+            "viewed_at",
         ]
 
     def validate(self, data):
@@ -236,5 +239,8 @@ class PreparedMessageSerializer(NetBoxModelSerializer):
 
             # Remove status from validated_data since state machine handled it
             validated_data.pop("status", None)
+
+            # Refresh instance from database after state machine saved it
+            instance.refresh_from_db()
 
         return super().update(instance, validated_data)
