@@ -13,11 +13,12 @@ class TestMaintenanceModel(unittest.TestCase):
     """Test Maintenance model basic functionality"""
 
     def _get_models_file_ast(self):
-        """Parse the models.py file and return AST"""
+        """Parse the models/events.py file and return AST"""
         models_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
             "notices",
-            "models.py",
+            "models",
+            "events.py",
         )
         with open(models_path, "r") as f:
             return ast.parse(f.read())
