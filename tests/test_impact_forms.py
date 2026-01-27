@@ -60,12 +60,8 @@ class TestImpactForm:
         """Create a test device"""
         from dcim.models import Device, DeviceRole, DeviceType, Manufacturer
 
-        manufacturer = Manufacturer.objects.create(
-            name="Test Manufacturer", slug="test-manufacturer"
-        )
-        device_type = DeviceType.objects.create(
-            manufacturer=manufacturer, model="Test Model", slug="test-model"
-        )
+        manufacturer = Manufacturer.objects.create(name="Test Manufacturer", slug="test-manufacturer")
+        device_type = DeviceType.objects.create(manufacturer=manufacturer, model="Test Model", slug="test-model")
         device_role = DeviceRole.objects.create(name="Test Role", slug="test-role")
         return Device.objects.create(
             name="test-device-001",
@@ -276,7 +272,4 @@ class TestImpactForm:
         assert "Maintenance or Outage" in form.fields["event_content_type"].help_text
         assert "maintenance or outage event" in form.fields["event_object_id"].help_text
         assert "Type of affected object" == form.fields["target_content_type"].help_text
-        assert (
-            "Select the specific object affected by this event"
-            == form.fields["target_object_id"].help_text
-        )
+        assert "Select the specific object affected by this event" == form.fields["target_object_id"].help_text
