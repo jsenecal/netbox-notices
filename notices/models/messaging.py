@@ -6,6 +6,7 @@ from django.db import models
 from django.urls import reverse
 from netbox.models import NetBoxModel
 from tenancy.models import Contact, ContactRole
+from utilities.querysets import RestrictedQuerySet
 
 from ..choices import (
     BodyFormatChoices,
@@ -312,7 +313,7 @@ class PreparedNotification(NetBoxModel):
         return None
 
 
-class SentNotificationManager(models.Manager):
+class SentNotificationManager(models.Manager.from_queryset(RestrictedQuerySet)):
     """Manager that filters to only sent/delivered notifications."""
 
     def get_queryset(self):
