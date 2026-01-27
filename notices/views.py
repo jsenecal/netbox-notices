@@ -592,11 +592,7 @@ class OutboundMessageListView(generic.ObjectListView):
     table = tables.PreparedMessageTable
     filterset = filtersets.PreparedMessageFilterSet
     filterset_form = forms.OutboundMessageFilterForm
-
-    def get_extra_context(self, request):
-        return {
-            "title": "Outbound Messages",
-        }
+    template_name = "notices/outbound_list.html"
 
 
 class PreparedMessageView(generic.ObjectView):
