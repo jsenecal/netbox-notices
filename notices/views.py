@@ -308,6 +308,7 @@ class EventNotificationListView(generic.ObjectListView):
     queryset = models.EventNotification.objects.all()
     table = tables.EventNotificationTable
     filterset = filtersets.EventNotificationFilterSet
+    filterset_form = forms.EventNotificationFilterForm
 
 
 class EventNotificationEditView(generic.ObjectEditView):
@@ -580,7 +581,17 @@ class PreparedMessageListView(generic.ObjectListView):
     table = tables.PreparedMessageTable
     filterset = filtersets.PreparedMessageFilterSet
     filterset_form = forms.PreparedMessageFilterForm
-    template_name = "notices/preparedmessage_list.html"
+
+
+class OutboundMessageListView(generic.ObjectListView):
+    """List view for sent/delivered messages (outbound notifications)."""
+
+    queryset = PreparedMessage.objects.filter(status__in=["sent", "delivered"]).select_related(
+        "template", "approved_by"
+    )
+    table = tables.PreparedMessageTable
+    filterset = filtersets.PreparedMessageFilterSet
+    filterset_form = forms.PreparedMessageFilterForm
 
 
 class PreparedMessageView(generic.ObjectView):

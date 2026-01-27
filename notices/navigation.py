@@ -15,6 +15,11 @@ notifications_items = [
             )
         ],
     ),
+    PluginMenuItem(
+        link="plugins:notices:outbound_list",
+        link_text="Outbound",
+        permissions=["notices.view_preparedmessage"],
+    ),
 ]
 
 # Events group

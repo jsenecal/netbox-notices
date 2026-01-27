@@ -185,6 +185,12 @@ urlpatterns = (
         views.TemplateScopeDeleteView.as_view(),
         name="templatescope_delete",
     ),
+    # Outbound Messages (sent/delivered)
+    path(
+        "outbound/",
+        views.OutboundMessageListView.as_view(),
+        name="outbound_list",
+    ),
     # PreparedMessage URLs
     path(
         "prepared-messages/",

@@ -31,7 +31,7 @@ class TestNavigationStructure:
         # First group: Notifications
         notifications_group = menu.groups[0]
         assert notifications_group.label == "Notifications"
-        assert len(notifications_group.items) == 1
+        assert len(notifications_group.items) == 2  # Inbound and Outbound
 
         # Second group: Events
         events_group = menu.groups[1]
@@ -47,7 +47,7 @@ class TestNavigationStructure:
         """Test correct number of menu items in each group"""
         from notices.navigation import events_items, notifications_items
 
-        assert len(notifications_items) == 1
+        assert len(notifications_items) == 2  # Inbound and Outbound
         assert len(events_items) == 3
 
     def test_inbound_menu_item(self):
@@ -66,6 +66,17 @@ class TestNavigationStructure:
         assert add_button.link == "plugins:notices:eventnotification_add"
         assert add_button.title == "Add"
         assert add_button.icon_class == "mdi mdi-plus-thick"
+
+    def test_outbound_menu_item(self):
+        """Test Outbound (sent/delivered messages) menu item configuration"""
+        from notices.navigation import notifications_items
+
+        outbound_item = notifications_items[1]
+        assert isinstance(outbound_item, PluginMenuItem)
+        assert outbound_item.link == "plugins:notices:outbound_list"
+        assert outbound_item.link_text == "Outbound"
+        # Outbound is view-only (no add button - messages are created via workflow)
+        assert outbound_item.buttons == []
 
     def test_maintenance_menu_item(self):
         """Test Planned Maintenances menu item configuration"""
@@ -154,6 +165,7 @@ class TestNavigationStructure:
 
         # Notifications group order
         assert notifications_items[0].link_text == "Inbound"
+        assert notifications_items[1].link_text == "Outbound"
 
         # Events group order
         assert events_items[0].link_text == "Planned Maintenances"

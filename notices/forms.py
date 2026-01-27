@@ -356,6 +356,16 @@ class EventNotificationForm(GenericForeignKeyFormMixin, NetBoxModelForm):
             self.init_generic_choice("event", event_ct_id)
 
 
+class EventNotificationFilterForm(NetBoxModelFilterSetForm):
+    """Filter form for EventNotification list view."""
+
+    model = EventNotification
+
+    subject = forms.CharField(required=False)
+    email_from = forms.CharField(required=False, label="From")
+    email_received = forms.DateTimeField(required=False, label="Received", widget=DateTimePicker())
+
+
 class OutageForm(NetBoxModelForm):
     provider = DynamicModelChoiceField(queryset=Provider.objects.all())
 
