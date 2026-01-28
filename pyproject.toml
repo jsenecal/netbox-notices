@@ -117,6 +117,7 @@ max-complexity = 18
 "__init__.py" = ["F401", "F403"]
 "parsers/*" = ["E711", "E722"]
 "notices/tables.py" = ["E501"]  # Template strings in ActionsColumn can exceed line length
+".devcontainer/load_plugin_demo.py" = ["E402", "E501", "F841", "C901"]  # Django setup requires late imports, demo script complexity OK
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -149,6 +149,11 @@ load-demo-data: clone-demo-data ## Load NetBox community demo data (WARNING: dro
 	${VENV_PY_PATH} ${NETBOX_DIR}/manage.py migrate
 	@echo "Demo data loaded! Login with admin/admin"
 
+.PHONY: load-plugin-demo
+load-plugin-demo: ## Load plugin demo data (run after load-demo-data)
+	@echo "Loading plugin demo data..."
+	${VENV_PY_PATH} ${REPO_PATH}/.devcontainer/load_plugin_demo.py
+
 .PHONY: demo-data-versions
 demo-data-versions: clone-demo-data ## List available demo data versions
 	@echo "Available NetBox demo data versions:"
