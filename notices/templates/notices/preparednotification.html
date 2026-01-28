@@ -1,0 +1,179 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col col-md-6">
+        <div class="card">
+            <h5 class="card-header">Notification Details</h5>
+            <div class="card-body">
+                <table class="table table-hover attr-table">
+                    <tr>
+                        <th scope="row">Subject</th>
+                        <td>{{ object.subject }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Template</th>
+                        <td>{{ object.template|linkify }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Status</th>
+                        <td>{% badge object.get_status_display %}</td>
+                    </tr>
+                    {% if object.event %}
+                    <tr>
+                        <th scope="row">Event</th>
+                        <td>
+                            <span class="badge bg-secondary">{{ object.event_type_name|title }}</span>
+                            {{ object.event|linkify }}
+                        </td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <h5 class="card-header">Approval</h5>
+            <div class="card-body">
+                <table class="table table-hover attr-table">
+                    <tr>
+                        <th scope="row">Approved By</th>
+                        <td>{{ object.approved_by|placeholder }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Approved At</th>
+                        <td>{{ object.approved_at|placeholder }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        {% include 'inc/panels/custom_fields.html' %}
+    </div>
+    <div class="col col-md-6">
+        {% include 'inc/panels/tags.html' %}
+
+        <div class="card">
+            <h5 class="card-header">Delivery Tracking</h5>
+            <div class="card-body">
+                <table class="table table-hover attr-table">
+                    <tr>
+                        <th scope="row">Sent At</th>
+                        <td>{{ object.sent_at|placeholder }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Delivered At</th>
+                        <td>{{ object.delivered_at|placeholder }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Viewed At</th>
+                        <td>{{ object.viewed_at|placeholder }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col col-md-12">
+        <div class="card">
+            <h5 class="card-header">Recipients</h5>
+            {% if contacts %}
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Contact</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contact in contacts %}
+                        <tr>
+                            <td>{{ contact|linkify }}</td>
+                            <td>{{ contact.email|placeholder }}</td>
+                            <td>{{ contact.phone|placeholder }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="card-body">
+                    <div class="text-muted">No contacts assigned</div>
+                </div>
+            {% endif %}
+
+            {% if object.recipients %}
+                <div class="card-footer">
+                    <strong>Snapshot at send time:</strong>
+                    <pre class="mb-0 mt-2"><code>{{ object.recipients }}</code></pre>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col col-md-12">
+        <div class="card">
+            <h5 class="card-header">Body (Plain Text)</h5>
+            <div class="card-body">
+                <pre class="mb-0">{{ object.body_text }}</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if object.body_html %}
+<div class="row mb-3">
+    <div class="col col-md-12">
+        <div class="card">
+            <h5 class="card-header">Body (HTML)</h5>
+            <div class="card-body">
+                <div class="border p-3 bg-white">
+                    {% if object.css %}
+                    <style>{{ object.css }}</style>
+                    {% endif %}
+                    {{ object.body_html|safe }}
+                </div>
+            </div>
+            <div class="card-footer">
+                <details>
+                    <summary>View HTML Source</summary>
+                    <pre class="mt-2 mb-0"><code>{{ object.body_html }}</code></pre>
+                </details>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if object.headers %}
+<div class="row mb-3">
+    <div class="col col-md-12">
+        <div class="card">
+            <h5 class="card-header">Headers</h5>
+            <div class="card-body">
+                <pre class="mb-0"><code>{{ object.headers }}</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if object.ical_content %}
+<div class="row mb-3">
+    <div class="col col-md-12">
+        <div class="card">
+            <h5 class="card-header">iCal Content</h5>
+            <div class="card-body">
+                <pre class="mb-0"><code>{{ object.ical_content }}</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock content %}

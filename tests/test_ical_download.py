@@ -2,14 +2,15 @@
 Tests for iCal download functionality.
 """
 
+from datetime import timedelta
+
 import pytest
+from circuits.models import Provider
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
-from datetime import timedelta
 
 from notices.models import Maintenance
-from circuits.models import Provider
 
 
 @pytest.mark.django_db
@@ -49,9 +50,7 @@ class TestICalDownload:
         assert response.status_code == 200
         assert response["Content-Type"] == "text/calendar; charset=utf-8"
         assert "Cache-Control" in response
-        assert "Content-Disposition" not in response or "inline" in response.get(
-            "Content-Disposition", ""
-        )
+        assert "Content-Disposition" not in response or "inline" in response.get("Content-Disposition", "")
 
     def test_ical_with_download_parameter(self, authenticated_client, maintenance):
         """Test iCal view with download=true has attachment header."""
@@ -75,6 +74,4 @@ class TestICalDownload:
 
         expected_date = date.today().strftime("%Y-%m-%d")
 
-        assert (
-            f"netbox-maintenance-{expected_date}.ics" in response["Content-Disposition"]
-        )
+        assert f"netbox-maintenance-{expected_date}.ics" in response["Content-Disposition"]

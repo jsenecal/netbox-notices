@@ -1,4 +1,5 @@
 from django.test import override_settings
+
 from notices.constants import DEFAULT_ALLOWED_CONTENT_TYPES
 from notices.utils import get_allowed_content_types
 

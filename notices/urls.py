@@ -137,4 +137,111 @@ urlpatterns = (
         views.MaintenanceICalView.as_view(),
         name="ical_maintenances",
     ),
+    # NotificationTemplate URLs
+    path(
+        "notification-templates/",
+        views.NotificationTemplateListView.as_view(),
+        name="notificationtemplate_list",
+    ),
+    path(
+        "notification-templates/add/",
+        views.NotificationTemplateEditView.as_view(),
+        name="notificationtemplate_add",
+    ),
+    path(
+        "notification-templates/<int:pk>/",
+        views.NotificationTemplateView.as_view(),
+        name="notificationtemplate",
+    ),
+    path(
+        "notification-templates/<int:pk>/edit/",
+        views.NotificationTemplateEditView.as_view(),
+        name="notificationtemplate_edit",
+    ),
+    path(
+        "notification-templates/<int:pk>/delete/",
+        views.NotificationTemplateDeleteView.as_view(),
+        name="notificationtemplate_delete",
+    ),
+    path(
+        "notification-templates/<int:pk>/changelog/",
+        ObjectChangeLogView.as_view(),
+        name="notificationtemplate_changelog",
+        kwargs={"model": models.NotificationTemplate},
+    ),
+    # TemplateScope URLs
+    path(
+        "template-scope/add/",
+        views.TemplateScopeEditView.as_view(),
+        name="templatescope_add",
+    ),
+    path(
+        "template-scope/<int:pk>/edit/",
+        views.TemplateScopeEditView.as_view(),
+        name="templatescope_edit",
+    ),
+    path(
+        "template-scope/<int:pk>/delete/",
+        views.TemplateScopeDeleteView.as_view(),
+        name="templatescope_delete",
+    ),
+    # Sent Notifications (sent/delivered)
+    path(
+        "sent-notifications/",
+        views.SentNotificationListView.as_view(),
+        name="sentnotification_list",
+    ),
+    path(
+        "sent-notifications/<int:pk>/",
+        views.SentNotificationView.as_view(),
+        name="sentnotification",
+    ),
+    path(
+        "sent-notifications/<int:pk>/changelog/",
+        ObjectChangeLogView.as_view(),
+        name="sentnotification_changelog",
+        kwargs={"model": models.PreparedNotification},
+    ),
+    # PreparedNotification URLs
+    path(
+        "prepared-notifications/",
+        views.PreparedNotificationListView.as_view(),
+        name="preparednotification_list",
+    ),
+    path(
+        "prepared-notifications/add/",
+        views.PreparedNotificationEditView.as_view(),
+        name="preparednotification_add",
+    ),
+    path(
+        "prepared-notifications/<int:pk>/",
+        views.PreparedNotificationView.as_view(),
+        name="preparednotification",
+    ),
+    path(
+        "prepared-notifications/<int:pk>/edit/",
+        views.PreparedNotificationEditView.as_view(),
+        name="preparednotification_edit",
+    ),
+    path(
+        "prepared-notifications/<int:pk>/delete/",
+        views.PreparedNotificationDeleteView.as_view(),
+        name="preparednotification_delete",
+    ),
+    path(
+        "prepared-notifications/<int:pk>/changelog/",
+        ObjectChangeLogView.as_view(),
+        name="preparednotification_changelog",
+        kwargs={"model": models.PreparedNotification},
+    ),
+    path(
+        "prepared-notifications/edit/",
+        views.PreparedNotificationBulkEditView.as_view(),
+        name="preparednotification_bulk_edit",
+    ),
+    path(
+        "prepared-notifications/delete/",
+        views.PreparedNotificationBulkDeleteView.as_view(),
+        name="preparednotification_bulk_delete",
+    ),
 )

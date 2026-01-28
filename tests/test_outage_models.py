@@ -13,11 +13,12 @@ class TestBaseEvent(unittest.TestCase):
     """Test the BaseEvent abstract model structure"""
 
     def _get_models_file_ast(self):
-        """Parse the models.py file and return AST"""
+        """Parse the models/events.py file and return AST"""
         models_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
             "notices",
-            "models.py",
+            "models",
+            "events.py",
         )
         with open(models_path, "r") as f:
             return ast.parse(f.read())
@@ -96,11 +97,12 @@ class TestOutageModel(unittest.TestCase):
     """Test renamed Outage model structure (Task 6)"""
 
     def _get_models_file_ast(self):
-        """Parse the models.py file and return AST"""
+        """Parse the models/events.py file and return AST"""
         models_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
             "notices",
-            "models.py",
+            "models",
+            "events.py",
         )
         with open(models_path, "r") as f:
             return ast.parse(f.read())
@@ -172,9 +174,7 @@ class TestOutageModel(unittest.TestCase):
 
         self.assertIsNotNone(class_node)
 
-        verbose_name_plural = self._get_meta_attribute(
-            class_node, "verbose_name_plural"
-        )
+        verbose_name_plural = self._get_meta_attribute(class_node, "verbose_name_plural")
         self.assertEqual(
             verbose_name_plural,
             "Outages",

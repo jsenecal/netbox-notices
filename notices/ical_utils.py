@@ -2,7 +2,9 @@
 
 import hashlib
 import json
-from datetime import datetime, timezone as dt_timezone
+from datetime import datetime
+from datetime import timezone as dt_timezone
+
 from icalendar import Calendar, Event
 
 
