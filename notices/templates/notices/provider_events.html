@@ -1,0 +1,109 @@
+{% load helpers %}
+
+{% if maintenances or outages %}
+<div class="card">
+    <h2 class="card-header mb-2">Maintenance &amp; Outage Events</h2>
+    <div class="card-body">
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="provider-maintenances-tab" data-bs-toggle="tab" data-bs-target="#provider-maintenances" type="button" role="tab" aria-controls="provider-maintenances" aria-selected="true">
+                    Maintenances
+                    <span class="badge text-bg-secondary">{{ maintenances|length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="provider-outages-tab" data-bs-toggle="tab" data-bs-target="#provider-outages" type="button" role="tab" aria-controls="provider-outages" aria-selected="false">
+                    Outages
+                    <span class="badge text-bg-secondary">{{ outages|length }}</span>
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div id="provider-maintenances" class="tab-pane fade show active" role="tabpanel" aria-labelledby="provider-maintenances-tab">
+                {% if maintenances %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>Status</th>
+                                <th>Impacts</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for maintenance in maintenances %}
+                            <tr>
+                                <td>{{ maintenance|linkify }}</td>
+                                <td>{{ maintenance.start|date:"Y-m-d H:i" }}</td>
+                                <td>{{ maintenance.end|date:"Y-m-d H:i" }}</td>
+                                <td>{% badge maintenance.get_status_display bg_color=maintenance.get_status_color %}</td>
+                                <td>{{ maintenance.impacts.count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-3">
+                    <span class="text-muted">No maintenances in this period</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div id="provider-outages" class="tab-pane fade" role="tabpanel" aria-labelledby="provider-outages-tab">
+                {% if outages %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>Status</th>
+                                <th>ETR</th>
+                                <th>Impacts</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for outage in outages %}
+                            <tr>
+                                <td>{{ outage|linkify }}</td>
+                                <td>{{ outage.start|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    {% if outage.end %}
+                                        {{ outage.end|date:"Y-m-d H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">Ongoing</span>
+                                    {% endif %}
+                                </td>
+                                <td>{% badge outage.get_status_display bg_color=outage.get_status_color %}</td>
+                                <td>
+                                    {% if outage.estimated_time_to_repair %}
+                                        {{ outage.estimated_time_to_repair|date:"Y-m-d H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ outage.impacts.count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-3">
+                    <span class="text-muted">No outages in this period</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card-footer text-muted small">
+            Showing events from the last {{ event_history_days }} days and future events
+        </div>
+    </div>
+</div>
+{% endif %}

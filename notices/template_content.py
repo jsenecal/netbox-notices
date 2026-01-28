@@ -3,12 +3,13 @@
 from datetime import timedelta
 
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 from django.template.loader import render_to_string
 from django.utils import timezone
 from netbox.config import get_config
 from netbox.plugins import PluginTemplateExtension
 
-from .models import Impact
+from .models import Impact, Maintenance, Outage
 from .utils import get_allowed_content_types
 
 
@@ -99,6 +100,50 @@ def render_event_history(obj):
     )
 
 
+def render_provider_events(provider):
+    """
+    Render maintenance and outage events for a provider.
+    Shows all events linked to this provider.
+    """
+    config = get_config()
+    days = config.PLUGINS_CONFIG.get("notices", {}).get("event_history_days", 30)
+    cutoff_date = timezone.now() - timedelta(days=days)
+
+    # Build filter: recent events OR future events OR ongoing (no end date)
+    time_filter = Q(start__gte=cutoff_date) | Q(end__gte=timezone.now()) | Q(end__isnull=True)
+
+    maintenances = list(
+        Maintenance.objects.filter(provider=provider).filter(time_filter).order_by("-start").prefetch_related("impacts")
+    )
+
+    outages = list(
+        Outage.objects.filter(provider=provider).filter(time_filter).order_by("-start").prefetch_related("impacts")
+    )
+
+    # Only render if there are events
+    if not maintenances and not outages:
+        return ""
+
+    return render_to_string(
+        "notices/provider_events.html",
+        {
+            "maintenances": maintenances,
+            "outages": outages,
+            "provider": provider,
+            "event_history_days": days,
+        },
+    )
+
+
+class ProviderEventsExtension(PluginTemplateExtension):
+    """Show maintenance and outage events on Provider detail pages."""
+
+    models = ["circuits.provider"]
+
+    def right_page(self):
+        return render_provider_events(self.context["object"])
+
+
 # Create template extensions at module import time
 # NetBox will auto-discover this via DEFAULT_RESOURCE_PATHS
-template_extensions = _create_event_history_extensions()
+template_extensions = _create_event_history_extensions() + [ProviderEventsExtension]

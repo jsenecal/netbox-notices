@@ -1,8 +1,8 @@
 {% if maintenances or outages %}
 <div class="card">
     <h2 class="card-header mb-2">Maintenance &amp; Outage History</h2>
-    <div class="card-body">        
-        <ul class="nav nav-tabs px-3" role="tablist">
+    <div class="card-body">
+        <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="tab-maintenances-tab" data-bs-toggle="tab" data-bs-target="#tab-maintenances" type="button" role="tab" aria-controls="tab-maintenances" aria-selected="true">
                     Maintenances
@@ -16,25 +16,22 @@
                 </button>
             </li>
         </ul>
-
-        <!-- Tab panes -->
-        <div id="tab-maintenances" class="tab-pane fade show active" role="tabpanel" aria-labelledby="tab-maintenances-tab">
-            {% if maintenances %}
-                {% include 'notices/event_history_table.html' with events=maintenances %}
-            {% else %}
-                <span class="text-muted">
-                    No maintenances in this period
-                </span>
-            {% endif %}
+        <div class="tab-content">
+            <div id="tab-maintenances" class="tab-pane fade show active" role="tabpanel" aria-labelledby="tab-maintenances-tab">
+                {% if maintenances %}
+                    {% include 'notices/event_history_table.html' with events=maintenances %}
+                {% else %}
+                    <p class="text-muted p-3 mb-0">No maintenances in this period</p>
+                {% endif %}
+            </div>
+            <div id="tab-outages" class="tab-pane fade" role="tabpanel" aria-labelledby="tab-outages-tab">
+                {% if outages %}
+                    {% include 'notices/event_history_table.html' with events=outages %}
+                {% else %}
+                    <p class="text-muted p-3 mb-0">No outages in this period</p>
+                {% endif %}
+            </div>
         </div>
-        <div id="tab-outages" class="tab-pane fade" role="tabpanel" aria-labelledby="tab-outages-tab">
-            {% if outages %}
-                {% include 'notices/event_history_table.html' with events=outages %}
-            {% else %}
-                <span class="text-muted">
-                    No outages in this period
-                </span>
-            {% endif %}
-        </div>
+    </div>
 </div>
-</div>{% endif %}
+{% endif %}
