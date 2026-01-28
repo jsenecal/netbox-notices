@@ -93,3 +93,86 @@ def pytest_configure(config):
     Django is already set up at module import time above.
     """
     pass
+
+
+# Common fixtures for all tests
+import pytest  # noqa: E402
+
+
+@pytest.fixture
+def provider(db):
+    """Create a test provider."""
+    from circuits.models import Provider
+
+    return Provider.objects.create(name="Test Provider", slug="test-provider")
+
+
+@pytest.fixture
+def circuit_type(db):
+    """Create a test circuit type."""
+    from circuits.models import CircuitType
+
+    return CircuitType.objects.create(name="Test Type", slug="test-type")
+
+
+@pytest.fixture
+def circuit(db, provider, circuit_type):
+    """Create a test circuit."""
+    from circuits.models import Circuit
+
+    return Circuit.objects.create(
+        cid="TEST-001",
+        provider=provider,
+        type=circuit_type,
+    )
+
+
+@pytest.fixture
+def site(db):
+    """Create a test site."""
+    from dcim.models import Site
+
+    return Site.objects.create(name="Test Site", slug="test-site")
+
+
+@pytest.fixture
+def device_role(db):
+    """Create a test device role."""
+    from dcim.models import DeviceRole
+
+    return DeviceRole.objects.create(name="Test Role", slug="test-role")
+
+
+@pytest.fixture
+def manufacturer(db):
+    """Create a test manufacturer."""
+    from dcim.models import Manufacturer
+
+    return Manufacturer.objects.create(
+        name="Test Manufacturer", slug="test-manufacturer"
+    )
+
+
+@pytest.fixture
+def device_type(db, manufacturer):
+    """Create a test device type."""
+    from dcim.models import DeviceType
+
+    return DeviceType.objects.create(
+        manufacturer=manufacturer,
+        model="Test Model",
+        slug="test-model",
+    )
+
+
+@pytest.fixture
+def device(db, site, device_role, device_type):
+    """Create a test device."""
+    from dcim.models import Device
+
+    return Device.objects.create(
+        name="test-device",
+        site=site,
+        role=device_role,
+        device_type=device_type,
+    )
