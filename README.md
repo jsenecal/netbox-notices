@@ -32,7 +32,8 @@ The plugin does not directly provide an automated approach to ingesting provider
   - Cancel maintenance with confirmation
 - Event timeline with status-specific icons and colors
 - Maintenance rescheduling with automatic status updates
-- iCalendar feed for external calendar integration
+- Interactive calendar view with FullCalendar
+- iCalendar feed for external calendar integration (Google Calendar, Outlook, Apple Calendar)
 - Maintenance overlap detection (coming soon)
 
 ## Compatibility
@@ -207,6 +208,45 @@ In addition to planned maintenance, this plugin supports tracking unplanned outa
 - **Unified View**: View both maintenance and outages together in a single interface
 - **Flexible Object Support**: Link outages to any configured NetBox object type
 
+## Calendar & iCal Integration
+
+The plugin provides an interactive calendar view and iCal feed for integrating maintenance events with external calendar applications.
+
+### Calendar View
+
+Access the calendar at **Plugins → Notices → Calendar**. Features include:
+
+- **Interactive FullCalendar**: Month, week, and day views
+- **Color-coded events**: Different colors for maintenance vs outage, and by status
+- **Click-to-view**: Click any event to see details and navigate to full view
+- **Drag navigation**: Navigate between time periods
+
+### iCal Feed
+
+Subscribe to maintenance events in your preferred calendar application:
+
+**Subscription URL:**
+```
+https://your-netbox/api/plugins/notices/ical/?token=YOUR_API_TOKEN
+```
+
+**Supported Calendar Apps:**
+- **Google Calendar**: Settings → Add calendar → From URL
+- **Outlook**: Calendar → Add calendar → Subscribe from web
+- **Apple Calendar**: File → New Calendar Subscription
+
+**Query Parameters:**
+- `token`: Your NetBox API token (required)
+- `provider`: Filter by provider ID
+- `status`: Filter by status (e.g., `CONFIRMED`, `IN-PROCESS`)
+- `days_past`: Include events from N days ago (default: 30)
+- `days_future`: Include events up to N days ahead (default: 90)
+
+**Example filtered subscription:**
+```
+/api/plugins/notices/ical/?token=YOUR_TOKEN&provider=1&status=CONFIRMED
+```
+
 ### API Endpoints
 
 **Maintenance Events:**
@@ -330,9 +370,70 @@ Stores raw email notifications received from providers:
 
 ## Screenshots
 
-![Maintenance Event View](docs/img/maintenance.png)
-![Circuit Maintenance View](docs/img/circuit_maintenance.png)
-![Provider Maintenance View](docs/img/provider_maintenance.png)
+### Maintenance Event Detail
+
+The maintenance detail view shows comprehensive information about a maintenance event including the event timeline, impacted objects, and received notifications.
+
+![Maintenance Event View](docs/img/maintenance_detail.png)
+
+**Key Features Shown:**
+- Operations dropdown with quick actions (Acknowledge, Reschedule, Mark In-Progress, Mark Completed, Cancel)
+- Maintenance details with timezone conversion display
+- Generic impact tracking showing any configured NetBox object type
+- Received notifications from providers
+- Event timeline with color-coded status changes
+
+### Outage Event Detail
+
+The outage detail view tracks unplanned incidents with ETR (Estimated Time to Repair) and flexible status workflow.
+
+![Outage Event View](docs/img/outage_detail.png)
+
+**Key Features Shown:**
+- Outage-specific status workflow (Reported → Investigating → Identified → Monitoring → Resolved)
+- ETR tracking with changelog history
+- Optional end time (required only when resolving)
+- Impact and notification tracking
+
+### Calendar View
+
+Interactive calendar view for visualizing maintenance and outage events with iCal subscription support.
+
+![Calendar View](docs/img/calendar_view.png)
+
+Click any event to see a quick summary modal with key details:
+
+![Calendar Event Detail](docs/img/calendar_view_event_detail.png)
+
+**Key Features Shown:**
+- FullCalendar integration with month/week/day views
+- Color-coded events by type (maintenance vs outage) and status
+- Click-to-view event details modal with status, provider, timing, and summary
+- iCal Subscribe and Download buttons for calendar integration
+
+### Provider Events Widget
+
+A "Maintenance & Outage Events" widget appears on Provider detail pages, showing all events from that provider.
+
+![Provider Events](docs/img/provider_events.png)
+
+**Key Features Shown:**
+- All maintenance and outage events for the provider
+- Tabbed view with event counts
+- Event status, timing, and impact count
+- ETR tracking for outages
+
+### Object Event History Widget
+
+A "Maintenance & Outage History" widget automatically appears on the detail pages of any impacted NetBox objects (circuits, devices, sites, etc.). This provides quick visibility into events affecting specific infrastructure.
+
+![Object Event History](docs/img/object_event_history.png)
+
+**Key Features Shown:**
+- Tabbed view separating maintenances and outages
+- Event counts in tab badges
+- Links to event details
+- Status and impact level badges
 
 ## Credits
 
