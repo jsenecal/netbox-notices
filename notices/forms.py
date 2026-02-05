@@ -856,6 +856,8 @@ class TemplateScopeForm(GenericForeignKeyFormMixin, forms.ModelForm):
                 help_text="Leave blank to match all objects of this type",
             )
         except (ContentType.DoesNotExist, ObjectDoesNotExist):
+            # Content type or referenced object no longer exists; skip creating
+            # the optional dynamic choice field and leave scope matching unchanged.
             pass
 
     def clean(self):

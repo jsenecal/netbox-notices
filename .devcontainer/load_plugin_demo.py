@@ -33,7 +33,7 @@ django.setup()
 
 # Now we can import Django models
 from circuits.models import Circuit, Provider
-from dcim.models import Device, Region, Site, SiteGroup
+from dcim.models import Device, Region, Site
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from tenancy.models import Contact, ContactRole, Tenant, TenantGroup
@@ -619,11 +619,6 @@ def create_notification_templates(contact_roles):
     """Create comprehensive notification templates covering all use cases."""
     print("Creating notification templates...")
 
-    noc_role = contact_roles.filter(slug="noc-contact").first()
-    tech_role = contact_roles.filter(slug="technical-contact").first()
-    emergency_role = contact_roles.filter(slug="emergency-contact").first()
-    mgmt_role = contact_roles.filter(slug="management").first()
-
     templates_data = [
         # =====================================================================
         # BASE TEMPLATES (for inheritance)
@@ -957,14 +952,12 @@ def create_template_scopes(templates):
     providers = list(Provider.objects.all()[:5])
     sites = list(Site.objects.all()[:5])
     regions = list(Region.objects.all()[:3])
-    site_groups = list(SiteGroup.objects.all()[:3])
     tenants = list(Tenant.objects.all()[:5])
     tenant_groups = list(TenantGroup.objects.all()[:3])
 
     provider_ct = ContentType.objects.get_for_model(Provider)
     site_ct = ContentType.objects.get_for_model(Site)
     region_ct = ContentType.objects.get_for_model(Region)
-    site_group_ct = ContentType.objects.get_for_model(SiteGroup)
     tenant_ct = ContentType.objects.get_for_model(Tenant)
     tenant_group_ct = ContentType.objects.get_for_model(TenantGroup)
 
