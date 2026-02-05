@@ -2,8 +2,8 @@
 Timeline utilities for categorizing and formatting ObjectChange records.
 """
 
-from django.contrib.contenttypes.models import ContentType
 from core.models import ObjectChange
+from django.contrib.contenttypes.models import ContentType
 
 FIELD_DISPLAY_NAMES = {
     "name": "Event ID",
@@ -68,23 +68,19 @@ def categorize_change(changed_object_model, action, prechange_data, postchange_d
     # Handle field changes in maintenance/outage objects
     if action == "update" and prechange_data and postchange_data:
         # Priority 1: Status changes
-        if "status" in postchange_data and prechange_data.get(
-            "status"
-        ) != postchange_data.get("status"):
+        if "status" in postchange_data and prechange_data.get("status") != postchange_data.get("status"):
             return "status"
 
         # Priority 2: Time changes
         time_fields = ["start", "end", "estimated_time_to_repair"]
         for field in time_fields:
-            if field in postchange_data and prechange_data.get(
-                field
-            ) != postchange_data.get(field):
+            if field in postchange_data and prechange_data.get(field) != postchange_data.get(field):
                 return "time"
 
         # Priority 3: Acknowledgment changes
-        if "acknowledged" in postchange_data and prechange_data.get(
+        if "acknowledged" in postchange_data and prechange_data.get("acknowledged") != postchange_data.get(
             "acknowledged"
-        ) != postchange_data.get("acknowledged"):
+        ):
             return "acknowledgment"
 
     # Default: standard change
@@ -206,11 +202,7 @@ def build_timeline_item(object_change, event_model_name):
 
     # Get user info
     user = object_change.user
-    user_name = (
-        object_change.user_name
-        if object_change.user_name
-        else (user.username if user else "System")
-    )
+    user_name = object_change.user_name if object_change.user_name else (user.username if user else "System")
 
     return {
         "time": object_change.time,
@@ -252,11 +244,7 @@ def _build_title(category, action, model, object_repr, prechange, postchange):
 
     elif category == "time":
         time_fields = ["start", "end", "estimated_time_to_repair"]
-        changed = [
-            f
-            for f in time_fields
-            if f in postchange and prechange.get(f) != postchange.get(f)
-        ]
+        changed = [f for f in time_fields if f in postchange and prechange.get(f) != postchange.get(f)]
         if len(changed) == 1:
             field_name = get_field_display_name(changed[0])
             return f"{field_name} updated"

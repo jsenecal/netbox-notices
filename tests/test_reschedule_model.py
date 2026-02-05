@@ -1,8 +1,9 @@
-import pytest
-from django.utils import timezone
 from datetime import timedelta
 
+import pytest
 from circuits.models import Provider
+from django.utils import timezone
+
 from notices.models import Maintenance
 
 

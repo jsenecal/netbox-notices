@@ -75,12 +75,7 @@ class TimeZoneChoices(ChoiceSet):
         )
     ]
 
-    ATLANTIC_CHOICES = [
-        (tz, tz)
-        for tz in sorted(
-            ["Atlantic/Azores", "Atlantic/Cape_Verde", "Atlantic/Reykjavik"]
-        )
-    ]
+    ATLANTIC_CHOICES = [(tz, tz) for tz in sorted(["Atlantic/Azores", "Atlantic/Cape_Verde", "Atlantic/Reykjavik"])]
 
     AUSTRALIA_CHOICES = [
         (tz, tz)
@@ -208,4 +203,90 @@ class OutageStatusChoices(ChoiceSet):
         (STATUS_IDENTIFIED, "Identified", "yellow"),
         (STATUS_MONITORING, "Monitoring", "blue"),
         (STATUS_RESOLVED, "Resolved", "green"),
+    ]
+
+
+class MessageEventTypeChoices(ChoiceSet):
+    """Event type choices for message templates."""
+
+    key = "MessageTemplate.EventType"
+
+    MAINTENANCE = "maintenance"
+    OUTAGE = "outage"
+    BOTH = "both"
+    NONE = "none"
+
+    CHOICES = [
+        (MAINTENANCE, "Maintenance"),
+        (OUTAGE, "Outage"),
+        (BOTH, "Both"),
+        (NONE, "None (Standalone)"),
+    ]
+
+
+class MessageGranularityChoices(ChoiceSet):
+    """Granularity choices for message generation."""
+
+    key = "MessageTemplate.Granularity"
+
+    PER_EVENT = "per_event"
+    PER_TENANT = "per_tenant"
+    PER_IMPACT = "per_impact"
+
+    CHOICES = [
+        (PER_EVENT, "Per Event"),
+        (PER_TENANT, "Per Tenant"),
+        (PER_IMPACT, "Per Impact"),
+    ]
+
+
+class BodyFormatChoices(ChoiceSet):
+    """Body format choices for templates."""
+
+    key = "MessageTemplate.BodyFormat"
+
+    MARKDOWN = "markdown"
+    HTML = "html"
+    TEXT = "text"
+
+    CHOICES = [
+        (MARKDOWN, "Markdown"),
+        (HTML, "HTML"),
+        (TEXT, "Plain Text"),
+    ]
+
+
+class PreparedNotificationStatusChoices(ChoiceSet):
+    """Status choices for prepared notifications."""
+
+    key = "PreparedNotification.Status"
+
+    DRAFT = "draft"
+    READY = "ready"
+    SENT = "sent"
+    DELIVERED = "delivered"
+    FAILED = "failed"
+
+    CHOICES = [
+        (DRAFT, "Draft"),
+        (READY, "Ready"),
+        (SENT, "Sent"),
+        (DELIVERED, "Delivered"),
+        (FAILED, "Failed"),
+    ]
+
+
+class ContactPriorityChoices(ChoiceSet):
+    """Contact priority choices (mirrors NetBox's ContactPriorityChoices)."""
+
+    key = "MessageTemplate.ContactPriority"
+
+    PRIMARY = "primary"
+    SECONDARY = "secondary"
+    TERTIARY = "tertiary"
+
+    CHOICES = [
+        (PRIMARY, "Primary"),
+        (SECONDARY, "Secondary"),
+        (TERTIARY, "Tertiary"),
     ]

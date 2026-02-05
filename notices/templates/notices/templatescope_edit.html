@@ -1,0 +1,40 @@
+{% extends 'generic/object_edit.html' %}
+{% load form_helpers %}
+
+{% block form %}
+<div class="field-group mb-5">
+    <div class="row mb-2">
+        <h2 class="col-9 offset-3">Scope Target</h2>
+    </div>
+    <p class="text-muted col-9 offset-3 mb-3">
+        Select the type of object this scope will match. Optionally select a specific object,
+        or leave blank to match all objects of the selected type.
+    </p>
+    {% render_field form.content_type %}
+    {% if form.scope_choice %}
+        {% render_field form.scope_choice %}
+    {% endif %}
+</div>
+
+<div class="field-group mb-5">
+    <div class="row mb-2">
+        <h2 class="col-9 offset-3">Event Filtering</h2>
+    </div>
+    <p class="text-muted col-9 offset-3 mb-3">
+        Optionally filter this scope to only apply to specific event types or statuses.
+    </p>
+    {% render_field form.event_type %}
+    {% render_field form.event_status %}
+</div>
+
+<div class="field-group mb-5">
+    <div class="row mb-2">
+        <h2 class="col-9 offset-3">Priority</h2>
+    </div>
+    {% render_field form.weight %}
+</div>
+
+{# Hidden fields #}
+{{ form.template }}
+{{ form.object_id }}
+{% endblock %}

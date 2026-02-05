@@ -3,20 +3,29 @@ from django.contrib.contenttypes.models import ContentType
 from netbox.api.serializers import NetBoxModelSerializer, WritableNestedSerializer
 from rest_framework import serializers
 
-from ..models import (
+from ...models import (
     EventNotification,
     Impact,
     Maintenance,
     Outage,
 )
 
+__all__ = (
+    "NestedMaintenanceSerializer",
+    "NestedOutageSerializer",
+    "NestedImpactSerializer",
+    "NestedEventNotificationSerializer",
+    "MaintenanceSerializer",
+    "OutageSerializer",
+    "ImpactSerializer",
+    "EventNotificationSerializer",
+)
+
 
 class NestedMaintenanceSerializer(WritableNestedSerializer):
     """Nested serializer for Maintenance model"""
 
-    url = serializers.HyperlinkedIdentityField(
-        view_name="plugins-api:notices-api:maintenance-detail"
-    )
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:notices-api:maintenance-detail")
 
     provider = ProviderSerializer(nested=True)
 
@@ -40,9 +49,7 @@ class NestedMaintenanceSerializer(WritableNestedSerializer):
 class NestedOutageSerializer(WritableNestedSerializer):
     """Nested serializer for Outage model"""
 
-    url = serializers.HyperlinkedIdentityField(
-        view_name="plugins-api:notices-api:outage-detail"
-    )
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:notices-api:outage-detail")
 
     provider = ProviderSerializer(nested=True)
 
@@ -67,9 +74,7 @@ class NestedOutageSerializer(WritableNestedSerializer):
 class NestedImpactSerializer(WritableNestedSerializer):
     """Nested serializer for Impact model"""
 
-    url = serializers.HyperlinkedIdentityField(
-        view_name="plugins-api:notices-api:impact-detail"
-    )
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:notices-api:impact-detail")
 
     # Read-only representation of the event
     event_type = serializers.SerializerMethodField(read_only=True)
@@ -108,9 +113,7 @@ class NestedImpactSerializer(WritableNestedSerializer):
     def get_target_type(self, obj):
         """Return target content type as app_label.model"""
         if obj.target_content_type:
-            return (
-                f"{obj.target_content_type.app_label}.{obj.target_content_type.model}"
-            )
+            return f"{obj.target_content_type.app_label}.{obj.target_content_type.model}"
         return None
 
     def get_target_object(self, obj):
@@ -123,9 +126,7 @@ class NestedImpactSerializer(WritableNestedSerializer):
 class NestedEventNotificationSerializer(WritableNestedSerializer):
     """Nested serializer for EventNotification model"""
 
-    url = serializers.HyperlinkedIdentityField(
-        view_name="plugins-api:notices-api:eventnotification-detail"
-    )
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:notices-api:eventnotification-detail")
 
     # Read-only representation of the event
     event_type = serializers.SerializerMethodField(read_only=True)
@@ -161,17 +162,11 @@ class NestedEventNotificationSerializer(WritableNestedSerializer):
 class MaintenanceSerializer(NetBoxModelSerializer):
     """Full serializer for Maintenance model"""
 
-    url = serializers.HyperlinkedIdentityField(
-        view_name="plugins-api:notices-api:maintenance-detail"
-    )
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:notices-api:maintenance-detail")
 
     provider = ProviderSerializer(nested=True)
-    replaces = serializers.PrimaryKeyRelatedField(
-        queryset=Maintenance.objects.all(), required=False, allow_null=True
-    )
-    impacts = NestedImpactSerializer(
-        required=False, many=True, read_only=True, source="impact_set"
-    )
+    replaces = serializers.PrimaryKeyRelatedField(queryset=Maintenance.objects.all(), required=False, allow_null=True)
+    impacts = NestedImpactSerializer(required=False, many=True, read_only=True, source="impact_set")
     notifications = NestedEventNotificationSerializer(
         required=False, many=True, read_only=True, source="eventnotification_set"
     )
@@ -214,14 +209,10 @@ class MaintenanceSerializer(NetBoxModelSerializer):
 class OutageSerializer(NetBoxModelSerializer):
     """Full serializer for Outage model"""
 
-    url = serializers.HyperlinkedIdentityField(
-        view_name="plugins-api:notices-api:outage-detail"
-    )
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:notices-api:outage-detail")
 
     provider = ProviderSerializer(nested=True)
-    impacts = NestedImpactSerializer(
-        required=False, many=True, read_only=True, source="impact_set"
-    )
+    impacts = NestedImpactSerializer(required=False, many=True, read_only=True, source="impact_set")
     notifications = NestedEventNotificationSerializer(
         required=False, many=True, read_only=True, source="eventnotification_set"
     )
@@ -260,15 +251,11 @@ class ImpactSerializer(NetBoxModelSerializer):
     Handles GenericForeignKey relationships for both event and target.
     """
 
-    url = serializers.HyperlinkedIdentityField(
-        view_name="plugins-api:notices-api:impact-detail"
-    )
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:notices-api:impact-detail")
 
     # Write fields for GenericForeignKey - event
     event_content_type = serializers.PrimaryKeyRelatedField(
-        queryset=ContentType.objects.filter(
-            app_label="notices", model__in=["maintenance", "outage"]
-        ),
+        queryset=ContentType.objects.filter(app_label="notices", model__in=["maintenance", "outage"]),
         help_text="Content type of the event (Maintenance or Outage)",
     )
     event_object_id = serializers.IntegerField(help_text="ID of the event object")
@@ -352,15 +339,11 @@ class EventNotificationSerializer(NetBoxModelSerializer):
     Handles GenericForeignKey relationship to event (Maintenance or Outage).
     """
 
-    url = serializers.HyperlinkedIdentityField(
-        view_name="plugins-api:notices-api:eventnotification-detail"
-    )
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:notices-api:eventnotification-detail")
 
     # Write fields for GenericForeignKey
     event_content_type = serializers.PrimaryKeyRelatedField(
-        queryset=ContentType.objects.filter(
-            app_label="notices", model__in=["maintenance", "outage"]
-        ),
+        queryset=ContentType.objects.filter(app_label="notices", model__in=["maintenance", "outage"]),
         help_text="Content type of the event (Maintenance or Outage)",
     )
     event_object_id = serializers.IntegerField(help_text="ID of the event object")

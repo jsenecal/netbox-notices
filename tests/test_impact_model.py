@@ -13,11 +13,12 @@ class TestImpactModelStructure(unittest.TestCase):
     """AST-based tests for Impact model structure (works without Django/NetBox)"""
 
     def _get_models_file_ast(self):
-        """Parse the models.py file and return AST"""
+        """Parse the models/events.py file and return AST"""
         models_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
             "notices",
-            "models.py",
+            "models",
+            "events.py",
         )
         with open(models_path, "r") as f:
             return ast.parse(f.read())
@@ -107,9 +108,7 @@ class TestImpactModelStructure(unittest.TestCase):
         self.assertIsNotNone(class_node)
 
         fields = self._get_field_names(class_node)
-        self.assertIn(
-            "event_object_id", fields, "Impact should define 'event_object_id' field"
-        )
+        self.assertIn("event_object_id", fields, "Impact should define 'event_object_id' field")
 
     def test_impact_has_event_generic_foreign_key(self):
         """Test that Impact has event GenericForeignKey"""
@@ -140,9 +139,7 @@ class TestImpactModelStructure(unittest.TestCase):
         self.assertIsNotNone(class_node)
 
         fields = self._get_field_names(class_node)
-        self.assertIn(
-            "target_object_id", fields, "Impact should define 'target_object_id' field"
-        )
+        self.assertIn("target_object_id", fields, "Impact should define 'target_object_id' field")
 
     def test_impact_has_target_generic_foreign_key(self):
         """Test that Impact has target GenericForeignKey"""
@@ -151,9 +148,7 @@ class TestImpactModelStructure(unittest.TestCase):
         self.assertIsNotNone(class_node)
 
         fields = self._get_field_names(class_node)
-        self.assertIn(
-            "target", fields, "Impact should define 'target' GenericForeignKey"
-        )
+        self.assertIn("target", fields, "Impact should define 'target' GenericForeignKey")
 
     def test_impact_has_impact_field(self):
         """Test that Impact has impact field"""
@@ -288,15 +283,9 @@ try:
 
             from notices.models import Maintenance
 
-            cls.provider = Provider.objects.create(
-                name="Test Provider", slug="test-provider"
-            )
-            cls.circuit_type = CircuitType.objects.create(
-                name="Test Type", slug="test-type"
-            )
-            cls.circuit = Circuit.objects.create(
-                cid="TEST-001", provider=cls.provider, type=cls.circuit_type
-            )
+            cls.provider = Provider.objects.create(name="Test Provider", slug="test-provider")
+            cls.circuit_type = CircuitType.objects.create(name="Test Type", slug="test-type")
+            cls.circuit = Circuit.objects.create(cid="TEST-001", provider=cls.provider, type=cls.circuit_type)
             cls.site = Site.objects.create(name="Test Site", slug="test-site")
             cls.maintenance = Maintenance.objects.create(
                 name="MAINT-001",
@@ -307,9 +296,7 @@ try:
                 status="CONFIRMED",
             )
 
-        @override_settings(
-            PLUGINS_CONFIG={"notices": {"allowed_content_types": ["circuits.Circuit"]}}
-        )
+        @override_settings(PLUGINS_CONFIG={"notices": {"allowed_content_types": ["circuits.Circuit"]}})
         def test_validation_disallowed_content_type(self):
             """Test that non-configured content types are rejected"""
             from django.core.exceptions import ValidationError

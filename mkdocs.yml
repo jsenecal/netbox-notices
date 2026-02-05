@@ -9,7 +9,8 @@ exclude_docs: |
 
 nav:
   - Home: index.md
-  - Automated Parsers: 
+  - Outgoing Notifications: outgoing-notifications.md
+  - Automated Parsers:
     - Using a parser: parsers.md
     - AWS SNS & Lambda: parsers_sns_lambda.md
   - Contributing: contributing.md

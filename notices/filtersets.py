@@ -3,22 +3,36 @@ from django.db.models import Q
 from netbox.filtersets import NetBoxModelFilterSet
 from utilities.filters import ContentTypeFilter
 
+from .choices import (
+    MessageEventTypeChoices,
+    MessageGranularityChoices,
+    PreparedNotificationStatusChoices,
+)
 from .models import (
     EventNotification,
     Impact,
     Maintenance,
+    NotificationTemplate,
     Outage,
+    PreparedNotification,
 )
 
 
 class MaintenanceFilterSet(NetBoxModelFilterSet):
     """FilterSet for Maintenance events"""
 
+    from circuits.models import Provider
+
+    provider_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Provider.objects.all(),
+        field_name="provider",
+        label="Provider",
+    )
     replaces_id = django_filters.ModelMultipleChoiceFilter(
         queryset=Maintenance.objects.all(),
-        label="Replaces (ID)",
+        field_name="replaces",
+        label="Replaces",
     )
-
     has_replaces = django_filters.BooleanFilter(
         method="filter_has_replaces",
         label="Has replacement",
@@ -31,7 +45,7 @@ class MaintenanceFilterSet(NetBoxModelFilterSet):
             "name",
             "summary",
             "status",
-            "provider",
+            "provider_id",
             "start",
             "end",
             "original_timezone",
@@ -61,6 +75,14 @@ class MaintenanceFilterSet(NetBoxModelFilterSet):
 class OutageFilterSet(NetBoxModelFilterSet):
     """FilterSet for Outage events"""
 
+    from circuits.models import Provider
+
+    provider_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Provider.objects.all(),
+        field_name="provider",
+        label="Provider",
+    )
+
     class Meta:
         model = Outage
         fields = (
@@ -68,7 +90,7 @@ class OutageFilterSet(NetBoxModelFilterSet):
             "name",
             "summary",
             "status",
-            "provider",
+            "provider_id",
             "start",
             "reported_at",
             "end",
@@ -146,7 +168,55 @@ class EventNotificationFilterSet(NetBoxModelFilterSet):
         if not value.strip():
             return queryset
         return queryset.filter(
-            Q(subject__icontains=value)
-            | Q(email_body__icontains=value)
-            | Q(email_from__icontains=value)
+            Q(subject__icontains=value) | Q(email_body__icontains=value) | Q(email_from__icontains=value)
         )
+
+
+class NotificationTemplateFilterSet(NetBoxModelFilterSet):
+    """Filterset for NotificationTemplate."""
+
+    event_type = django_filters.MultipleChoiceFilter(
+        choices=MessageEventTypeChoices,
+    )
+    granularity = django_filters.MultipleChoiceFilter(
+        choices=MessageGranularityChoices,
+    )
+    is_base_template = django_filters.BooleanFilter()
+    q = django_filters.CharFilter(
+        method="search",
+        label="Search",
+    )
+
+    class Meta:
+        model = NotificationTemplate
+        fields = ["id", "name", "slug", "event_type", "granularity", "is_base_template"]
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(Q(name__icontains=value) | Q(slug__icontains=value) | Q(description__icontains=value))
+
+
+class PreparedNotificationFilterSet(NetBoxModelFilterSet):
+    """Filterset for PreparedNotification."""
+
+    status = django_filters.MultipleChoiceFilter(
+        choices=PreparedNotificationStatusChoices,
+    )
+    template_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=NotificationTemplate.objects.all(),
+        field_name="template",
+    )
+    q = django_filters.CharFilter(
+        method="search",
+        label="Search",
+    )
+
+    class Meta:
+        model = PreparedNotification
+        fields = ["id", "status", "template_id"]
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(Q(subject__icontains=value) | Q(body_text__icontains=value))

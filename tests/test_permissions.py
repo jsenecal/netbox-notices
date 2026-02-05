@@ -5,14 +5,15 @@ These tests verify that Django permissions are properly enforced
 for all models and views in the notices plugin.
 """
 
+from datetime import timedelta
+
 import pytest
+from circuits.models import Provider
 from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
-from datetime import timedelta
 
-from circuits.models import Provider
 from notices.models import Maintenance, Outage
 
 User = get_user_model()
@@ -42,9 +43,7 @@ class TestMaintenancePermissions:
     @pytest.fixture
     def user_no_perms(self):
         """Create user without any permissions."""
-        return User.objects.create_user(
-            username="noauth", password="test", email="noauth@example.com"
-        )
+        return User.objects.create_user(username="noauth", password="test", email="noauth@example.com")
 
     def test_list_view_requires_permission(self, user_no_perms):
         """Test that maintenance list requires view_maintenance permission."""
@@ -136,9 +135,7 @@ class TestOutagePermissions:
     @pytest.fixture
     def user_no_perms(self):
         """Create user without any permissions."""
-        return User.objects.create_user(
-            username="noauth", password="test", email="noauth@example.com"
-        )
+        return User.objects.create_user(username="noauth", password="test", email="noauth@example.com")
 
     def test_list_view_requires_permission(self, user_no_perms):
         """Test that outage list requires view_outage permission."""
@@ -209,9 +206,7 @@ class TestAPIPermissions:
     @pytest.fixture
     def user_no_perms(self):
         """Create user without any permissions."""
-        return User.objects.create_user(
-            username="apiuser", password="test", email="api@example.com"
-        )
+        return User.objects.create_user(username="apiuser", password="test", email="api@example.com")
 
     def test_api_list_requires_permission(self, user_no_perms):
         """Test that API list endpoint requires view permission."""
@@ -302,9 +297,7 @@ class TestICalPermissions:
     @pytest.fixture
     def user_no_perms(self):
         """Create user without any permissions."""
-        return User.objects.create_user(
-            username="icaluser", password="test", email="ical@example.com"
-        )
+        return User.objects.create_user(username="icaluser", password="test", email="ical@example.com")
 
     def test_ical_requires_permission(self, user_no_perms):
         """Test that iCal feed requires view_maintenance permission."""

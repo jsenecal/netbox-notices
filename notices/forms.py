@@ -7,12 +7,34 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from netbox.forms import NetBoxModelFilterSetForm, NetBoxModelForm
 from utilities.forms import get_field_value
+from utilities.forms.fields import (
+    DynamicModelChoiceField,
+    DynamicModelMultipleChoiceField,
+    SlugField,
+    TagFilterField,
+)
 from utilities.forms.rendering import FieldSet
-from utilities.forms.fields import DynamicModelChoiceField
 from utilities.forms.widgets import DateTimePicker, HTMXSelect
 
-from .choices import MaintenanceTypeChoices, OutageStatusChoices, TimeZoneChoices
-from .models import EventNotification, Impact, Maintenance, Outage
+from .choices import (
+    BodyFormatChoices,
+    MaintenanceTypeChoices,
+    MessageEventTypeChoices,
+    MessageGranularityChoices,
+    OutageStatusChoices,
+    PreparedNotificationStatusChoices,
+    TimeZoneChoices,
+)
+from .models import (
+    EventNotification,
+    Impact,
+    Maintenance,
+    NotificationTemplate,
+    Outage,
+    PreparedNotification,
+    SentNotification,
+    TemplateScope,
+)
 from .utils import get_allowed_content_types
 
 
@@ -93,22 +115,24 @@ class GenericForeignKeyFormMixin:
 
             if choice_object:
                 # Populate GenericForeignKey fields
-                self.cleaned_data[content_type_field] = (
-                    ContentType.objects.get_for_model(choice_object)
-                )
+                self.cleaned_data[content_type_field] = ContentType.objects.get_for_model(choice_object)
                 self.cleaned_data[object_id_field] = choice_object.id
 
         return self.cleaned_data
 
 
 class MaintenanceForm(NetBoxModelForm):
-    provider = DynamicModelChoiceField(queryset=Provider.objects.all())
+    provider = DynamicModelChoiceField(
+        queryset=Provider.objects.all(),
+        quick_add=True,
+    )
 
     replaces = DynamicModelChoiceField(
         queryset=Maintenance.objects.all(),
         required=False,
         label="Replaces",
         help_text="The maintenance this event replaces (for rescheduled events)",
+        selector=True,
     )
 
     original_timezone = forms.ChoiceField(
@@ -142,11 +166,7 @@ class MaintenanceForm(NetBoxModelForm):
 
         # On edit, change help text since we don't convert
         if self.instance and self.instance.pk:
-            self.fields[
-                "original_timezone"
-            ].help_text = (
-                "Original timezone from provider notification (reference only)"
-            )
+            self.fields["original_timezone"].help_text = "Original timezone from provider notification (reference only)"
             self.fields["original_timezone"].label = "Original Timezone"
 
     def save(self, commit=True):
@@ -163,14 +183,10 @@ class MaintenanceForm(NetBoxModelForm):
                 if instance.start:
                     # Make the datetime aware in the original timezone if it's naive
                     if timezone.is_naive(instance.start):
-                        start_in_original_tz = instance.start.replace(
-                            tzinfo=original_tz
-                        )
+                        start_in_original_tz = instance.start.replace(tzinfo=original_tz)
                     else:
                         # If already aware, interpret it as being in the original timezone
-                        start_in_original_tz = instance.start.replace(
-                            tzinfo=original_tz
-                        )
+                        start_in_original_tz = instance.start.replace(tzinfo=original_tz)
                     # Convert to system timezone
                     instance.start = start_in_original_tz.astimezone(system_tz)
 
@@ -196,23 +212,32 @@ class MaintenanceForm(NetBoxModelForm):
 class MaintenanceFilterForm(NetBoxModelFilterSetForm):
     model = Maintenance
 
-    name = forms.CharField(required=False)
-
-    summary = forms.CharField(required=False)
-
-    provider = forms.ModelMultipleChoiceField(
-        queryset=Provider.objects.all(), required=False
+    fieldsets = (
+        FieldSet("q", "filter_id", "tag"),
+        FieldSet("status", "provider_id", "acknowledged", name="Attributes"),
     )
+    selector_fields = ("filter_id", "q", "provider_id", "status")
 
-    status = forms.MultipleChoiceField(choices=MaintenanceTypeChoices, required=False)
-
-    start = forms.CharField(required=False)
-
-    end = forms.CharField(required=False)
-
-    acknowledged = forms.BooleanField(required=False)
-
-    internal_ticket = forms.CharField(required=False)
+    status = forms.MultipleChoiceField(
+        choices=MaintenanceTypeChoices,
+        required=False,
+    )
+    provider_id = DynamicModelMultipleChoiceField(
+        queryset=Provider.objects.all(),
+        required=False,
+        label="Provider",
+    )
+    acknowledged = forms.NullBooleanField(
+        required=False,
+        widget=forms.Select(
+            choices=[
+                ("", "---------"),
+                (True, "Yes"),
+                (False, "No"),
+            ]
+        ),
+    )
+    tag = TagFilterField(model)
 
 
 class ImpactForm(GenericForeignKeyFormMixin, NetBoxModelForm):
@@ -259,9 +284,7 @@ class ImpactForm(GenericForeignKeyFormMixin, NetBoxModelForm):
             app_label="notices", model__in=["maintenance", "outage"]
         )
         self.fields["event_content_type"].label = "Event Type"
-        self.fields[
-            "event_content_type"
-        ].help_text = "Type of event (Maintenance or Outage)"
+        self.fields["event_content_type"].help_text = "Type of event (Maintenance or Outage)"
 
         # Customize auto-generated target_content_type field
         self.fields["target_content_type"].label = "Target Type"
@@ -269,15 +292,11 @@ class ImpactForm(GenericForeignKeyFormMixin, NetBoxModelForm):
 
         # Customize object_id fields (labels and help text)
         self.fields["event_object_id"].label = "Event"
-        self.fields[
-            "event_object_id"
-        ].help_text = "Select a specific maintenance or outage event"
+        self.fields["event_object_id"].help_text = "Select a specific maintenance or outage event"
         self.fields["event_object_id"].required = False
 
         self.fields["target_object_id"].label = "Target Object"
-        self.fields[
-            "target_object_id"
-        ].help_text = "Select the specific object affected by this event"
+        self.fields["target_object_id"].help_text = "Select the specific object affected by this event"
         self.fields["target_object_id"].required = False
 
         # Get allowed content types for targets from plugin configuration
@@ -286,9 +305,7 @@ class ImpactForm(GenericForeignKeyFormMixin, NetBoxModelForm):
         for type_string in allowed_types:
             try:
                 app_label, model = type_string.lower().split(".")
-                ct = ContentType.objects.filter(
-                    app_label=app_label, model=model
-                ).first()
+                ct = ContentType.objects.filter(app_label=app_label, model=model).first()
                 if ct:
                     target_content_types.append(ct.pk)
             except (ValueError, AttributeError):
@@ -296,9 +313,7 @@ class ImpactForm(GenericForeignKeyFormMixin, NetBoxModelForm):
                 continue
 
         # Update target_content_type queryset based on allowed types
-        self.fields["target_content_type"].queryset = ContentType.objects.filter(
-            pk__in=target_content_types
-        )
+        self.fields["target_content_type"].queryset = ContentType.objects.filter(pk__in=target_content_types)
 
         # Determine event content type from form state (instance, initial, or GET/POST)
         event_ct_id = get_field_value(self, "event_content_type")
@@ -359,9 +374,7 @@ class EventNotificationForm(GenericForeignKeyFormMixin, NetBoxModelForm):
             app_label="notices", model__in=["maintenance", "outage"]
         )
         self.fields["event_content_type"].label = "Event Type"
-        self.fields[
-            "event_content_type"
-        ].help_text = "Type of event (Maintenance or Outage)"
+        self.fields["event_content_type"].help_text = "Type of event (Maintenance or Outage)"
 
         # Make hidden object_id field not required
         self.fields["event_object_id"].required = False
@@ -372,8 +385,26 @@ class EventNotificationForm(GenericForeignKeyFormMixin, NetBoxModelForm):
             self.init_generic_choice("event", event_ct_id)
 
 
+class EventNotificationFilterForm(NetBoxModelFilterSetForm):
+    """Filter form for EventNotification list view."""
+
+    model = EventNotification
+
+    fieldsets = (
+        FieldSet("q", "filter_id"),
+        FieldSet("subject", "email_from", name="Email"),
+    )
+    selector_fields = ("filter_id", "q")
+
+    subject = forms.CharField(required=False)
+    email_from = forms.CharField(required=False, label="From")
+
+
 class OutageForm(NetBoxModelForm):
-    provider = DynamicModelChoiceField(queryset=Provider.objects.all())
+    provider = DynamicModelChoiceField(
+        queryset=Provider.objects.all(),
+        quick_add=True,
+    )
 
     original_timezone = forms.ChoiceField(
         choices=TimeZoneChoices,
@@ -412,11 +443,7 @@ class OutageForm(NetBoxModelForm):
 
         # On edit, change help text since we don't convert
         if self.instance and self.instance.pk:
-            self.fields[
-                "original_timezone"
-            ].help_text = (
-                "Original timezone from provider notification (reference only)"
-            )
+            self.fields["original_timezone"].help_text = "Original timezone from provider notification (reference only)"
             self.fields["original_timezone"].label = "Original Timezone"
 
     def save(self, commit=True):
@@ -432,28 +459,18 @@ class OutageForm(NetBoxModelForm):
                 # Convert start time if provided
                 if instance.start:
                     if timezone.is_naive(instance.start):
-                        start_in_original_tz = instance.start.replace(
-                            tzinfo=original_tz
-                        )
+                        start_in_original_tz = instance.start.replace(tzinfo=original_tz)
                     else:
-                        start_in_original_tz = instance.start.replace(
-                            tzinfo=original_tz
-                        )
+                        start_in_original_tz = instance.start.replace(tzinfo=original_tz)
                     instance.start = start_in_original_tz.astimezone(system_tz)
 
                 # Convert reported_at time if provided
                 if instance.reported_at:
                     if timezone.is_naive(instance.reported_at):
-                        reported_at_in_original_tz = instance.reported_at.replace(
-                            tzinfo=original_tz
-                        )
+                        reported_at_in_original_tz = instance.reported_at.replace(tzinfo=original_tz)
                     else:
-                        reported_at_in_original_tz = instance.reported_at.replace(
-                            tzinfo=original_tz
-                        )
-                    instance.reported_at = reported_at_in_original_tz.astimezone(
-                        system_tz
-                    )
+                        reported_at_in_original_tz = instance.reported_at.replace(tzinfo=original_tz)
+                    instance.reported_at = reported_at_in_original_tz.astimezone(system_tz)
 
                 # Convert end time if provided
                 if instance.end:
@@ -466,16 +483,10 @@ class OutageForm(NetBoxModelForm):
                 # Convert ETR time if provided
                 if instance.estimated_time_to_repair:
                     if timezone.is_naive(instance.estimated_time_to_repair):
-                        etr_in_original_tz = instance.estimated_time_to_repair.replace(
-                            tzinfo=original_tz
-                        )
+                        etr_in_original_tz = instance.estimated_time_to_repair.replace(tzinfo=original_tz)
                     else:
-                        etr_in_original_tz = instance.estimated_time_to_repair.replace(
-                            tzinfo=original_tz
-                        )
-                    instance.estimated_time_to_repair = etr_in_original_tz.astimezone(
-                        system_tz
-                    )
+                        etr_in_original_tz = instance.estimated_time_to_repair.replace(tzinfo=original_tz)
+                    instance.estimated_time_to_repair = etr_in_original_tz.astimezone(system_tz)
 
             except (zoneinfo.ZoneInfoNotFoundError, ValueError):
                 # If timezone is invalid, just save without conversion
@@ -491,13 +502,375 @@ class OutageForm(NetBoxModelForm):
 class OutageFilterForm(NetBoxModelFilterSetForm):
     model = Outage
 
-    name = forms.CharField(required=False)
-    summary = forms.CharField(required=False)
-    provider = forms.ModelMultipleChoiceField(
-        queryset=Provider.objects.all(), required=False
+    fieldsets = (
+        FieldSet("q", "filter_id", "tag"),
+        FieldSet("status", "provider_id", "acknowledged", name="Attributes"),
     )
-    status = forms.MultipleChoiceField(choices=OutageStatusChoices, required=False)
-    start = forms.CharField(required=False)
-    end = forms.CharField(required=False)
-    acknowledged = forms.BooleanField(required=False)
-    internal_ticket = forms.CharField(required=False)
+    selector_fields = ("filter_id", "q", "provider_id", "status")
+
+    status = forms.MultipleChoiceField(
+        choices=OutageStatusChoices,
+        required=False,
+    )
+    provider_id = DynamicModelMultipleChoiceField(
+        queryset=Provider.objects.all(),
+        required=False,
+        label="Provider",
+    )
+    acknowledged = forms.NullBooleanField(
+        required=False,
+        widget=forms.Select(
+            choices=[
+                ("", "---------"),
+                (True, "Yes"),
+                (False, "No"),
+            ]
+        ),
+    )
+    tag = TagFilterField(model)
+
+
+# NotificationTemplate Forms
+class NotificationTemplateForm(NetBoxModelForm):
+    """Form for creating/editing NotificationTemplate records."""
+
+    from tenancy.models import ContactRole
+
+    slug = SlugField(
+        slug_source="name",
+    )
+    contact_roles = DynamicModelMultipleChoiceField(
+        queryset=ContactRole.objects.all(),
+        required=False,
+    )
+    extends = DynamicModelChoiceField(
+        queryset=NotificationTemplate.objects.filter(is_base_template=True),
+        required=False,
+        label="Extends Template",
+        help_text="Parent template to extend (for Jinja block inheritance).",
+        selector=True,
+    )
+
+    fieldsets = (
+        FieldSet("name", "slug", "description", "weight", name="Template"),
+        FieldSet("event_type", "granularity", name="Targeting"),
+        FieldSet(
+            "subject_template",
+            "body_template",
+            "body_format",
+            "css_template",
+            "headers_template",
+            name="Content",
+        ),
+        FieldSet("include_ical", "ical_template", name="iCal"),
+        FieldSet("contact_roles", "contact_priorities", name="Recipients"),
+        FieldSet("is_base_template", "extends", name="Inheritance"),
+        FieldSet("tags", name="Tags"),
+    )
+
+    class Meta:
+        model = NotificationTemplate
+        fields = [
+            "name",
+            "slug",
+            "description",
+            "weight",
+            "event_type",
+            "granularity",
+            "subject_template",
+            "body_template",
+            "body_format",
+            "css_template",
+            "headers_template",
+            "include_ical",
+            "ical_template",
+            "contact_roles",
+            "contact_priorities",
+            "is_base_template",
+            "extends",
+            "tags",
+        ]
+        widgets = {
+            "body_template": forms.Textarea(attrs={"rows": 10, "class": "font-monospace"}),
+            "ical_template": forms.Textarea(attrs={"rows": 10, "class": "font-monospace"}),
+            "css_template": forms.Textarea(attrs={"rows": 5, "class": "font-monospace"}),
+            "subject_template": forms.TextInput(attrs={"class": "font-monospace"}),
+        }
+
+
+class NotificationTemplateFilterForm(NetBoxModelFilterSetForm):
+    model = NotificationTemplate
+
+    fieldsets = (
+        FieldSet("q", "filter_id", "tag"),
+        FieldSet("event_type", "granularity", "body_format", "is_base_template", name="Attributes"),
+    )
+    selector_fields = ("filter_id", "q", "event_type")
+
+    event_type = forms.MultipleChoiceField(
+        choices=MessageEventTypeChoices,
+        required=False,
+    )
+    granularity = forms.MultipleChoiceField(
+        choices=MessageGranularityChoices,
+        required=False,
+    )
+    body_format = forms.MultipleChoiceField(
+        choices=BodyFormatChoices,
+        required=False,
+    )
+    is_base_template = forms.NullBooleanField(
+        required=False,
+        widget=forms.Select(
+            choices=[
+                ("", "---------"),
+                (True, "Yes"),
+                (False, "No"),
+            ]
+        ),
+    )
+    tag = TagFilterField(model)
+
+
+# PreparedNotification Forms
+class PreparedNotificationForm(NetBoxModelForm):
+    """Form for creating/editing PreparedNotification records."""
+
+    from tenancy.models import Contact
+
+    template = DynamicModelChoiceField(
+        queryset=NotificationTemplate.objects.all(),
+        quick_add=True,
+        selector=True,
+    )
+    contacts = DynamicModelMultipleChoiceField(
+        queryset=Contact.objects.all(),
+        required=False,
+    )
+
+    fieldsets = (
+        FieldSet("template", "status", name="Notification"),
+        FieldSet("contacts", name="Recipients"),
+        FieldSet("subject", "body_text", "body_html", name="Content"),
+        FieldSet("tags", name="Tags"),
+    )
+
+    class Meta:
+        model = PreparedNotification
+        fields = [
+            "template",
+            "status",
+            "contacts",
+            "subject",
+            "body_text",
+            "body_html",
+            "headers",
+            "css",
+            "ical_content",
+            "tags",
+        ]
+        widgets = {
+            "body_text": forms.Textarea(attrs={"rows": 10}),
+            "body_html": forms.Textarea(attrs={"rows": 10}),
+        }
+
+
+class PreparedNotificationFilterForm(NetBoxModelFilterSetForm):
+    model = PreparedNotification
+
+    fieldsets = (
+        FieldSet("q", "filter_id", "tag"),
+        FieldSet("status", "template_id", name="Attributes"),
+    )
+    selector_fields = ("filter_id", "q", "status", "template_id")
+
+    status = forms.MultipleChoiceField(
+        choices=PreparedNotificationStatusChoices,
+        required=False,
+    )
+    template_id = DynamicModelMultipleChoiceField(
+        queryset=NotificationTemplate.objects.all(),
+        required=False,
+        label="Template",
+    )
+    tag = TagFilterField(model)
+
+
+class SentNotificationFilterForm(NetBoxModelFilterSetForm):
+    """Filter form for Sent notifications (only sent/delivered statuses)."""
+
+    model = SentNotification
+
+    fieldsets = (
+        FieldSet("q", "filter_id", "tag"),
+        FieldSet("status", "template_id", name="Attributes"),
+    )
+    selector_fields = ("filter_id", "q", "status", "template_id")
+
+    # Only show sent/delivered status options
+    status = forms.MultipleChoiceField(
+        choices=[
+            ("sent", "Sent"),
+            ("delivered", "Delivered"),
+        ],
+        required=False,
+    )
+    template_id = DynamicModelMultipleChoiceField(
+        queryset=NotificationTemplate.objects.all(),
+        required=False,
+        label="Template",
+    )
+    tag = TagFilterField(PreparedNotification)  # Use parent model for tags
+
+
+class PreparedNotificationBulkEditForm(NetBoxModelForm):
+    """Form for bulk editing PreparedNotification records."""
+
+    pk = forms.ModelMultipleChoiceField(
+        queryset=PreparedNotification.objects.all(),
+        widget=forms.MultipleHiddenInput(),
+    )
+    status = forms.ChoiceField(
+        choices=[("", "---------")] + list(PreparedNotificationStatusChoices),
+        required=False,
+        label="Status",
+        help_text="Set status for all selected notifications (only valid transitions allowed)",
+    )
+
+    class Meta:
+        model = PreparedNotification
+        fields = ["pk", "status"]
+        nullable_fields = []
+
+
+# TemplateScope Forms
+class TemplateScopeForm(GenericForeignKeyFormMixin, forms.ModelForm):
+    """
+    Form for creating/editing TemplateScope records.
+    Uses GenericForeignKeyFormMixin for HTMX-based object picker.
+    """
+
+    # Register GenericFK field with mixin
+    generic_fk_fields = [
+        ("scope", "content_type", "object_id"),
+    ]
+
+    template = DynamicModelChoiceField(
+        queryset=NotificationTemplate.objects.all(),
+        selector=True,
+    )
+
+    fieldsets = (
+        FieldSet("template", name="Template"),
+        FieldSet("content_type", "scope_choice", name="Scope Target"),
+        FieldSet("event_type", "event_status", name="Event Filtering"),
+        FieldSet("weight", name="Priority"),
+    )
+
+    class Meta:
+        model = TemplateScope
+        fields = [
+            "template",
+            "content_type",
+            "object_id",
+            "event_type",
+            "event_status",
+            "weight",
+        ]
+        widgets = {
+            "content_type": HTMXSelect(),
+            "object_id": forms.HiddenInput,
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Get allowed content types from plugin configuration + event types
+        allowed_types = get_allowed_content_types()
+        content_type_pks = []
+
+        # Add configured allowed types (circuits, devices, etc.)
+        for type_string in allowed_types:
+            try:
+                app_label, model = type_string.lower().split(".")
+                ct = ContentType.objects.filter(app_label=app_label, model=model).first()
+                if ct:
+                    content_type_pks.append(ct.pk)
+            except (ValueError, AttributeError):
+                continue
+
+        # Also add Provider content type (commonly used for scoping)
+        provider_ct = ContentType.objects.filter(app_label="circuits", model="provider").first()
+        if provider_ct:
+            content_type_pks.append(provider_ct.pk)
+
+        # Add event types (Maintenance, Outage)
+        event_cts = ContentType.objects.filter(app_label="notices", model__in=["maintenance", "outage"])
+        content_type_pks.extend([ct.pk for ct in event_cts])
+
+        self.fields["content_type"].queryset = ContentType.objects.filter(pk__in=content_type_pks)
+        self.fields["content_type"].label = "Scope Type"
+        self.fields["content_type"].help_text = "Type of object this scope applies to"
+
+        self.fields["object_id"].required = False
+
+        # Event filtering fields
+        self.fields["event_type"].required = False
+        self.fields["event_status"].required = False
+
+        # Determine content type from form state
+        ct_id = get_field_value(self, "content_type")
+        if ct_id:
+            self.init_generic_choice("scope", ct_id)
+
+    def init_generic_choice(self, field_prefix, content_type_id):
+        """Override to make the object field optional (null = all objects of type)."""
+        if isinstance(content_type_id, list):
+            content_type_id = content_type_id[0] if content_type_id else None
+
+        if not content_type_id:
+            return
+
+        initial = None
+        try:
+            content_type = ContentType.objects.get(pk=content_type_id)
+            model_class = content_type.model_class()
+
+            # Get initial value if editing existing object
+            object_id_field = "object_id"
+            object_id = get_field_value(self, object_id_field)
+
+            if isinstance(object_id, list):
+                object_id = object_id[0] if object_id else None
+
+            if object_id:
+                initial = model_class.objects.get(pk=object_id)
+
+            # Create dynamic choice field with model-specific queryset
+            choice_field_name = f"{field_prefix}_choice"
+            self.fields[choice_field_name] = DynamicModelChoiceField(
+                label=f"Specific {content_type.model.title()} (optional)",
+                queryset=model_class.objects.all(),
+                required=False,  # Optional - null means "all of this type"
+                initial=initial,
+                help_text="Leave blank to match all objects of this type",
+            )
+        except (ContentType.DoesNotExist, ObjectDoesNotExist):
+            # Content type or referenced object no longer exists; skip creating
+            # the optional dynamic choice field and leave scope matching unchanged.
+            pass
+
+    def clean(self):
+        """Extract ContentType and object ID from selected object."""
+        cleaned_data = super(forms.ModelForm, self).clean()
+
+        # Handle the optional scope_choice field
+        choice_object = cleaned_data.get("scope_choice")
+        if choice_object:
+            cleaned_data["content_type"] = ContentType.objects.get_for_model(choice_object)
+            cleaned_data["object_id"] = choice_object.id
+        else:
+            # Keep content_type but set object_id to None (matches all of type)
+            cleaned_data["object_id"] = None
+
+        return cleaned_data

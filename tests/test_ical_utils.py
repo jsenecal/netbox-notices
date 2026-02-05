@@ -1,16 +1,18 @@
 """Tests for iCal utility functions."""
 
+from datetime import datetime
+from datetime import timezone as dt_timezone
+
 import pytest
-from datetime import datetime, timezone as dt_timezone
+from circuits.models import Provider
 from django.test import RequestFactory
 
-from circuits.models import Provider
-from notices.models import Maintenance
 from notices.ical_utils import (
     calculate_etag,
-    get_ical_status,
     generate_maintenance_ical,
+    get_ical_status,
 )
+from notices.models import Maintenance
 
 
 class TestICalStatusMapping:

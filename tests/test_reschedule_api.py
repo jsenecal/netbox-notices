@@ -1,10 +1,11 @@
+from datetime import timedelta
+
 import pytest
+from circuits.models import Provider
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from datetime import timedelta
 from rest_framework.test import APIClient
 
-from circuits.models import Provider
 from notices.models import Maintenance
 
 User = get_user_model()
@@ -17,9 +18,7 @@ class TestMaintenanceRescheduleAPI:
     @pytest.fixture
     def user(self):
         """Create superuser for API testing."""
-        return User.objects.create_superuser(
-            username="apiuser", email="api@example.com", password="apipass123"
-        )
+        return User.objects.create_superuser(username="apiuser", email="api@example.com", password="apipass123")
 
     @pytest.fixture
     def api_client(self, user):
