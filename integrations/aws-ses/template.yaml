@@ -1,0 +1,343 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  netbox-notices AWS SES integration — inbound email parsing, outbound delivery,
+  and delivery tracking via three Lambda functions.
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 60
+    MemorySize: 256
+    Architectures:
+      - x86_64
+
+Parameters:
+  NetBoxUrl:
+    Type: String
+    Description: NetBox base URL (e.g. https://netbox.example.com)
+    AllowedPattern: "https?://.*"
+
+  NetBoxApiToken:
+    Type: String
+    Description: NetBox API token with write access to the notices plugin
+    NoEcho: true
+
+  SesReceiptDomain:
+    Type: String
+    Description: Domain that receives inbound emails via SES (e.g. notices.example.com)
+    Default: ""
+
+  SesFromAddress:
+    Type: String
+    Description: Verified SES sender address for outbound emails
+    Default: noc@example.com
+
+  SesConfigSetName:
+    Type: String
+    Description: Name for the SES Configuration Set used to track delivery events
+    Default: netbox-notices-tracking
+
+  EnableOutboundPolling:
+    Type: String
+    Description: >
+      Enable scheduled polling for ready notifications. Set to "false" if using
+      webhook mode exclusively. Can be combined with webhook for belt-and-suspenders.
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+
+  OutboundPollInterval:
+    Type: String
+    Description: EventBridge schedule expression for outbound polling (ignored if polling disabled)
+    Default: "rate(5 minutes)"
+
+  InboundS3BucketName:
+    Type: String
+    Description: S3 bucket name for storing inbound emails (must be globally unique)
+    AllowedPattern: "[a-z0-9][a-z0-9.-]*[a-z0-9]"
+
+  WebhookSecret:
+    Type: String
+    Description: >
+      Shared secret for validating NetBox webhook signatures (X-Hook-Signature).
+      Must match the secret configured on the NetBox Webhook object.
+      Leave empty to disable webhook endpoint.
+    Default: ""
+    NoEcho: true
+
+Conditions:
+  HasReceiptDomain: !Not [!Equals [!Ref SesReceiptDomain, ""]]
+  HasWebhookSecret: !Not [!Equals [!Ref WebhookSecret, ""]]
+  PollingEnabled: !Equals [!Ref EnableOutboundPolling, "true"]
+
+Resources:
+  # ============================================================
+  # S3 — Inbound email storage
+  # ============================================================
+  InboundEmailBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref InboundS3BucketName
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireInboundEmails
+            Status: Enabled
+            ExpirationInDays: 30
+
+  InboundEmailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref InboundEmailBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowSESPuts
+            Effect: Allow
+            Principal:
+              Service: ses.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub "arn:aws:s3:::${InboundEmailBucket}/*"
+            Condition:
+              StringEquals:
+                "AWS:SourceAccount": !Ref AWS::AccountId
+
+  # ============================================================
+  # SES — Configuration Set + Tracking
+  # ============================================================
+  SesConfigurationSet:
+    Type: AWS::SES::ConfigurationSet
+    Properties:
+      Name: !Ref SesConfigSetName
+
+  TrackingSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${AWS::StackName}-ses-tracking"
+
+  TrackingSNSTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref TrackingSNSTopic
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowSESPublish
+            Effect: Allow
+            Principal:
+              Service: ses.amazonaws.com
+            Action: sns:Publish
+            Resource: !Ref TrackingSNSTopic
+            Condition:
+              StringEquals:
+                "AWS:SourceAccount": !Ref AWS::AccountId
+
+  SesTrackingEventDestination:
+    Type: AWS::SES::ConfigurationSetEventDestination
+    Properties:
+      ConfigurationSetName: !Ref SesConfigurationSet
+      EventDestination:
+        Name: sns-tracking
+        Enabled: true
+        MatchingEventTypes:
+          - send
+          - delivery
+          - bounce
+          - complaint
+          - reject
+          - open
+          - click
+          - renderingFailure
+          - deliveryDelay
+        SnsDestination:
+          TopicARN: !Ref TrackingSNSTopic
+
+  # ============================================================
+  # Inbound Lambda — SES receipt → parse → NetBox API
+  # ============================================================
+  InboundFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-inbound"
+      Handler: handler.lambda_handler
+      CodeUri: functions/inbound/
+      Timeout: 120
+      Environment:
+        Variables:
+          NETBOX_URL: !Ref NetBoxUrl
+          NETBOX_API_TOKEN: !Ref NetBoxApiToken
+          S3_BUCKET_NAME: !Ref InboundS3BucketName
+          PROVIDER_MAP: ""
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref InboundS3BucketName
+
+  InboundFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${InboundFunction}"
+      RetentionInDays: 14
+
+  InboundFunctionSESPermission:
+    Type: AWS::Lambda::Permission
+    Condition: HasReceiptDomain
+    Properties:
+      FunctionName: !Ref InboundFunction
+      Action: lambda:InvokeFunction
+      Principal: ses.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+
+  SesReceiptRuleSet:
+    Type: AWS::SES::ReceiptRuleSet
+    Condition: HasReceiptDomain
+    Properties:
+      RuleSetName: !Sub "${AWS::StackName}-inbound-rules"
+
+  SesReceiptRule:
+    Type: AWS::SES::ReceiptRule
+    Condition: HasReceiptDomain
+    DependsOn:
+      - InboundEmailBucketPolicy
+      - InboundFunctionSESPermission
+    Properties:
+      RuleSetName: !Ref SesReceiptRuleSet
+      Rule:
+        Name: !Sub "${AWS::StackName}-receive"
+        Enabled: true
+        Recipients:
+          - !Ref SesReceiptDomain
+        Actions:
+          - S3Action:
+              BucketName: !Ref InboundEmailBucket
+          - LambdaAction:
+              FunctionArn: !GetAtt InboundFunction.Arn
+
+  # ============================================================
+  # Outbound Lambda — Poll NetBox → send via SES
+  # ============================================================
+  OutboundFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-outbound"
+      Handler: handler.lambda_handler
+      CodeUri: functions/outbound/
+      Timeout: 120
+      Environment:
+        Variables:
+          NETBOX_URL: !Ref NetBoxUrl
+          NETBOX_API_TOKEN: !Ref NetBoxApiToken
+          SES_FROM_ADDRESS: !Ref SesFromAddress
+          SES_CONFIGURATION_SET: !Ref SesConfigSetName
+          WEBHOOK_SECRET: !Ref WebhookSecret
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendRawEmail
+              Resource: "*"
+      Events:
+        Schedule:
+          Type: Schedule
+          Properties:
+            Schedule: !Ref OutboundPollInterval
+            Description: Poll NetBox for ready notifications
+            Enabled: !If [PollingEnabled, true, false]
+
+  OutboundFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${OutboundFunction}"
+      RetentionInDays: 14
+
+  # ============================================================
+  # Tracking Lambda — SES events via SNS → NetBox status updates
+  # ============================================================
+  TrackingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-tracking"
+      Handler: handler.lambda_handler
+      CodeUri: functions/tracking/
+      Environment:
+        Variables:
+          NETBOX_URL: !Ref NetBoxUrl
+          NETBOX_API_TOKEN: !Ref NetBoxApiToken
+      Events:
+        SNSEvent:
+          Type: SNS
+          Properties:
+            Topic: !Ref TrackingSNSTopic
+
+  TrackingFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${TrackingFunction}"
+      RetentionInDays: 14
+
+  # ============================================================
+  # Webhook API — NetBox Event Rule → immediate outbound send
+  # ============================================================
+  WebhookApi:
+    Type: AWS::Serverless::HttpApi
+    Condition: HasWebhookSecret
+    Properties:
+      StageName: prod
+      Description: Webhook endpoint for NetBox Event Rules
+
+  WebhookApiOutboundPermission:
+    Type: AWS::Lambda::Permission
+    Condition: HasWebhookSecret
+    Properties:
+      FunctionName: !Ref OutboundFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebhookApi}/*"
+
+  WebhookApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Condition: HasWebhookSecret
+    Properties:
+      ApiId: !Ref WebhookApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt OutboundFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  WebhookApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Condition: HasWebhookSecret
+    Properties:
+      ApiId: !Ref WebhookApi
+      RouteKey: "POST /webhook/outbound"
+      Target: !Sub "integrations/${WebhookApiIntegration}"
+
+Outputs:
+  InboundFunctionArn:
+    Description: Inbound Lambda ARN (for SES receipt rule)
+    Value: !GetAtt InboundFunction.Arn
+
+  OutboundFunctionArn:
+    Description: Outbound Lambda ARN
+    Value: !GetAtt OutboundFunction.Arn
+
+  TrackingFunctionArn:
+    Description: Tracking Lambda ARN
+    Value: !GetAtt TrackingFunction.Arn
+
+  TrackingSNSTopicArn:
+    Description: SNS topic ARN for SES tracking events
+    Value: !Ref TrackingSNSTopic
+
+  InboundEmailBucketName:
+    Description: S3 bucket for inbound emails
+    Value: !Ref InboundEmailBucket
+
+  SesConfigurationSetName:
+    Description: SES Configuration Set name
+    Value: !Ref SesConfigurationSet
+
+  WebhookUrl:
+    Condition: HasWebhookSecret
+    Description: Webhook URL for NetBox Event Rules (use as Webhook payload_url)
+    Value: !Sub "https://${WebhookApi}.execute-api.${AWS::Region}.amazonaws.com/prod/webhook/outbound"

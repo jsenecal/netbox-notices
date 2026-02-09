@@ -1,0 +1,17 @@
+{
+  "Records": [
+    {
+      "EventVersion": "1.0",
+      "EventSubscriptionArn": "arn:aws:sns:us-east-1:123456789012:netbox-notices-ses-tracking:abcd1234",
+      "EventSource": "aws:sns",
+      "Sns": {
+        "Type": "Notification",
+        "MessageId": "msg-bounce-001",
+        "TopicArn": "arn:aws:sns:us-east-1:123456789012:netbox-notices-ses-tracking",
+        "Subject": "Amazon SES Email Event Notification",
+        "Message": "{\"eventType\":\"Bounce\",\"mail\":{\"timestamp\":\"2026-01-15T12:06:00.000Z\",\"messageId\":\"ses-msg-id-002\",\"source\":\"noc@example.com\",\"destination\":[\"invalid@example.com\"],\"tags\":{\"notification_id\":[\"43\"]}},\"bounce\":{\"bounceType\":\"Permanent\",\"bounceSubType\":\"General\",\"bouncedRecipients\":[{\"emailAddress\":\"invalid@example.com\",\"action\":\"failed\",\"status\":\"5.1.1\",\"diagnosticCode\":\"smtp; 550 5.1.1 user unknown\"}],\"timestamp\":\"2026-01-15T12:06:05.000Z\",\"feedbackId\":\"feedback-bounce-001\",\"reportingMTA\":\"dns; a1-2.smtp-out.us-east-1.amazonses.com\"}}",
+        "Timestamp": "2026-01-15T12:06:06.000Z"
+      }
+    }
+  ]
+}

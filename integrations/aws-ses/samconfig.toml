@@ -1,0 +1,9 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "netbox-notices-ses"
+resolve_s3 = true
+s3_prefix = "netbox-notices-ses"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true

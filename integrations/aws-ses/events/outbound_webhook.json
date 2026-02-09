@@ -1,0 +1,30 @@
+{
+  "version": "2.0",
+  "routeKey": "POST /webhook/outbound",
+  "rawPath": "/prod/webhook/outbound",
+  "rawQueryString": "",
+  "headers": {
+    "content-type": "application/json",
+    "x-hook-signature": "REPLACE_WITH_VALID_HMAC_SHA512_HEX_DIGEST"
+  },
+  "requestContext": {
+    "accountId": "123456789012",
+    "apiId": "abc123",
+    "domainName": "abc123.execute-api.us-east-1.amazonaws.com",
+    "domainPrefix": "abc123",
+    "http": {
+      "method": "POST",
+      "path": "/prod/webhook/outbound",
+      "protocol": "HTTP/1.1",
+      "sourceIp": "198.51.100.10",
+      "userAgent": "python-requests/2.31.0"
+    },
+    "requestId": "req-12345",
+    "routeKey": "POST /webhook/outbound",
+    "stage": "prod",
+    "time": "15/Jan/2026:12:05:00 +0000",
+    "timeEpoch": 1768483500000
+  },
+  "body": "{\"event\":\"updated\",\"timestamp\":\"2026-01-15T12:05:00+00:00\",\"model\":\"preparednotification\",\"username\":\"admin\",\"request_id\":\"550e8400-e29b-41d4-a716-446655440000\",\"data\":{\"id\":42,\"url\":\"/api/plugins/notices/prepared-notifications/42/\",\"display\":\"Maintenance Notification #42\",\"status\":{\"value\":\"ready\",\"label\":\"Ready\"},\"subject\":\"[CONFIRMED] Zayo Maintenance: TTN-12345\",\"body_text\":\"Maintenance scheduled...\",\"body_html\":\"<p>Maintenance scheduled...</p>\",\"recipients\":[{\"email\":\"noc@customer.com\",\"name\":\"NOC Team\"}]},\"snapshots\":{\"prechange\":{\"status\":\"draft\"},\"postchange\":{\"status\":\"ready\"}}}",
+  "isBase64Encoded": false
+}

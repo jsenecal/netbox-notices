@@ -1,0 +1,46 @@
+{
+  "Records": [
+    {
+      "eventVersion": "1.0",
+      "eventSource": "aws:ses",
+      "ses": {
+        "mail": {
+          "timestamp": "2026-01-15T12:00:00.000Z",
+          "source": "noc@zayo.com",
+          "messageId": "abc123def456ghi789",
+          "destination": [
+            "notices@example.com"
+          ],
+          "headersTruncated": false,
+          "headers": [
+            { "name": "From", "value": "NOC <noc@zayo.com>" },
+            { "name": "To", "value": "notices@example.com" },
+            { "name": "Subject", "value": "Zayo Maintenance Notification - TTN-12345" },
+            { "name": "Date", "value": "Wed, 15 Jan 2026 12:00:00 +0000" },
+            { "name": "Content-Type", "value": "multipart/mixed; boundary=\"boundary123\"" }
+          ],
+          "commonHeaders": {
+            "from": ["NOC <noc@zayo.com>"],
+            "to": ["notices@example.com"],
+            "subject": "Zayo Maintenance Notification - TTN-12345",
+            "date": "Wed, 15 Jan 2026 12:00:00 +0000"
+          }
+        },
+        "receipt": {
+          "timestamp": "2026-01-15T12:00:01.000Z",
+          "processingTimeMillis": 500,
+          "recipients": ["notices@example.com"],
+          "spamVerdict": { "status": "PASS" },
+          "virusVerdict": { "status": "PASS" },
+          "spfVerdict": { "status": "PASS" },
+          "dkimVerdict": { "status": "PASS" },
+          "dmarcVerdict": { "status": "PASS" },
+          "action": {
+            "type": "Lambda",
+            "functionArn": "arn:aws:lambda:us-east-1:123456789012:function:netbox-notices-ses-inbound"
+          }
+        }
+      }
+    }
+  ]
+}

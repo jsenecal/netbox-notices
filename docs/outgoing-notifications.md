@@ -748,3 +748,15 @@ for msg in response.json()["results"]:
             headers=headers,
         )
 ```
+
+### AWS SES Integration
+
+For a complete, deployable AWS SES integration that handles outbound delivery with full delivery lifecycle tracking (delivery confirmation, bounce/complaint handling, open/click tracking), see the [AWS SES Integration](integrations_aws_ses.md) guide.
+
+The SES integration provides:
+
+- Scheduled polling for ready notifications
+- MIME email construction with HTML, plain text, and iCal attachments
+- SES Configuration Set with SNS event destinations for tracking
+- Automatic status updates (sent, delivered, failed) based on SES events
+- Journal entries for informational events (open, click, delivery delay)

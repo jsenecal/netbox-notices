@@ -1,0 +1,2 @@
+circuit-maintenance-parser>=2.5,<3
+requests>=2.31,<3

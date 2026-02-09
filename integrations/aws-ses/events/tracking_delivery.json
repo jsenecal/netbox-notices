@@ -1,0 +1,17 @@
+{
+  "Records": [
+    {
+      "EventVersion": "1.0",
+      "EventSubscriptionArn": "arn:aws:sns:us-east-1:123456789012:netbox-notices-ses-tracking:abcd1234",
+      "EventSource": "aws:sns",
+      "Sns": {
+        "Type": "Notification",
+        "MessageId": "msg-delivery-001",
+        "TopicArn": "arn:aws:sns:us-east-1:123456789012:netbox-notices-ses-tracking",
+        "Subject": "Amazon SES Email Event Notification",
+        "Message": "{\"eventType\":\"Delivery\",\"mail\":{\"timestamp\":\"2026-01-15T12:06:00.000Z\",\"messageId\":\"ses-msg-id-001\",\"source\":\"noc@example.com\",\"destination\":[\"customer@example.com\"],\"tags\":{\"notification_id\":[\"42\"]}},\"delivery\":{\"timestamp\":\"2026-01-15T12:06:01.000Z\",\"processingTimeMillis\":500,\"recipients\":[\"customer@example.com\"],\"smtpResponse\":\"250 2.0.0 OK\",\"reportingMTA\":\"a1-2.smtp-out.us-east-1.amazonses.com\"}}",
+        "Timestamp": "2026-01-15T12:06:02.000Z"
+      }
+    }
+  ]
+}

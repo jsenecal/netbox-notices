@@ -13,6 +13,8 @@ nav:
   - Automated Parsers:
     - Using a parser: parsers.md
     - AWS SNS & Lambda: parsers_sns_lambda.md
+  - Integrations:
+    - AWS SES: integrations_aws_ses.md
   - Contributing: contributing.md
   - Changelog: changelog.md
 theme:
