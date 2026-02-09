@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.0 (2026-02-09)
 
 ### New Features
 
@@ -8,10 +8,21 @@
   * NotificationTemplate model with Jinja templating support
   * Template scoping (similar to Config Contexts) for tenant/provider/site-specific templates
   * Template inheritance for customization
-  * PreparedNotification model with approval workflow
+  * PreparedNotification model with approval workflow (draft → ready → sent → delivered/failed)
   * SentNotification proxy model for viewing sent/delivered notifications
   * Recipient discovery based on contact roles and priorities
   * iCal attachment support for maintenance notifications
+* **AWS SES Integration** (`integrations/aws-ses/`): Complete AWS SAM application for email delivery
+  * **Inbound Lambda** — SES receipt rule → S3 → parse with circuit-maintenance-parser → NetBox API
+  * **Outbound Lambda** — Poll NetBox for ready notifications → build MIME → send via SES
+  * **Tracking Lambda** — SES delivery events (delivery, bounce, complaint, open, click) via SNS → NetBox status updates
+  * Webhook support via API Gateway for immediate delivery on status change (alternative to polling)
+  * Polling and webhook modes independently toggleable (can use either or both)
+  * Optional VPC deployment for Lambda functions (private subnets with NAT Gateway)
+  * SES Configuration Set with full event tracking (send, delivery, bounce, complaint, open, click)
+  * HMAC-SHA512 webhook signature verification for NetBox Event Rules
+  * Comprehensive documentation: architecture, quick start, email authentication (SPF, DKIM, DMARC)
+* **Developer Tooling**: Plugin demo data loader and netbox-demo-data toolkit integration
 
 ### API Changes
 
@@ -19,6 +30,7 @@
   * `/api/plugins/notices/notification-templates/` - CRUD for notification templates
   * `/api/plugins/notices/prepared-notifications/` - CRUD with status workflow
   * `/api/plugins/notices/sent-notifications/` - Read-only view of sent notifications
+* Status transitions support optional `timestamp` and `message` fields
 
 ### UI Changes
 
@@ -26,6 +38,13 @@
 * New "Sent" menu item for viewing sent/delivered notifications
 * New "Notification Templates" management UI
 * New "Prepared Notifications" management UI with approval workflow
+
+### Documentation
+
+* AWS SES integration guide with architecture diagrams and deployment instructions
+* Outgoing notifications documentation with Slack and SES integration examples
+* Email authentication guide (SPF, DKIM, DMARC, Custom MAIL FROM)
+* Updated parsers documentation with SES cross-references
 
 ---
 

@@ -13,7 +13,7 @@ notices = ["templates/**/*", "static/**/*"]
 [project]
 name = "netbox-notices"
 keywords = ['notices']
-version = "0.2.4"
+version = "1.0.0"
 description = "Track maintenance and outage events across various NetBox models from vendors and internal sources."
 readme = "README.md"
 authors = [
@@ -23,7 +23,7 @@ authors = [
 license-files = ["LICENSE"]
 
 classifiers = [
-    'Development Status :: 2 - Pre-Alpha',
+    'Development Status :: 4 - Beta',
     'Intended Audience :: Developers',
     'Natural Language :: English',
     'Programming Language :: Python :: 3',
@@ -63,7 +63,7 @@ Tracker = "https://github.com/jsenecal/netbox-notices/issues"
 
 
 [tool.bumpver]
-current_version = "0.2.4"
+current_version = "1.0.0"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "chore: bump version {old_version} -> {new_version}"
 tag_pattern = "v{version}"
