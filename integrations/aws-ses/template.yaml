@@ -67,10 +67,27 @@ Parameters:
     Default: ""
     NoEcho: true
 
+  VpcSubnetIds:
+    Type: String
+    Description: >
+      Comma-separated list of private subnet IDs for Lambda VPC deployment.
+      Subnets must have a NAT Gateway for internet access (SES, S3, NetBox API).
+      Leave empty to deploy Lambda without VPC (default).
+    Default: ""
+
+  VpcSecurityGroupIds:
+    Type: String
+    Description: >
+      Comma-separated list of security group IDs for Lambda VPC deployment.
+      Security groups must allow outbound HTTPS (port 443).
+      Leave empty to deploy Lambda without VPC (default).
+    Default: ""
+
 Conditions:
   HasReceiptDomain: !Not [!Equals [!Ref SesReceiptDomain, ""]]
   HasWebhookSecret: !Not [!Equals [!Ref WebhookSecret, ""]]
   PollingEnabled: !Equals [!Ref EnableOutboundPolling, "true"]
+  HasVpcConfig: !Not [!Equals [!Ref VpcSubnetIds, ""]]
 
 Resources:
   # ============================================================
@@ -164,6 +181,11 @@ Resources:
       Handler: handler.lambda_handler
       CodeUri: functions/inbound/
       Timeout: 120
+      VpcConfig: !If
+        - HasVpcConfig
+        - SubnetIds: !Split [",", !Ref VpcSubnetIds]
+          SecurityGroupIds: !Split [",", !Ref VpcSecurityGroupIds]
+        - !Ref AWS::NoValue
       Environment:
         Variables:
           NETBOX_URL: !Ref NetBoxUrl
@@ -224,6 +246,11 @@ Resources:
       Handler: handler.lambda_handler
       CodeUri: functions/outbound/
       Timeout: 120
+      VpcConfig: !If
+        - HasVpcConfig
+        - SubnetIds: !Split [",", !Ref VpcSubnetIds]
+          SecurityGroupIds: !Split [",", !Ref VpcSecurityGroupIds]
+        - !Ref AWS::NoValue
       Environment:
         Variables:
           NETBOX_URL: !Ref NetBoxUrl
@@ -260,6 +287,11 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-tracking"
       Handler: handler.lambda_handler
       CodeUri: functions/tracking/
+      VpcConfig: !If
+        - HasVpcConfig
+        - SubnetIds: !Split [",", !Ref VpcSubnetIds]
+          SecurityGroupIds: !Split [",", !Ref VpcSecurityGroupIds]
+        - !Ref AWS::NoValue
       Environment:
         Variables:
           NETBOX_URL: !Ref NetBoxUrl
