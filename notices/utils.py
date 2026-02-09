@@ -14,6 +14,4 @@ def get_allowed_content_types():
     Returns list from PLUGINS_CONFIG['notices']['allowed_content_types']
     or DEFAULT_ALLOWED_CONTENT_TYPES if not configured.
     """
-    return settings.PLUGINS_CONFIG.get("notices", {}).get(
-        "allowed_content_types", DEFAULT_ALLOWED_CONTENT_TYPES
-    )
+    return settings.PLUGINS_CONFIG.get("notices", {}).get("allowed_content_types", DEFAULT_ALLOWED_CONTENT_TYPES)

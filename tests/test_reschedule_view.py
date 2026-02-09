@@ -1,11 +1,12 @@
+from datetime import timedelta
+
 import pytest
+from circuits.models import Provider
 from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
-from datetime import timedelta
 
-from circuits.models import Provider
 from notices.models import Maintenance
 
 User = get_user_model()
@@ -18,9 +19,7 @@ class TestMaintenanceRescheduleView:
     @pytest.fixture
     def user(self):
         """Create a superuser for testing."""
-        return User.objects.create_superuser(
-            username="testuser", email="test@example.com", password="testpass123"
-        )
+        return User.objects.create_superuser(username="testuser", email="test@example.com", password="testpass123")
 
     @pytest.fixture
     def client(self, user):
@@ -50,17 +49,13 @@ class TestMaintenanceRescheduleView:
 
     def test_reschedule_url_exists(self, client, original_maintenance):
         """Test that reschedule URL is accessible."""
-        url = reverse(
-            "plugins:notices:maintenance_reschedule", args=[original_maintenance.pk]
-        )
+        url = reverse("plugins:notices:maintenance_reschedule", args=[original_maintenance.pk])
         response = client.get(url)
         assert response.status_code == 200
 
     def test_reschedule_form_prefilled(self, client, original_maintenance):
         """Test that reschedule form is pre-filled with original data."""
-        url = reverse(
-            "plugins:notices:maintenance_reschedule", args=[original_maintenance.pk]
-        )
+        url = reverse("plugins:notices:maintenance_reschedule", args=[original_maintenance.pk])
         response = client.get(url)
 
         # Check that form has initial values from original
@@ -73,9 +68,7 @@ class TestMaintenanceRescheduleView:
 
     def test_reschedule_sets_replaces_field(self, client, original_maintenance):
         """Test that reschedule form sets replaces to original."""
-        url = reverse(
-            "plugins:notices:maintenance_reschedule", args=[original_maintenance.pk]
-        )
+        url = reverse("plugins:notices:maintenance_reschedule", args=[original_maintenance.pk])
         response = client.get(url)
 
         form = response.context["form"]
@@ -83,21 +76,15 @@ class TestMaintenanceRescheduleView:
 
     def test_reschedule_resets_status_to_tentative(self, client, original_maintenance):
         """Test that new maintenance starts with TENTATIVE status."""
-        url = reverse(
-            "plugins:notices:maintenance_reschedule", args=[original_maintenance.pk]
-        )
+        url = reverse("plugins:notices:maintenance_reschedule", args=[original_maintenance.pk])
         response = client.get(url)
 
         form = response.context["form"]
         assert form.initial["status"] == "TENTATIVE"
 
-    def test_reschedule_post_creates_new_maintenance(
-        self, client, original_maintenance, provider
-    ):
+    def test_reschedule_post_creates_new_maintenance(self, client, original_maintenance, provider):
         """Test that posting reschedule form creates new maintenance."""
-        url = reverse(
-            "plugins:notices:maintenance_reschedule", args=[original_maintenance.pk]
-        )
+        url = reverse("plugins:notices:maintenance_reschedule", args=[original_maintenance.pk])
 
         new_start = timezone.now() + timedelta(days=1)
         new_end = new_start + timedelta(hours=2)
@@ -121,13 +108,9 @@ class TestMaintenanceRescheduleView:
         new_maintenance = Maintenance.objects.get(name="MAINT-002")
         assert new_maintenance.replaces == original_maintenance
 
-    def test_reschedule_updates_original_status(
-        self, client, original_maintenance, provider
-    ):
+    def test_reschedule_updates_original_status(self, client, original_maintenance, provider):
         """Test that rescheduling updates original status to RE-SCHEDULED."""
-        url = reverse(
-            "plugins:notices:maintenance_reschedule", args=[original_maintenance.pk]
-        )
+        url = reverse("plugins:notices:maintenance_reschedule", args=[original_maintenance.pk])
 
         new_start = timezone.now() + timedelta(days=1)
         new_end = new_start + timedelta(hours=2)

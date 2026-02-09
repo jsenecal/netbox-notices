@@ -1,7 +1,15 @@
 import django_tables2 as tables
 from netbox.tables import NetBoxTable, columns
 
-from .models import EventNotification, Impact, Maintenance, Outage
+from .models import (
+    EventNotification,
+    Impact,
+    Maintenance,
+    NotificationTemplate,
+    Outage,
+    PreparedNotification,
+    SentNotification,
+)
 
 
 class MaintenanceTable(NetBoxTable):
@@ -265,4 +273,109 @@ class EventNotificationTable(NetBoxTable):
             "subject",
             "email_from",
             "email_received",
+        )
+
+
+class NotificationTemplateTable(NetBoxTable):
+    """Table for displaying NotificationTemplate records."""
+
+    name = tables.Column(linkify=True)
+    event_type = columns.ChoiceFieldColumn()
+    granularity = columns.ChoiceFieldColumn()
+    body_format = columns.ChoiceFieldColumn()
+    extends = tables.Column(linkify=True)
+    is_base_template = columns.BooleanColumn()
+    actions = columns.ActionsColumn()
+
+    class Meta(NetBoxTable.Meta):
+        model = NotificationTemplate
+        fields = (
+            "pk",
+            "id",
+            "name",
+            "slug",
+            "event_type",
+            "granularity",
+            "body_format",
+            "is_base_template",
+            "extends",
+            "weight",
+            "created",
+            "actions",
+        )
+        default_columns = (
+            "name",
+            "event_type",
+            "granularity",
+            "is_base_template",
+            "weight",
+        )
+
+
+class PreparedNotificationTable(NetBoxTable):
+    """Table for displaying PreparedNotification records."""
+
+    subject = tables.Column(linkify=True)
+    template = tables.Column(linkify=True)
+    status = columns.ChoiceFieldColumn()
+    approved_by = tables.Column(linkify=True)
+    sent_at = columns.DateTimeColumn()
+    delivered_at = columns.DateTimeColumn()
+    actions = columns.ActionsColumn()
+
+    class Meta(NetBoxTable.Meta):
+        model = PreparedNotification
+        fields = (
+            "pk",
+            "id",
+            "subject",
+            "template",
+            "status",
+            "approved_by",
+            "approved_at",
+            "sent_at",
+            "delivered_at",
+            "created",
+            "actions",
+        )
+        default_columns = (
+            "subject",
+            "template",
+            "status",
+            "sent_at",
+        )
+
+
+class SentNotificationTable(NetBoxTable):
+    """Table for displaying SentNotification records (sent/delivered only)."""
+
+    subject = tables.Column(linkify=True)
+    template = tables.Column(linkify=True)
+    status = columns.ChoiceFieldColumn()
+    approved_by = tables.Column(linkify=True)
+    sent_at = columns.DateTimeColumn()
+    delivered_at = columns.DateTimeColumn()
+    actions = columns.ActionsColumn()
+
+    class Meta(NetBoxTable.Meta):
+        model = SentNotification
+        fields = (
+            "pk",
+            "id",
+            "subject",
+            "template",
+            "status",
+            "approved_by",
+            "approved_at",
+            "sent_at",
+            "delivered_at",
+            "created",
+            "actions",
+        )
+        default_columns = (
+            "subject",
+            "template",
+            "status",
+            "sent_at",
+            "delivered_at",
         )

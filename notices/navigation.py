@@ -4,7 +4,7 @@ from netbox.plugins import PluginMenu, PluginMenuButton, PluginMenuItem
 notifications_items = [
     PluginMenuItem(
         link="plugins:notices:eventnotification_list",
-        link_text="Inbound",
+        link_text="Received",
         permissions=["notices.view_eventnotification"],
         buttons=[
             PluginMenuButton(
@@ -14,6 +14,11 @@ notifications_items = [
                 permissions=["notices.add_eventnotification"],
             )
         ],
+    ),
+    PluginMenuItem(
+        link="plugins:notices:sentnotification_list",
+        link_text="Sent",
+        permissions=["notices.view_preparednotification"],
     ),
 ]
 
@@ -52,11 +57,42 @@ events_items = [
     ),
 ]
 
+# Messaging group
+messaging_items = [
+    PluginMenuItem(
+        link="plugins:notices:notificationtemplate_list",
+        link_text="Notification Templates",
+        permissions=["notices.view_notificationtemplate"],
+        buttons=[
+            PluginMenuButton(
+                link="plugins:notices:notificationtemplate_add",
+                title="Add",
+                icon_class="mdi mdi-plus-thick",
+                permissions=["notices.add_notificationtemplate"],
+            )
+        ],
+    ),
+    PluginMenuItem(
+        link="plugins:notices:preparednotification_list",
+        link_text="Prepared Notifications",
+        permissions=["notices.view_preparednotification"],
+        buttons=[
+            PluginMenuButton(
+                link="plugins:notices:preparednotification_add",
+                title="Add",
+                icon_class="mdi mdi-plus-thick",
+                permissions=["notices.add_preparednotification"],
+            )
+        ],
+    ),
+]
+
 menu = PluginMenu(
     label="Notices",
     groups=(
         ("Notifications", notifications_items),
         ("Events", events_items),
+        ("Messaging", messaging_items),
     ),
     icon_class="mdi mdi-wrench",
 )

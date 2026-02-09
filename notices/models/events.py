@@ -8,7 +8,15 @@ from django.urls import reverse
 from django.utils import timezone
 from netbox.models import NetBoxModel
 
-from .choices import ImpactTypeChoices, MaintenanceTypeChoices, OutageStatusChoices
+from ..choices import ImpactTypeChoices, MaintenanceTypeChoices, OutageStatusChoices
+
+__all__ = (
+    "BaseEvent",
+    "Maintenance",
+    "Outage",
+    "Impact",
+    "EventNotification",
+)
 
 
 class BaseEvent(NetBoxModel):
@@ -57,9 +65,7 @@ class BaseEvent(NetBoxModel):
 
     comments = models.TextField(blank=True)
 
-    impact = models.TextField(
-        blank=True, help_text="Description of the impact of this event"
-    )
+    impact = models.TextField(blank=True, help_text="Description of the impact of this event")
 
     clone_fields = [
         "name",
@@ -169,9 +175,7 @@ class Outage(BaseEvent):
     """
 
     # Override start field to default to now() for outages
-    start = models.DateTimeField(
-        default=timezone.now, help_text="Start date and time of the outage"
-    )
+    start = models.DateTimeField(default=timezone.now, help_text="Start date and time of the outage")
 
     reported_at = models.DateTimeField(
         default=timezone.now,
@@ -214,9 +218,7 @@ class Outage(BaseEvent):
         super().clean()
         # Validation: end time required when status = RESOLVED
         if self.status == "RESOLVED" and not self.end:
-            raise ValidationError(
-                {"end": "End time is required when marking outage as resolved"}
-            )
+            raise ValidationError({"end": "End time is required when marking outage as resolved"})
 
     def get_status_color(self):
         return OutageStatusChoices.colors.get(self.status)
@@ -288,17 +290,13 @@ class Impact(NetBoxModel):
         ContentType,
         on_delete=models.CASCADE,
         related_name="impacts_as_event",
-        limit_choices_to=models.Q(
-            app_label="notices", model__in=["maintenance", "outage"]
-        ),
+        limit_choices_to=models.Q(app_label="notices", model__in=["maintenance", "outage"]),
     )
     event_object_id = models.PositiveIntegerField(db_index=True)
     event = GenericForeignKey("event_content_type", "event_object_id")
 
     # Link to target NetBox object (Circuit, Device, Site, etc.)
-    target_content_type = models.ForeignKey(
-        ContentType, on_delete=models.CASCADE, related_name="impacts_as_target"
-    )
+    target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name="impacts_as_target")
     target_object_id = models.PositiveIntegerField(db_index=True)
     target = GenericForeignKey("target_content_type", "target_object_id")
 
@@ -348,7 +346,7 @@ class Impact(NetBoxModel):
 
     def clean(self):
         super().clean()
-        from .utils import get_allowed_content_types
+        from ..utils import get_allowed_content_types
 
         allowed_types = get_allowed_content_types()
 
@@ -371,20 +369,14 @@ class Impact(NetBoxModel):
         # Validate event is Maintenance or Outage
         if self.event_content_type:
             if self.event_content_type.app_label != "notices":
-                raise ValidationError(
-                    {"event_content_type": "Event must be a Maintenance or Outage"}
-                )
+                raise ValidationError({"event_content_type": "Event must be a Maintenance or Outage"})
             if self.event_content_type.model not in ["maintenance", "outage"]:
-                raise ValidationError(
-                    {"event_content_type": "Event must be a Maintenance or Outage"}
-                )
+                raise ValidationError({"event_content_type": "Event must be a Maintenance or Outage"})
 
         # Validate event status - cannot modify impacts on completed events
         if hasattr(self.event, "status"):
             if self.event.status in ["COMPLETED", "CANCELLED", "RESOLVED"]:
-                raise ValidationError(
-                    "You cannot alter an impact once the event has completed."
-                )
+                raise ValidationError("You cannot alter an impact once the event has completed.")
 
 
 class EventNotification(NetBoxModel):
@@ -397,9 +389,7 @@ class EventNotification(NetBoxModel):
     event_content_type = models.ForeignKey(
         ContentType,
         on_delete=models.CASCADE,
-        limit_choices_to=models.Q(
-            app_label="notices", model__in=["maintenance", "outage"]
-        ),
+        limit_choices_to=models.Q(app_label="notices", model__in=["maintenance", "outage"]),
     )
     event_object_id = models.PositiveIntegerField(db_index=True)
     event = GenericForeignKey("event_content_type", "event_object_id")

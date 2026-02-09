@@ -1,12 +1,12 @@
-import boto3
 import email
-from email import policy
-from circuit_maintenance_parser import init_provider
-from circuit_maintenance_parser import NotificationData
-import urllib3
-import pynetbox
 import json
 from datetime import datetime
+from email import policy
+
+import boto3
+import pynetbox
+import urllib3
+from circuit_maintenance_parser import NotificationData, init_provider
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 

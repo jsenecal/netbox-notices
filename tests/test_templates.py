@@ -57,10 +57,7 @@ class TestTemplateStructure:
 
         # Check that old URLs are NOT present
         assert "netbox_circuitmaintenance" not in content
-        assert (
-            "circuitmaintenance" not in content.lower()
-            or "maintenance" in content.lower()
-        )
+        assert "circuitmaintenance" not in content.lower() or "maintenance" in content.lower()
 
     def test_outage_template_urls(self):
         """Verify outage.html uses correct URL patterns"""

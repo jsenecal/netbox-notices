@@ -1,11 +1,18 @@
 from netbox.api.viewsets import NetBoxModelViewSet
 
-from .. import filtersets, models
-from .serializers import (
+from notices import filtersets, models
+from notices.api.serializers import (
     EventNotificationSerializer,
     ImpactSerializer,
     MaintenanceSerializer,
     OutageSerializer,
+)
+
+__all__ = (
+    "MaintenanceViewSet",
+    "OutageViewSet",
+    "ImpactViewSet",
+    "EventNotificationViewSet",
 )
 
 

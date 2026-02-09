@@ -11,6 +11,7 @@ class TestNavigationStructure:
         assert hasattr(navigation, "menu")
         assert hasattr(navigation, "notifications_items")
         assert hasattr(navigation, "events_items")
+        assert hasattr(navigation, "messaging_items")
 
     def test_navigation_menu_exists(self):
         """Test that navigation menu is defined"""
@@ -24,42 +25,58 @@ class TestNavigationStructure:
         """Test navigation menu groups structure"""
         from notices.navigation import menu
 
-        assert len(menu.groups) == 2
+        assert len(menu.groups) == 3
         # NetBox uses MenuGroup objects, not tuples
 
         # First group: Notifications
         notifications_group = menu.groups[0]
         assert notifications_group.label == "Notifications"
-        assert len(notifications_group.items) == 1
+        assert len(notifications_group.items) == 2  # Received and Sent
 
         # Second group: Events
         events_group = menu.groups[1]
         assert events_group.label == "Events"
         assert len(events_group.items) == 3
 
+        # Third group: Messaging
+        messaging_group = menu.groups[2]
+        assert messaging_group.label == "Messaging"
+        assert len(messaging_group.items) == 2
+
     def test_menuitems_count(self):
         """Test correct number of menu items in each group"""
-        from notices.navigation import notifications_items, events_items
+        from notices.navigation import events_items, notifications_items
 
-        assert len(notifications_items) == 1
+        assert len(notifications_items) == 2  # Received and Sent
         assert len(events_items) == 3
 
-    def test_inbound_menu_item(self):
-        """Test Inbound (EventNotifications) menu item configuration"""
+    def test_received_menu_item(self):
+        """Test Received (EventNotifications) menu item configuration"""
         from notices.navigation import notifications_items
 
-        inbound_item = notifications_items[0]
-        assert isinstance(inbound_item, PluginMenuItem)
-        assert inbound_item.link == "plugins:notices:eventnotification_list"
-        assert inbound_item.link_text == "Inbound"
-        assert len(inbound_item.buttons) == 1
+        received_item = notifications_items[0]
+        assert isinstance(received_item, PluginMenuItem)
+        assert received_item.link == "plugins:notices:eventnotification_list"
+        assert received_item.link_text == "Received"
+        assert len(received_item.buttons) == 1
 
         # Check the add button
-        add_button = inbound_item.buttons[0]
+        add_button = received_item.buttons[0]
         assert isinstance(add_button, PluginMenuButton)
         assert add_button.link == "plugins:notices:eventnotification_add"
         assert add_button.title == "Add"
         assert add_button.icon_class == "mdi mdi-plus-thick"
+
+    def test_sent_menu_item(self):
+        """Test Sent (sent/delivered notifications) menu item configuration"""
+        from notices.navigation import notifications_items
+
+        sent_item = notifications_items[1]
+        assert isinstance(sent_item, PluginMenuItem)
+        assert sent_item.link == "plugins:notices:sentnotification_list"
+        assert sent_item.link_text == "Sent"
+        # Sent is view-only (no add button - notifications are created via workflow)
+        assert sent_item.buttons == []
 
     def test_maintenance_menu_item(self):
         """Test Planned Maintenances menu item configuration"""
@@ -144,10 +161,11 @@ class TestNavigationStructure:
 
     def test_menu_item_ordering(self):
         """Test that menu items are in the expected order"""
-        from notices.navigation import notifications_items, events_items
+        from notices.navigation import events_items, notifications_items
 
         # Notifications group order
-        assert notifications_items[0].link_text == "Inbound"
+        assert notifications_items[0].link_text == "Received"
+        assert notifications_items[1].link_text == "Sent"
 
         # Events group order
         assert events_items[0].link_text == "Planned Maintenances"
@@ -156,7 +174,7 @@ class TestNavigationStructure:
 
     def test_all_buttons_have_icons(self):
         """Test that all menu buttons have icons configured"""
-        from notices.navigation import notifications_items, events_items
+        from notices.navigation import events_items, notifications_items
 
         all_items = notifications_items + events_items
 
@@ -176,7 +194,7 @@ class TestNavigationStructure:
         assert menu.groups
 
         # Verify groups structure matches NetBox expectations
-        assert len(menu.groups) == 2
+        assert len(menu.groups) == 3
 
         for group in menu.groups:
             assert hasattr(group, "label")
@@ -187,3 +205,35 @@ class TestNavigationStructure:
                 assert isinstance(item, PluginMenuItem)
                 assert hasattr(item, "link")
                 assert hasattr(item, "link_text")
+
+    def test_messaging_menu_items(self):
+        """Test Messaging group menu items configuration"""
+        from notices.navigation import messaging_items
+
+        assert len(messaging_items) == 2
+
+        # Notification Templates item
+        templates_item = messaging_items[0]
+        assert isinstance(templates_item, PluginMenuItem)
+        assert templates_item.link == "plugins:notices:notificationtemplate_list"
+        assert templates_item.link_text == "Notification Templates"
+        assert len(templates_item.buttons) == 1
+
+        add_button = templates_item.buttons[0]
+        assert isinstance(add_button, PluginMenuButton)
+        assert add_button.link == "plugins:notices:notificationtemplate_add"
+        assert add_button.title == "Add"
+        assert add_button.icon_class == "mdi mdi-plus-thick"
+
+        # Prepared Notifications item
+        notifications_item = messaging_items[1]
+        assert isinstance(notifications_item, PluginMenuItem)
+        assert notifications_item.link == "plugins:notices:preparednotification_list"
+        assert notifications_item.link_text == "Prepared Notifications"
+        assert len(notifications_item.buttons) == 1
+
+        add_button = notifications_item.buttons[0]
+        assert isinstance(add_button, PluginMenuButton)
+        assert add_button.link == "plugins:notices:preparednotification_add"
+        assert add_button.title == "Add"
+        assert add_button.icon_class == "mdi mdi-plus-thick"

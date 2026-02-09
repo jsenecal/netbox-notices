@@ -289,9 +289,7 @@ class TestViewsStructure(unittest.TestCase):
 
         for view_class in old_view_classes:
             class_node = self._find_class(tree, view_class)
-            self.assertIsNone(
-                class_node, f"Old view class {view_class} should not exist"
-            )
+            self.assertIsNone(class_node, f"Old view class {view_class} should not exist")
 
     def test_calendar_view_exists(self):
         """Test that MaintenanceCalendarView exists"""
@@ -303,9 +301,7 @@ class TestViewsStructure(unittest.TestCase):
         """Test that old CircuitMaintenanceScheduleView no longer exists"""
         tree = self._get_views_file_ast()
         class_node = self._find_class(tree, "CircuitMaintenanceScheduleView")
-        self.assertIsNone(
-            class_node, "Old CircuitMaintenanceScheduleView should not exist"
-        )
+        self.assertIsNone(class_node, "Old CircuitMaintenanceScheduleView should not exist")
 
     def test_quick_action_views_exist(self):
         """Test that all quick action views are defined"""
