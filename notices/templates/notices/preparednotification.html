@@ -1,5 +1,6 @@
 {% extends 'generic/object.html' %}
 {% load helpers %}
+{% load notices_filters %}
 
 {% block content %}
 <div class="row mb-3">
@@ -136,7 +137,7 @@
                     {% if object.css %}
                     <style>{{ object.css }}</style>
                     {% endif %}
-                    {{ object.body_html|safe }}
+                    {{ object.body_html|sanitize_html }}
                 </div>
             </div>
             <div class="card-footer">

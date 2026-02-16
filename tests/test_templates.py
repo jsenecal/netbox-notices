@@ -120,9 +120,10 @@ class TestTemplateStructure:
         template_path = self.TEMPLATE_DIR / "eventnotification.html"
         content = template_path.read_text()
 
-        # Should just display email body
+        # Should just display email body with sanitization
         assert "email_body" in content
-        assert "safe" in content  # Should use safe filter
+        assert "sanitize_html" in content  # Should use sanitize_html filter
+        assert "notices_filters" in content  # Should load custom filters
 
     def test_no_old_model_references(self):
         """Verify templates don't reference old model names"""

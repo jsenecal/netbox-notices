@@ -1,1 +1,1 @@
-{{object.email_body|safe}}
+{% load notices_filters %}{{ object.email_body|sanitize_html }}
