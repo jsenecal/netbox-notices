@@ -83,6 +83,12 @@ class BaseEvent(NetBoxModel):
         abstract = True
         ordering = ("-created",)
 
+    def clean(self):
+        super().clean()
+        end = getattr(self, "end", None)
+        if self.start and end and end < self.start:
+            raise ValidationError({"end": "The end time must be after the start time."})
+
 
 class Maintenance(BaseEvent):
     """
