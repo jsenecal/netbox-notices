@@ -25,6 +25,89 @@ from .models import Maintenance, NotificationTemplate, Outage, PreparedNotificat
 from .timeline_utils import build_timeline_item, get_timeline_changes
 
 
+# Dashboard View
+class DashboardView(PermissionRequiredMixin, View):
+    """Summary dashboard showing event statistics and upcoming timeline."""
+
+    permission_required = "notices.view_maintenance"
+    template_name = "notices/dashboard.html"
+
+    def get(self, request):
+        now = timezone.now()
+        week_end = now + timedelta(days=7)
+        month_end = now + timedelta(days=30)
+
+        # Active statuses
+        maintenance_active = ["TENTATIVE", "CONFIRMED", "IN-PROCESS", "RE-SCHEDULED"]
+        outage_active = ["REPORTED", "INVESTIGATING", "IDENTIFIED", "MONITORING"]
+
+        # Stats
+        maintenance_in_progress = models.Maintenance.objects.filter(status="IN-PROCESS").count()
+        outage_active_count = models.Outage.objects.filter(status__in=outage_active).count()
+
+        confirmed_this_week = models.Maintenance.objects.filter(
+            status="CONFIRMED", start__gte=now, start__lte=week_end
+        ).count()
+
+        upcoming_7 = models.Maintenance.objects.filter(
+            status__in=maintenance_active, start__gte=now, start__lte=week_end
+        ).count()
+
+        upcoming_30 = models.Maintenance.objects.filter(
+            status__in=maintenance_active, start__gte=now, start__lte=month_end
+        ).count()
+
+        unacknowledged = (
+            models.Maintenance.objects.filter(status__in=maintenance_active, acknowledged=False).count()
+            + models.Outage.objects.filter(status__in=outage_active, acknowledged=False).count()
+        )
+
+        # Timeline: next 14 days of events
+        timeline_end = now + timedelta(days=14)
+        timeline_maintenance = (
+            models.Maintenance.objects.filter(
+                status__in=maintenance_active,
+                start__lte=timeline_end,
+                end__gte=now,
+            )
+            .select_related("provider")
+            .annotate(impact_count=Count("impacts"))
+            .order_by("start")[:20]
+        )
+        timeline_outages = (
+            models.Outage.objects.filter(status__in=outage_active)
+            .select_related("provider")
+            .annotate(impact_count=Count("impacts"))
+            .order_by("start")[:20]
+        )
+
+        # Upcoming by provider
+        upcoming_by_provider = (
+            models.Maintenance.objects.filter(
+                status__in=["TENTATIVE", "CONFIRMED"],
+                start__gte=now,
+            )
+            .select_related("provider")
+            .order_by("provider__name", "start")[:50]
+        )
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "maintenance_in_progress": maintenance_in_progress,
+                "outage_active": outage_active_count,
+                "confirmed_this_week": confirmed_this_week,
+                "upcoming_7": upcoming_7,
+                "upcoming_30": upcoming_30,
+                "unacknowledged": unacknowledged,
+                "timeline_maintenance": timeline_maintenance,
+                "timeline_outages": timeline_outages,
+                "upcoming_by_provider": upcoming_by_provider,
+            },
+        )
+
+
 # Maintenance Views
 class MaintenanceView(generic.ObjectView):
     queryset = models.Maintenance.objects.prefetch_related("impacts").all()

@@ -9,6 +9,7 @@ class TestNavigationStructure:
         from notices import navigation
 
         assert hasattr(navigation, "menu")
+        assert hasattr(navigation, "dashboard_items")
         assert hasattr(navigation, "notifications_items")
         assert hasattr(navigation, "events_items")
         assert hasattr(navigation, "messaging_items")
@@ -25,21 +26,26 @@ class TestNavigationStructure:
         """Test navigation menu groups structure"""
         from notices.navigation import menu
 
-        assert len(menu.groups) == 3
+        assert len(menu.groups) == 4
         # NetBox uses MenuGroup objects, not tuples
 
-        # First group: Notifications
-        notifications_group = menu.groups[0]
+        # First group: Dashboard
+        dashboard_group = menu.groups[0]
+        assert dashboard_group.label == "Dashboard"
+        assert len(dashboard_group.items) == 1
+
+        # Second group: Notifications
+        notifications_group = menu.groups[1]
         assert notifications_group.label == "Notifications"
         assert len(notifications_group.items) == 2  # Received and Sent
 
-        # Second group: Events
-        events_group = menu.groups[1]
+        # Third group: Events
+        events_group = menu.groups[2]
         assert events_group.label == "Events"
         assert len(events_group.items) == 3
 
-        # Third group: Messaging
-        messaging_group = menu.groups[2]
+        # Fourth group: Messaging
+        messaging_group = menu.groups[3]
         assert messaging_group.label == "Messaging"
         assert len(messaging_group.items) == 2
 
@@ -194,7 +200,7 @@ class TestNavigationStructure:
         assert menu.groups
 
         # Verify groups structure matches NetBox expectations
-        assert len(menu.groups) == 3
+        assert len(menu.groups) == 4
 
         for group in menu.groups:
             assert hasattr(group, "label")

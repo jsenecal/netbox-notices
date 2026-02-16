@@ -1,0 +1,162 @@
+{% extends 'generic/_base.html' %}
+{% load helpers %}
+
+{% block title %}Notices Dashboard{% endblock %}
+
+{% block tabs %}{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h2 class="mb-3">Notices Dashboard</h2>
+    </div>
+</div>
+
+{# Stat Cards #}
+<div class="row mb-3">
+    <div class="col">
+        <a href="{% url 'plugins:notices:maintenance_list' %}?status=IN-PROCESS" class="text-decoration-none">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h1 class="display-4 {% if maintenance_in_progress %}text-warning{% else %}text-muted{% endif %}">{{ maintenance_in_progress }}</h1>
+                    <div class="text-secondary">In Progress</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col">
+        <a href="{% url 'plugins:notices:outage_list' %}?status=REPORTED&status=INVESTIGATING&status=IDENTIFIED&status=MONITORING" class="text-decoration-none">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h1 class="display-4 {% if outage_active %}text-danger{% else %}text-muted{% endif %}">{{ outage_active }}</h1>
+                    <div class="text-secondary">Active Outages</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col">
+        <a href="{% url 'plugins:notices:maintenance_list' %}?status=CONFIRMED" class="text-decoration-none">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h1 class="display-4 {% if confirmed_this_week %}text-success{% else %}text-muted{% endif %}">{{ confirmed_this_week }}</h1>
+                    <div class="text-secondary">Confirmed This Week</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col">
+        <a href="{% url 'plugins:notices:maintenance_list' %}?status=TENTATIVE&status=CONFIRMED&status=IN-PROCESS&status=RE-SCHEDULED" class="text-decoration-none">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h1 class="display-4 {% if upcoming_7 %}text-info{% else %}text-muted{% endif %}">{{ upcoming_7 }}</h1>
+                    <div class="text-secondary">Upcoming (7 days)</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col">
+        <a href="{% url 'plugins:notices:maintenance_list' %}?status=TENTATIVE&status=CONFIRMED&status=IN-PROCESS&status=RE-SCHEDULED" class="text-decoration-none">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h1 class="display-4 {% if upcoming_30 %}text-primary{% else %}text-muted{% endif %}">{{ upcoming_30 }}</h1>
+                    <div class="text-secondary">Upcoming (30 days)</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col">
+        <a href="{% url 'plugins:notices:maintenance_list' %}?acknowledged=false" class="text-decoration-none">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h1 class="display-4 {% if unacknowledged %}text-danger{% else %}text-muted{% endif %}">{{ unacknowledged }}</h1>
+                    <div class="text-secondary">Unacknowledged</div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+{# Timeline: next 14 days #}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <h5 class="card-header">14-Day Timeline</h5>
+            {% if timeline_maintenance or timeline_outages %}
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Name</th>
+                        <th>Provider</th>
+                        <th>Status</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Impacts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in timeline_maintenance %}
+                    <tr>
+                        <td><span class="badge bg-blue">Maintenance</span></td>
+                        <td><a href="{{ m.get_absolute_url }}">{{ m.name }}</a></td>
+                        <td>{{ m.provider }}</td>
+                        <td>{% badge m.get_status_display bg_color=m.get_status_color %}</td>
+                        <td>{{ m.start }}</td>
+                        <td>{{ m.end }}</td>
+                        <td>{{ m.impact_count }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% for o in timeline_outages %}
+                    <tr>
+                        <td><span class="badge bg-red">Outage</span></td>
+                        <td><a href="{{ o.get_absolute_url }}">{{ o.name }}</a></td>
+                        <td>{{ o.provider }}</td>
+                        <td>{% badge o.get_status_display bg_color=o.get_status_color %}</td>
+                        <td>{{ o.start }}</td>
+                        <td>{{ o.end|placeholder }}</td>
+                        <td>{{ o.impact_count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="card-body text-muted">No active or upcoming events in the next 14 days.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# Upcoming by Provider #}
+{% if upcoming_by_provider %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <h5 class="card-header">Upcoming Maintenance by Provider</h5>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Provider</th>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Start</th>
+                        <th>End</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in upcoming_by_provider %}
+                    <tr>
+                        <td>{{ m.provider }}</td>
+                        <td><a href="{{ m.get_absolute_url }}">{{ m.name }}</a></td>
+                        <td>{% badge m.get_status_display bg_color=m.get_status_color %}</td>
+                        <td>{{ m.start }}</td>
+                        <td>{{ m.end }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock content %}

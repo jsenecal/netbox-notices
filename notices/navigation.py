@@ -1,5 +1,14 @@
 from netbox.plugins import PluginMenu, PluginMenuButton, PluginMenuItem
 
+# Dashboard
+dashboard_items = [
+    PluginMenuItem(
+        link="plugins:notices:dashboard",
+        link_text="Summary",
+        permissions=["notices.view_maintenance"],
+    ),
+]
+
 # Notifications group
 notifications_items = [
     PluginMenuItem(
@@ -90,6 +99,7 @@ messaging_items = [
 menu = PluginMenu(
     label="Notices",
     groups=(
+        ("Dashboard", dashboard_items),
         ("Notifications", notifications_items),
         ("Events", events_items),
         ("Messaging", messaging_items),

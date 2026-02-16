@@ -4,6 +4,8 @@ from netbox.views.generic import ObjectChangeLogView
 from . import models, views
 
 urlpatterns = (
+    # Dashboard
+    path("", views.DashboardView.as_view(), name="dashboard"),
     # Maintenance URLs
     path(
         "maintenance/",
