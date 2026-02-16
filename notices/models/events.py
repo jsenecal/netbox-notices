@@ -39,7 +39,7 @@ class BaseEvent(NetBoxModel):
         related_name="%(class)s_events",  # Dynamic related name per subclass
     )
 
-    start = models.DateTimeField(help_text="Start date and time of the event")
+    start = models.DateTimeField(db_index=True, help_text="Start date and time of the event")
 
     original_timezone = models.CharField(
         max_length=63,
@@ -98,9 +98,9 @@ class Maintenance(BaseEvent):
         default=None,
     )
 
-    end = models.DateTimeField(help_text="End date and time of the maintenance event")
+    end = models.DateTimeField(db_index=True, help_text="End date and time of the maintenance event")
 
-    status = models.CharField(max_length=30, choices=MaintenanceTypeChoices)
+    status = models.CharField(max_length=30, choices=MaintenanceTypeChoices, db_index=True)
 
     # Reverse relation for GenericForeignKey in Impact model
     impacts = GenericRelation(
@@ -175,7 +175,7 @@ class Outage(BaseEvent):
     """
 
     # Override start field to default to now() for outages
-    start = models.DateTimeField(default=timezone.now, help_text="Start date and time of the outage")
+    start = models.DateTimeField(default=timezone.now, db_index=True, help_text="Start date and time of the outage")
 
     reported_at = models.DateTimeField(
         default=timezone.now,
@@ -186,6 +186,7 @@ class Outage(BaseEvent):
     end = models.DateTimeField(
         null=True,
         blank=True,
+        db_index=True,
         help_text="End date and time of the outage (required when resolved)",
     )
 
@@ -196,7 +197,7 @@ class Outage(BaseEvent):
         help_text="Current estimate for when service will be restored",
     )
 
-    status = models.CharField(max_length=30, choices=OutageStatusChoices)
+    status = models.CharField(max_length=30, choices=OutageStatusChoices, db_index=True)
 
     # Reverse relation for GenericForeignKey in Impact model
     impacts = GenericRelation(
