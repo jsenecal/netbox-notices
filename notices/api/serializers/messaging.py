@@ -89,6 +89,7 @@ class NotificationTemplateSerializer(NetBoxModelSerializer):
             "created",
             "last_updated",
         ]
+        brief_fields = ("id", "url", "display", "name", "slug", "description")
 
     def validate_headers_template(self, value):
         """Accept YAML input and convert to dict."""
@@ -216,6 +217,7 @@ class PreparedNotificationSerializer(NetBoxModelSerializer):
             "delivered_at",
             "viewed_at",
         ]
+        brief_fields = ("id", "url", "display", "subject", "status")
 
     def validate(self, data):
         """Validate status transitions using state machine."""
@@ -296,3 +298,4 @@ class SentNotificationSerializer(NetBoxModelSerializer):
             "last_updated",
         ]
         read_only_fields = fields  # Entirely read-only
+        brief_fields = ("id", "url", "display", "subject", "status", "sent_at")

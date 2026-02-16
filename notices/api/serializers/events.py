@@ -204,6 +204,7 @@ class MaintenanceSerializer(NetBoxModelSerializer):
             "created",
             "last_updated",
         )
+        brief_fields = ("id", "url", "display", "name", "status", "provider", "start", "end")
 
 
 class OutageSerializer(NetBoxModelSerializer):
@@ -243,6 +244,7 @@ class OutageSerializer(NetBoxModelSerializer):
             "created",
             "last_updated",
         )
+        brief_fields = ("id", "url", "display", "name", "status", "provider", "start", "end")
 
 
 class ImpactSerializer(NetBoxModelSerializer):
@@ -289,6 +291,7 @@ class ImpactSerializer(NetBoxModelSerializer):
             "created",
             "last_updated",
         )
+        brief_fields = ("id", "url", "display", "impact")
 
     def get_event(self, obj):
         """
@@ -369,6 +372,7 @@ class EventNotificationSerializer(NetBoxModelSerializer):
             "created",
             "last_updated",
         )
+        brief_fields = ("id", "url", "display", "subject", "email_from", "email_received")
 
     def get_event(self, obj):
         """
