@@ -19,6 +19,7 @@ class NoticesConfig(PluginConfig):
     version = __version__
     min_version = "4.4.1"
     base_url = "notices"
+    graphql_schema = "graphql.schema.schema"
 
     default_settings = {
         "allowed_content_types": DEFAULT_ALLOWED_CONTENT_TYPES,
