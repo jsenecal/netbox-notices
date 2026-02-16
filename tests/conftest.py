@@ -140,9 +140,7 @@ def manufacturer(db):
     """Create a test manufacturer."""
     from dcim.models import Manufacturer
 
-    return Manufacturer.objects.create(
-        name="Test Manufacturer", slug="test-manufacturer"
-    )
+    return Manufacturer.objects.create(name="Test Manufacturer", slug="test-manufacturer")
 
 
 @pytest.fixture
@@ -189,17 +187,6 @@ def contact():
     return Contact.objects.create(
         name="Test Contact",
         email="test@example.com",
-    )
-
-
-@pytest.fixture
-def provider():
-    """Create a test provider."""
-    from circuits.models import Provider
-
-    return Provider.objects.create(
-        name="Test Provider",
-        slug="test-provider",
     )
 
 

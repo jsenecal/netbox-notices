@@ -153,9 +153,7 @@ class TestMaintenanceMarkInProgressView:
 
     def test_mark_in_progress(self, admin_client, maintenance):
         """Should mark maintenance as in-progress."""
-        url = reverse(
-            "plugins:notices:maintenance_mark_in_progress", args=[maintenance.pk]
-        )
+        url = reverse("plugins:notices:maintenance_mark_in_progress", args=[maintenance.pk])
         response = admin_client.post(url)
 
         maintenance.refresh_from_db()
@@ -173,9 +171,7 @@ class TestMaintenanceMarkInProgressView:
             status="COMPLETED",
         )
 
-        url = reverse(
-            "plugins:notices:maintenance_mark_in_progress", args=[completed.pk]
-        )
+        url = reverse("plugins:notices:maintenance_mark_in_progress", args=[completed.pk])
         admin_client.post(url)
 
         completed.refresh_from_db()
@@ -192,9 +188,7 @@ class TestMaintenanceMarkInProgressView:
             status="CANCELLED",
         )
 
-        url = reverse(
-            "plugins:notices:maintenance_mark_in_progress", args=[cancelled.pk]
-        )
+        url = reverse("plugins:notices:maintenance_mark_in_progress", args=[cancelled.pk])
         admin_client.post(url)
 
         cancelled.refresh_from_db()
@@ -207,9 +201,7 @@ class TestMaintenanceMarkCompletedView:
 
     def test_mark_completed(self, admin_client, maintenance):
         """Should mark maintenance as completed."""
-        url = reverse(
-            "plugins:notices:maintenance_mark_completed", args=[maintenance.pk]
-        )
+        url = reverse("plugins:notices:maintenance_mark_completed", args=[maintenance.pk])
         response = admin_client.post(url)
 
         maintenance.refresh_from_db()

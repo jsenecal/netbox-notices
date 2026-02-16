@@ -105,9 +105,7 @@ class TestMaintenanceFilterSetSearch:
             replaces=original,
         )
 
-        filterset = MaintenanceFilterSet(
-            {"has_replaces": True}, Maintenance.objects.all()
-        )
+        filterset = MaintenanceFilterSet({"has_replaces": True}, Maintenance.objects.all())
         assert filterset.qs.count() == 1
         assert filterset.qs.first().name == "Original"
 
@@ -228,9 +226,7 @@ class TestEventNotificationFilterSetSearch:
             email_received=timezone.now(),
         )
 
-        filterset = EventNotificationFilterSet(
-            {"q": "Urgent"}, EventNotification.objects.all()
-        )
+        filterset = EventNotificationFilterSet({"q": "Urgent"}, EventNotification.objects.all())
         assert filterset.qs.count() == 1
 
     def test_search_by_email_body(self, provider):
@@ -253,9 +249,7 @@ class TestEventNotificationFilterSetSearch:
             email_received=timezone.now(),
         )
 
-        filterset = EventNotificationFilterSet(
-            {"q": "advised"}, EventNotification.objects.all()
-        )
+        filterset = EventNotificationFilterSet({"q": "advised"}, EventNotification.objects.all())
         assert filterset.qs.count() == 1
 
     def test_search_by_email_from(self, provider):
@@ -278,9 +272,7 @@ class TestEventNotificationFilterSetSearch:
             email_received=timezone.now(),
         )
 
-        filterset = EventNotificationFilterSet(
-            {"q": "provider.net"}, EventNotification.objects.all()
-        )
+        filterset = EventNotificationFilterSet({"q": "provider.net"}, EventNotification.objects.all())
         assert filterset.qs.count() == 1
 
     def test_search_empty_value(self, provider):
@@ -303,7 +295,5 @@ class TestEventNotificationFilterSetSearch:
             email_received=timezone.now(),
         )
 
-        filterset = EventNotificationFilterSet(
-            {"q": ""}, EventNotification.objects.all()
-        )
+        filterset = EventNotificationFilterSet({"q": ""}, EventNotification.objects.all())
         assert filterset.qs.count() == 1

@@ -450,7 +450,5 @@ class TestEventNotificationMethods:
         )
         from core.choices import ObjectChangeActionChoices
 
-        objectchange = notification.to_objectchange(
-            ObjectChangeActionChoices.ACTION_CREATE
-        )
+        objectchange = notification.to_objectchange(ObjectChangeActionChoices.ACTION_CREATE)
         assert objectchange.related_object == maintenance
