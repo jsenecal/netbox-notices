@@ -60,12 +60,12 @@ class ImpactType(NetBoxObjectType):
 
 @strawberry_django.type(
     models.EventNotification,
-    exclude=["email"],
+    fields="__all__",
     filters=EventNotificationFilter,
     pagination=True,
 )
 class EventNotificationType(NetBoxObjectType):
-    pass
+    email: strawberry.Private[bytes] = None  # BinaryField not supported by GraphQL
 
 
 @strawberry_django.type(
