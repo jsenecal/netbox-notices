@@ -38,15 +38,15 @@ The plugin does not directly provide an automated approach to ingesting provider
 
 ## Compatibility
 
-This plugin requires NetBox 4.4.1 or higher.
+This plugin requires NetBox 4.5.0 or higher.
 
 | NetBox Version | Plugin Version |
 | -------------- | -------------- |
-| 4.4.x - 4.5.x  | 0.2.x          |
+| 4.5.x          | 1.x            |
 
 ## Installing
 
-A working installation of Netbox 4.4.1+ is required - [see official documentation](https://netbox.readthedocs.io/en/stable/plugins/).
+A working installation of Netbox 4.5.2+ is required - [see official documentation](https://netbox.readthedocs.io/en/stable/plugins/).
 
 ### Package Installation
 

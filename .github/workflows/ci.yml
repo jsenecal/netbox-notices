@@ -48,7 +48,7 @@ jobs:
       - name: Install NetBox
         run: |
           # Clone NetBox
-          git clone --depth 1 --branch v4.4.1 https://github.com/netbox-community/netbox.git /tmp/netbox
+          git clone --depth 1 --branch v4.5.2 https://github.com/netbox-community/netbox.git /tmp/netbox
 
           # Install NetBox dependencies
           pip install --upgrade pip

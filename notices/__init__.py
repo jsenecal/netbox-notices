@@ -17,7 +17,7 @@ class NoticesConfig(PluginConfig):
     verbose_name = "Notices"
     description = "Track maintenance and outage events across various NetBox models"
     version = __version__
-    min_version = "4.4.1"
+    min_version = "4.5.0"
     base_url = "notices"
     graphql_schema = "graphql.schema.schema"
 

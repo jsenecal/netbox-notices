@@ -1,5 +1,5 @@
 import strawberry_django
-from netbox.graphql.filter_mixins import PrimaryModelFilterMixin
+from netbox.graphql.filters import PrimaryModelFilter
 from strawberry.scalars import ID
 from strawberry_django import FilterLookup
 
@@ -16,7 +16,7 @@ __all__ = (
 
 
 @strawberry_django.filter_type(models.Maintenance, lookups=True)
-class MaintenanceFilter(PrimaryModelFilterMixin):
+class MaintenanceFilter(PrimaryModelFilter):
     name: FilterLookup[str] | None = strawberry_django.filter_field()
     summary: FilterLookup[str] | None = strawberry_django.filter_field()
     status: FilterLookup[str] | None = strawberry_django.filter_field()
@@ -25,7 +25,7 @@ class MaintenanceFilter(PrimaryModelFilterMixin):
 
 
 @strawberry_django.filter_type(models.Outage, lookups=True)
-class OutageFilter(PrimaryModelFilterMixin):
+class OutageFilter(PrimaryModelFilter):
     name: FilterLookup[str] | None = strawberry_django.filter_field()
     summary: FilterLookup[str] | None = strawberry_django.filter_field()
     status: FilterLookup[str] | None = strawberry_django.filter_field()
@@ -34,26 +34,26 @@ class OutageFilter(PrimaryModelFilterMixin):
 
 
 @strawberry_django.filter_type(models.Impact, lookups=True)
-class ImpactFilter(PrimaryModelFilterMixin):
+class ImpactFilter(PrimaryModelFilter):
     impact: FilterLookup[str] | None = strawberry_django.filter_field()
     event_object_id: ID | None = strawberry_django.filter_field()
     target_object_id: ID | None = strawberry_django.filter_field()
 
 
 @strawberry_django.filter_type(models.EventNotification, lookups=True)
-class EventNotificationFilter(PrimaryModelFilterMixin):
+class EventNotificationFilter(PrimaryModelFilter):
     subject: FilterLookup[str] | None = strawberry_django.filter_field()
     email_from: FilterLookup[str] | None = strawberry_django.filter_field()
 
 
 @strawberry_django.filter_type(models.NotificationTemplate, lookups=True)
-class NotificationTemplateFilter(PrimaryModelFilterMixin):
+class NotificationTemplateFilter(PrimaryModelFilter):
     name: FilterLookup[str] | None = strawberry_django.filter_field()
     slug: FilterLookup[str] | None = strawberry_django.filter_field()
     event_type: FilterLookup[str] | None = strawberry_django.filter_field()
 
 
 @strawberry_django.filter_type(models.PreparedNotification, lookups=True)
-class PreparedNotificationFilter(PrimaryModelFilterMixin):
+class PreparedNotificationFilter(PrimaryModelFilter):
     status: FilterLookup[str] | None = strawberry_django.filter_field()
     subject: FilterLookup[str] | None = strawberry_django.filter_field()
