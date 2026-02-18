@@ -525,21 +525,23 @@ class MaintenanceICalView(View):
         Returns authenticated user or None.
         """
         # Try 1: Token in URL parameter
-        token_key = request.GET.get("token")
-        if token_key:
+        token_value = request.GET.get("token")
+        if token_value:
             try:
-                authenticator = TokenAuthentication()
-                user, token = authenticator.authenticate_credentials(token_key)
-                return user
+                token = self._validate_url_token(token_value)
+                return token.user
             except exceptions.AuthenticationFailed:
                 return None
 
         # Try 2: Authorization header
         if not request.user.is_authenticated:
-            authenticator = TokenAuthentication()
-            auth_info = authenticator.authenticate(request)
-            if auth_info:
-                return auth_info[0]
+            try:
+                authenticator = TokenAuthentication()
+                auth_info = authenticator.authenticate(request)
+                if auth_info:
+                    return auth_info[0]
+            except exceptions.AuthenticationFailed:
+                return None
 
         # Try 3: Session authentication
         if request.user.is_authenticated:
@@ -551,6 +553,46 @@ class MaintenanceICalView(View):
             return request.user
 
         return None
+
+    @staticmethod
+    def _validate_url_token(token_value):
+        """Validate a token passed as a URL query parameter.
+
+        Supports both v1 (plaintext) and v2 (nbt_<key>.<plaintext>) formats.
+        """
+        from users.constants import TOKEN_PREFIX
+        from users.models import Token
+
+        qs = Token.objects.prefetch_related("user")
+
+        if token_value.startswith(TOKEN_PREFIX):
+            # v2 token: nbt_<key>.<plaintext>
+            auth_value = token_value.removeprefix(TOKEN_PREFIX)
+            try:
+                key, plaintext = auth_value.split(".", 1)
+            except ValueError:
+                raise exceptions.AuthenticationFailed("Invalid token format")
+            try:
+                token = qs.get(version=2, key=key)
+            except Token.DoesNotExist:
+                raise exceptions.AuthenticationFailed("Invalid token")
+            if not token.validate(plaintext):
+                raise exceptions.AuthenticationFailed("Invalid token")
+        else:
+            # v1 token: direct plaintext lookup
+            try:
+                token = qs.get(version=1, plaintext=token_value)
+            except Token.DoesNotExist:
+                raise exceptions.AuthenticationFailed("Invalid token")
+
+        if not token.enabled:
+            raise exceptions.AuthenticationFailed("Token disabled")
+        if token.is_expired:
+            raise exceptions.AuthenticationFailed("Token expired")
+        if not token.user.is_active:
+            raise exceptions.AuthenticationFailed("User inactive")
+
+        return token
 
     def _parse_query_params(self, request):
         """Parse and validate query parameters."""
