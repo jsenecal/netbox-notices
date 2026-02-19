@@ -1,4 +1,4 @@
-ARG NETBOX_VARIANT=v4.5.2-4.0.0
+ARG NETBOX_VARIANT=v4.5.3-4.0.0
 
 FROM ghcr.io/netbox-community/netbox:${NETBOX_VARIANT}
 
