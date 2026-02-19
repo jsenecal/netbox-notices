@@ -242,3 +242,192 @@ class TestMaintenanceICalViewCaching:
         content = response.content.decode("utf-8")
         assert "BEGIN:VCALENDAR" in content
         assert "END:VCALENDAR" in content
+
+
+@pytest.mark.django_db
+class TestMaintenanceICalViewTokenValidation:
+    """Test _validate_url_token edge cases."""
+
+    def test_disabled_token_returns_403(self):
+        user = User.objects.create_user(username="disabled-tok", password="pass", is_superuser=True)
+        token = Token.objects.create(user=user, version=1, enabled=False)
+
+        client = Client()
+        response = client.get(f"/plugins/notices/ical/maintenances.ics?token={token.plaintext}")
+        assert response.status_code == 403
+
+    def test_expired_token_returns_403(self):
+        user = User.objects.create_user(username="expired-tok", password="pass", is_superuser=True)
+        token = Token.objects.create(
+            user=user,
+            version=1,
+            expires=datetime.now(dt_timezone.utc) - timedelta(days=1),
+        )
+
+        client = Client()
+        response = client.get(f"/plugins/notices/ical/maintenances.ics?token={token.plaintext}")
+        assert response.status_code == 403
+
+    def test_inactive_user_returns_403(self):
+        user = User.objects.create_user(username="inactive-tok", password="pass", is_superuser=True, is_active=False)
+        token = Token.objects.create(user=user, version=1)
+
+        client = Client()
+        response = client.get(f"/plugins/notices/ical/maintenances.ics?token={token.plaintext}")
+        assert response.status_code == 403
+
+    def test_v2_token_authenticates(self):
+        from users.constants import TOKEN_PREFIX
+
+        user = User.objects.create_user(username="v2-tok", password="pass", is_superuser=True)
+        # v2 tokens: plaintext is ephemeral, only available at creation
+        plaintext_value = "a" * 40
+        token = Token(user=user, version=2, token=plaintext_value)
+        token.save()
+
+        # v2 token format: nbt_<key>.<plaintext>
+        token_value = f"{TOKEN_PREFIX}{token.key}.{plaintext_value}"
+
+        provider = Provider.objects.create(name="V2Test", slug="v2test")
+        Maintenance.objects.create(
+            name="M1",
+            summary="Test",
+            provider=provider,
+            start=datetime.now(dt_timezone.utc),
+            end=datetime.now(dt_timezone.utc) + timedelta(hours=2),
+            status="CONFIRMED",
+        )
+
+        client = Client()
+        response = client.get(f"/plugins/notices/ical/maintenances.ics?token={token_value}")
+        assert response.status_code == 200
+
+    def test_v2_token_invalid_format(self):
+        from users.constants import TOKEN_PREFIX
+
+        client = Client()
+        # Missing dot separator
+        response = client.get(f"/plugins/notices/ical/maintenances.ics?token={TOKEN_PREFIX}nodot")
+        assert response.status_code == 403
+
+
+@pytest.mark.django_db
+class TestMaintenanceICalViewParseQueryParams:
+    """Test _parse_query_params edge cases."""
+
+    def setup_method(self):
+        self.user = User.objects.create_user(username="param-user", password="pass", is_superuser=True)
+        self.token = Token.objects.create(user=self.user, version=1)
+        self.client = Client()
+
+    def test_negative_past_days_uses_default(self):
+        provider = Provider.objects.create(name="Test", slug="test")
+        now = datetime.now(dt_timezone.utc)
+        Maintenance.objects.create(
+            name="M1",
+            summary="Test",
+            provider=provider,
+            start=now,
+            end=now + timedelta(hours=2),
+            status="CONFIRMED",
+        )
+
+        response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&past_days=-5")
+        assert response.status_code == 200
+
+    def test_past_days_exceeds_365_uses_default(self):
+        response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&past_days=999")
+        # past_days > 365 raises ValueError which is caught and defaults
+        assert response.status_code == 200
+
+    def test_non_integer_past_days_uses_default(self):
+        response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&past_days=abc")
+        assert response.status_code == 200
+
+
+@pytest.mark.django_db
+class TestMaintenanceICalViewBuildQueryset:
+    """Test _build_queryset edge cases."""
+
+    def setup_method(self):
+        self.user = User.objects.create_user(username="qs-user", password="pass", is_superuser=True)
+        self.token = Token.objects.create(user=self.user, version=1)
+        self.client = Client()
+
+    def test_provider_id_filter(self):
+        provider = Provider.objects.create(name="ByID", slug="byid")
+        now = datetime.now(dt_timezone.utc)
+        Maintenance.objects.create(
+            name="BY-ID-1",
+            summary="Test",
+            provider=provider,
+            start=now,
+            end=now + timedelta(hours=2),
+            status="CONFIRMED",
+        )
+
+        response = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&provider_id={provider.pk}"
+        )
+        assert response.status_code == 200
+        content = response.content.decode("utf-8")
+        assert "BY-ID-1" in content
+
+    def test_invalid_provider_id_returns_400(self):
+        response = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&provider_id=notanumber"
+        )
+        assert response.status_code == 400
+
+    def test_comma_separated_status_filter(self):
+        provider = Provider.objects.create(name="Multi", slug="multi")
+        now = datetime.now(dt_timezone.utc)
+        Maintenance.objects.create(
+            name="CONF1",
+            summary="T",
+            provider=provider,
+            start=now,
+            end=now + timedelta(hours=2),
+            status="CONFIRMED",
+        )
+        Maintenance.objects.create(
+            name="TENT1",
+            summary="T",
+            provider=provider,
+            start=now,
+            end=now + timedelta(hours=2),
+            status="TENTATIVE",
+        )
+        Maintenance.objects.create(
+            name="COMP1",
+            summary="T",
+            provider=provider,
+            start=now,
+            end=now + timedelta(hours=2),
+            status="COMPLETED",
+        )
+
+        response = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&status=CONFIRMED,TENTATIVE"
+        )
+        assert response.status_code == 200
+        content = response.content.decode("utf-8")
+        assert "CONF1" in content
+        assert "TENT1" in content
+        assert "COMP1" not in content
+
+    def test_download_mode(self):
+        provider = Provider.objects.create(name="DL", slug="dl")
+        now = datetime.now(dt_timezone.utc)
+        Maintenance.objects.create(
+            name="DL1",
+            summary="T",
+            provider=provider,
+            start=now,
+            end=now + timedelta(hours=2),
+            status="CONFIRMED",
+        )
+
+        response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&download=true")
+        assert response.status_code == 200
+        assert "attachment" in response["Content-Disposition"]

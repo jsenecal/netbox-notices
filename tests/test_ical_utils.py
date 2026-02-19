@@ -4,7 +4,8 @@ from datetime import datetime
 from datetime import timezone as dt_timezone
 
 import pytest
-from circuits.models import Provider
+from circuits.models import Circuit, CircuitType, Provider
+from django.contrib.contenttypes.models import ContentType
 from django.test import RequestFactory
 
 from notices.ical_utils import (
@@ -12,7 +13,7 @@ from notices.ical_utils import (
     generate_maintenance_ical,
     get_ical_status,
 )
-from notices.models import Maintenance
+from notices.models import Impact, Maintenance
 
 
 class TestICalStatusMapping:
@@ -153,3 +154,43 @@ class TestICalGeneration:
         assert "END:VCALENDAR" in ical_str
         # Should not have any events
         assert ical_str.count("BEGIN:VEVENT") == 0
+
+    def test_maintenance_with_impacts(self):
+        """iCal description should include Affected Objects when impacts exist."""
+        provider = Provider.objects.create(name="Impact Provider", slug="impact-provider")
+        circuit_type = CircuitType.objects.create(name="Impact Type", slug="impact-type")
+        circuit = Circuit.objects.create(cid="CKT-IMPACT-001", provider=provider, type=circuit_type)
+
+        maintenance = Maintenance.objects.create(
+            name="MAINT-IMPACT",
+            summary="Maintenance with impacts",
+            provider=provider,
+            start=datetime(2025, 6, 1, 10, 0, 0, tzinfo=dt_timezone.utc),
+            end=datetime(2025, 6, 1, 14, 0, 0, tzinfo=dt_timezone.utc),
+            status="CONFIRMED",
+        )
+
+        maint_ct = ContentType.objects.get_for_model(Maintenance)
+        circuit_ct = ContentType.objects.get_for_model(Circuit)
+        Impact.objects.create(
+            event_content_type=maint_ct,
+            event_object_id=maintenance.pk,
+            target_content_type=circuit_ct,
+            target_object_id=circuit.pk,
+            impact="OUTAGE",
+        )
+
+        # Must use queryset (not list) for impacts prefetch
+        queryset = Maintenance.objects.filter(pk=maintenance.pk).prefetch_related("impacts")
+
+        factory = RequestFactory()
+        request = factory.get("/")
+        request.META["HTTP_HOST"] = "netbox.example.com"
+
+        ical = generate_maintenance_ical(queryset, request)
+        ical_str = ical.to_ical().decode("utf-8")
+
+        # iCal line folding wraps long lines — unfold before checking
+        unfolded = ical_str.replace("\r\n ", "")
+        assert "Affected Objects" in unfolded
+        assert "OUTAGE" in unfolded

@@ -10,9 +10,18 @@ from notices.filtersets import (
     EventNotificationFilterSet,
     ImpactFilterSet,
     MaintenanceFilterSet,
+    NotificationTemplateFilterSet,
     OutageFilterSet,
+    PreparedNotificationFilterSet,
 )
-from notices.models import EventNotification, Impact, Maintenance, Outage
+from notices.models import (
+    EventNotification,
+    Impact,
+    Maintenance,
+    NotificationTemplate,
+    Outage,
+    PreparedNotification,
+)
 
 
 @pytest.mark.django_db
@@ -297,3 +306,129 @@ class TestEventNotificationFilterSetSearch:
 
         filterset = EventNotificationFilterSet({"q": ""}, EventNotification.objects.all())
         assert filterset.qs.count() == 1
+
+
+@pytest.mark.django_db
+class TestMaintenanceFilterSetHasReplaceFalse:
+    """Test the false branch of filter_has_replaces."""
+
+    def test_filter_has_replaces_false(self, provider):
+        """Should filter maintenances that have NOT been rescheduled."""
+        original = Maintenance.objects.create(
+            name="Original",
+            summary="Test",
+            provider=provider,
+            start=timezone.now(),
+            end=timezone.now() + timedelta(hours=4),
+            status="RE-SCHEDULED",
+        )
+        Maintenance.objects.create(
+            name="Standalone",
+            summary="Test",
+            provider=provider,
+            start=timezone.now(),
+            end=timezone.now() + timedelta(hours=4),
+            status="CONFIRMED",
+        )
+        Maintenance.objects.create(
+            name="Replacement",
+            summary="Test",
+            provider=provider,
+            start=timezone.now() + timedelta(days=1),
+            end=timezone.now() + timedelta(days=1, hours=4),
+            status="CONFIRMED",
+            replaces=original,
+        )
+
+        filterset = MaintenanceFilterSet({"has_replaces": False}, Maintenance.objects.all())
+        names = list(filterset.qs.values_list("name", flat=True))
+        assert "Standalone" in names
+        assert "Replacement" in names
+        assert "Original" not in names
+
+
+@pytest.mark.django_db
+class TestNotificationTemplateFilterSetSearch:
+    """Tests for NotificationTemplateFilterSet search method."""
+
+    def _create_template(self, name, slug, description=""):
+        return NotificationTemplate.objects.create(
+            name=name,
+            slug=slug,
+            description=description,
+            event_type="maintenance",
+            granularity="per_event",
+            subject_template="S",
+            body_template="B",
+            body_format="text",
+            weight=1000,
+        )
+
+    def test_search_by_name(self):
+        self._create_template("Outage Alert", "outage-alert")
+        self._create_template("Maintenance Notice", "maint-notice")
+
+        filterset = NotificationTemplateFilterSet({"q": "Alert"}, NotificationTemplate.objects.all())
+        assert filterset.qs.count() == 1
+        assert filterset.qs.first().name == "Outage Alert"
+
+    def test_search_by_slug(self):
+        self._create_template("Template One", "template-one")
+
+        filterset = NotificationTemplateFilterSet({"q": "template-one"}, NotificationTemplate.objects.all())
+        assert filterset.qs.count() == 1
+
+    def test_search_by_description(self):
+        self._create_template("T1", "t1", description="Sends alerts to NOC team")
+
+        filterset = NotificationTemplateFilterSet({"q": "NOC team"}, NotificationTemplate.objects.all())
+        assert filterset.qs.count() == 1
+
+    def test_search_empty_returns_all(self):
+        self._create_template("T1", "t1")
+        self._create_template("T2", "t2")
+
+        filterset = NotificationTemplateFilterSet({"q": "  "}, NotificationTemplate.objects.all())
+        assert filterset.qs.count() == 2
+
+
+@pytest.mark.django_db
+class TestPreparedNotificationFilterSetSearch:
+    """Tests for PreparedNotificationFilterSet search method."""
+
+    def _create_prepared(self, subject, body_text="body"):
+        template = NotificationTemplate.objects.create(
+            name=f"Tmpl-{subject[:10]}",
+            slug=f"tmpl-{subject[:10].lower().replace(' ', '-')}",
+            event_type="maintenance",
+            granularity="per_event",
+            subject_template="S",
+            body_template="B",
+            body_format="text",
+            weight=1000,
+        )
+        return PreparedNotification.objects.create(
+            template=template,
+            subject=subject,
+            body_text=body_text,
+        )
+
+    def test_search_by_subject(self):
+        self._create_prepared("Critical Outage Notification")
+        self._create_prepared("Routine Maintenance")
+
+        filterset = PreparedNotificationFilterSet({"q": "Critical"}, PreparedNotification.objects.all())
+        assert filterset.qs.count() == 1
+
+    def test_search_by_body_text(self):
+        self._create_prepared("Subject", body_text="Router firmware update scheduled")
+
+        filterset = PreparedNotificationFilterSet({"q": "firmware"}, PreparedNotification.objects.all())
+        assert filterset.qs.count() == 1
+
+    def test_search_empty_returns_all(self):
+        self._create_prepared("A")
+        self._create_prepared("B")
+
+        filterset = PreparedNotificationFilterSet({"q": " "}, PreparedNotification.objects.all())
+        assert filterset.qs.count() == 2

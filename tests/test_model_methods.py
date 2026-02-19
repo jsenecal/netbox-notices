@@ -7,7 +7,15 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-from notices.models import EventNotification, Impact, Maintenance, Outage
+from notices.models import (
+    EventNotification,
+    Impact,
+    Maintenance,
+    NotificationTemplate,
+    Outage,
+    PreparedNotification,
+    SentNotification,
+)
 
 
 @pytest.mark.django_db
@@ -452,3 +460,92 @@ class TestEventNotificationMethods:
 
         objectchange = notification.to_objectchange(ObjectChangeActionChoices.ACTION_CREATE)
         assert objectchange.related_object == maintenance
+
+
+@pytest.mark.django_db
+class TestNotificationTemplateGetAbsoluteUrl:
+    """Test NotificationTemplate.get_absolute_url."""
+
+    def test_get_absolute_url(self):
+        template = NotificationTemplate.objects.create(
+            name="T1",
+            slug="t1-url",
+            event_type="maintenance",
+            granularity="per_event",
+            subject_template="S",
+            body_template="B",
+            body_format="text",
+            weight=1000,
+        )
+        url = template.get_absolute_url()
+        assert f"/notification-templates/{template.pk}/" in url
+
+
+@pytest.mark.django_db
+class TestPreparedNotificationMethods:
+    """Test PreparedNotification methods."""
+
+    def _create_prepared(self, **kwargs):
+        template = NotificationTemplate.objects.create(
+            name="T-Prep",
+            slug=f"t-prep-{kwargs.get('subject', 'default')[:10].lower().replace(' ', '-')}",
+            event_type="maintenance",
+            granularity="per_event",
+            subject_template="S",
+            body_template="B",
+            body_format="text",
+            weight=1000,
+        )
+        defaults = {
+            "template": template,
+            "subject": "Test Subject for Prep",
+            "body_text": "body",
+        }
+        defaults.update(kwargs)
+        return PreparedNotification.objects.create(**defaults)
+
+    def test_get_absolute_url(self):
+        pn = self._create_prepared()
+        url = pn.get_absolute_url()
+        assert f"/prepared-notifications/{pn.pk}/" in url
+
+    def test_event_type_name_with_event(self, provider):
+        now = timezone.now()
+        maint = Maintenance.objects.create(
+            name="M1", summary="T", provider=provider, start=now, end=now + timedelta(hours=2), status="CONFIRMED"
+        )
+        maint_ct = ContentType.objects.get_for_model(Maintenance)
+        pn = self._create_prepared(event_content_type=maint_ct, event_id=maint.pk)
+        assert pn.event_type_name == "maintenance"
+
+    def test_event_type_name_without_event(self):
+        pn = self._create_prepared()
+        assert pn.event_type_name is None
+
+
+@pytest.mark.django_db
+class TestSentNotificationGetAbsoluteUrl:
+    """Test SentNotification.get_absolute_url."""
+
+    def test_get_absolute_url(self):
+        from notices.choices import PreparedNotificationStatusChoices
+
+        template = NotificationTemplate.objects.create(
+            name="T-Sent",
+            slug="t-sent-url",
+            event_type="maintenance",
+            granularity="per_event",
+            subject_template="S",
+            body_template="B",
+            body_format="text",
+            weight=1000,
+        )
+        pn = PreparedNotification.objects.create(
+            template=template,
+            subject="Test",
+            body_text="body",
+            status=PreparedNotificationStatusChoices.SENT,
+        )
+        sent = SentNotification.objects.get(pk=pn.pk)
+        url = sent.get_absolute_url()
+        assert f"/sent-notifications/{sent.pk}/" in url

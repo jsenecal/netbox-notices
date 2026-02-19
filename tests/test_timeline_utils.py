@@ -1,6 +1,7 @@
 from unittest.mock import Mock
 
 from notices.timeline_utils import (
+    _build_title,
     build_timeline_item,
     categorize_change,
     get_category_color,
@@ -269,3 +270,141 @@ class TestBuildTimelineItem:
         assert item["category"] == "status"
         assert item["icon"] == "check-circle"
         assert item["title"] == "Status changed to Completed"
+
+
+class TestGetCategoryColorOutageFallback:
+    """Test get_category_color outage status fallback."""
+
+    def test_outage_status_color(self):
+        """Outage status should be resolved via OutageStatusChoices."""
+        color = get_category_color("status", "REPORTED")
+        assert color == "red"
+
+    def test_outage_status_investigating(self):
+        color = get_category_color("status", "INVESTIGATING")
+        assert color == "orange"
+
+    def test_unknown_status_returns_secondary(self):
+        color = get_category_color("status", "NONEXISTENT_STATUS")
+        assert color == "secondary"
+
+
+class TestBuildTitleBranches:
+    """Test all _build_title branches not covered by build_timeline_item tests."""
+
+    def test_impact_delete(self):
+        title = _build_title("impact", "delete", "impact", "Circuit XYZ - OUTAGE", {}, {})
+        assert title == "Impact removed: Circuit XYZ - OUTAGE"
+
+    def test_impact_update(self):
+        title = _build_title("impact", "update", "impact", "Circuit XYZ - DEGRADED", {}, {})
+        assert title == "Impact updated: Circuit XYZ - DEGRADED"
+
+    def test_notification_create(self):
+        title = _build_title(
+            "notification",
+            "create",
+            "eventnotification",
+            "Notif",
+            {},
+            {"subject": "Provider Maintenance Alert"},
+        )
+        assert title == "Notification received: Provider Maintenance Alert"
+
+    def test_notification_update(self):
+        title = _build_title("notification", "update", "eventnotification", "Notif", {}, {})
+        assert title == "Notification updated"
+
+    def test_acknowledgment_true(self):
+        title = _build_title(
+            "acknowledgment",
+            "update",
+            "maintenance",
+            "MAINT-1",
+            {"acknowledged": False},
+            {"acknowledged": True},
+        )
+        assert title == "Event acknowledged"
+
+    def test_acknowledgment_false(self):
+        title = _build_title(
+            "acknowledgment",
+            "update",
+            "maintenance",
+            "MAINT-1",
+            {"acknowledged": True},
+            {"acknowledged": False},
+        )
+        assert title == "Acknowledgment removed"
+
+    def test_time_single_field(self):
+        title = _build_title(
+            "time",
+            "update",
+            "maintenance",
+            "MAINT-1",
+            {"start": "2025-01-01T10:00:00Z"},
+            {"start": "2025-01-01T12:00:00Z"},
+        )
+        assert title == "Start Time updated"
+
+    def test_time_multiple_fields(self):
+        title = _build_title(
+            "time",
+            "update",
+            "maintenance",
+            "MAINT-1",
+            {"start": "2025-01-01T10:00:00Z", "end": "2025-01-01T14:00:00Z"},
+            {"start": "2025-01-01T12:00:00Z", "end": "2025-01-01T16:00:00Z"},
+        )
+        assert title == "Event times updated"
+
+    def test_standard_create(self):
+        title = _build_title("standard", "create", "maintenance", "MAINT-1", {}, {})
+        assert title == "Maintenance created"
+
+    def test_standard_delete(self):
+        title = _build_title("standard", "delete", "maintenance", "MAINT-1", {}, {})
+        assert title == "Maintenance deleted"
+
+    def test_standard_update(self):
+        title = _build_title("standard", "update", "maintenance", "MAINT-1", {}, {})
+        assert title == "Event updated"
+
+    def test_notification_create_unknown_subject(self):
+        """When postchange has no subject, falls back to 'Unknown'."""
+        title = _build_title("notification", "create", "eventnotification", "Notif", {}, {})
+        assert title == "Notification received: Unknown"
+
+
+class TestBuildTimelineItemUserNameFallback:
+    """Test user_name fallback when user_name is empty."""
+
+    def test_user_name_empty_uses_username(self):
+        object_change = Mock()
+        object_change.time = Mock()
+        object_change.user = Mock()
+        object_change.user.username = "fallback_user"
+        object_change.user_name = ""
+        object_change.changed_object_type.model = "maintenance"
+        object_change.action = "create"
+        object_change.object_repr = "MAINT-1"
+        object_change.prechange_data = None
+        object_change.postchange_data = {}
+
+        item = build_timeline_item(object_change, "maintenance")
+        assert item["user_name"] == "fallback_user"
+
+    def test_user_name_none_and_no_user_uses_system(self):
+        object_change = Mock()
+        object_change.time = Mock()
+        object_change.user = None
+        object_change.user_name = ""
+        object_change.changed_object_type.model = "maintenance"
+        object_change.action = "create"
+        object_change.object_repr = "MAINT-1"
+        object_change.prechange_data = None
+        object_change.postchange_data = {}
+
+        item = build_timeline_item(object_change, "maintenance")
+        assert item["user_name"] == "System"
