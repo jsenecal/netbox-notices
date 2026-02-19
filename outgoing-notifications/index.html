@@ -1,0 +1,2999 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://jsenecal.github.io/netbox-notices/outgoing-notifications/">
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../parsers/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>Outgoing Notifications - NetBox Notices Plugin</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#outgoing-notifications" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="NetBox Notices Plugin" class="md-header__button md-logo" aria-label="NetBox Notices Plugin" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NetBox Notices Plugin
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Outgoing Notifications
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jsenecal/netbox-notices" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jsenecal/netbox-notices
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="NetBox Notices Plugin" class="md-nav__button md-logo" aria-label="NetBox Notices Plugin" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NetBox Notices Plugin
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jsenecal/netbox-notices" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jsenecal/netbox-notices
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Outgoing Notifications
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Outgoing Notifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#outgoing-notifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outgoing Notifications
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Outgoing Notifications">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#messagetemplate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MessageTemplate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#templatescope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TemplateScope
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#preparedmessage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PreparedMessage
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#template-creation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Template Creation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Template Creation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#event-type-targeting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event Type Targeting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#granularity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Granularity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#template-syntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Template Syntax
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#context-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context Variables
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Context Variables">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#all-templates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        All Templates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maintenance-event-linked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Maintenance Event-Linked
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outage-event-linked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outage Event-Linked
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-impact-granularity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-Impact Granularity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Filters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Custom Filters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ical_datetime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ical_datetime
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#markdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        markdown
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recipient-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recipient Discovery
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Recipient Discovery">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#standalone-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standalone Messages
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#template-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Template Matching
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Template Matching">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#matching-algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Matching Algorithm
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scope-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scope Matching
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#field-level-merging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Field-Level Merging
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ical-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iCal Generation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="iCal Generation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#when-generated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When Generated
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bcop-standard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BCOP Standard
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#required-x-maintnote--properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required X-MAINTNOTE-* Properties
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-bcop-template" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example BCOP Template
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#state-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State Machine
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="State Machine">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#status-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Status Workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#valid-transitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Valid Transitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validation-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation Requirements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional-timestamp-parameter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional Timestamp Parameter
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rest-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        REST API
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="REST API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Endpoints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filtering-preparedmessages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filtering PreparedMessages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-a-messagetemplate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating a MessageTemplate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-a-preparedmessage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating a PreparedMessage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updating-message-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Updating Message Status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#journal-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Journal Entries
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pull-based-api-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pull-Based API Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#webhook-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Webhook Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-delivery-script" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Delivery Script
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#slack-integration-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Slack Integration Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aws-ses-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AWS SES Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automated Parsers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Automated Parsers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parsers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a parser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parsers_sns_lambda/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AWS SNS & Lambda
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integrations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations_aws_ses/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AWS SES
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#outgoing-notifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outgoing Notifications
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Outgoing Notifications">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#messagetemplate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MessageTemplate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#templatescope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TemplateScope
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#preparedmessage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PreparedMessage
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#template-creation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Template Creation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Template Creation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#event-type-targeting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event Type Targeting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#granularity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Granularity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#template-syntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Template Syntax
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#context-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context Variables
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Context Variables">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#all-templates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        All Templates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maintenance-event-linked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Maintenance Event-Linked
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outage-event-linked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outage Event-Linked
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-impact-granularity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-Impact Granularity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Filters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Custom Filters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ical_datetime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ical_datetime
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#markdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        markdown
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recipient-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recipient Discovery
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Recipient Discovery">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#standalone-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standalone Messages
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#template-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Template Matching
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Template Matching">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#matching-algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Matching Algorithm
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scope-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scope Matching
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#field-level-merging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Field-Level Merging
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ical-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iCal Generation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="iCal Generation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#when-generated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When Generated
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bcop-standard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BCOP Standard
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#required-x-maintnote--properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required X-MAINTNOTE-* Properties
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-bcop-template" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example BCOP Template
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#state-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State Machine
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="State Machine">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#status-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Status Workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#valid-transitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Valid Transitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validation-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation Requirements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional-timestamp-parameter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional Timestamp Parameter
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rest-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        REST API
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="REST API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Endpoints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filtering-preparedmessages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filtering PreparedMessages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-a-messagetemplate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating a MessageTemplate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-a-preparedmessage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating a PreparedMessage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updating-message-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Updating Message Status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#journal-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Journal Entries
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pull-based-api-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pull-Based API Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#webhook-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Webhook Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-delivery-script" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Delivery Script
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#slack-integration-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Slack Integration Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aws-ses-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AWS SES Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+  <h1>Outgoing Notifications</h1>
+
+<h2 id="outgoing-notifications">Outgoing Notifications<a class="headerlink" href="#outgoing-notifications" title="Permanent link">&para;</a></h2>
+<p>This document describes the outgoing notification system in netbox-notices for composing and preparing messages based on maintenance and outage events.</p>
+<h3 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h3>
+<p>The outgoing notifications feature provides a complete message composition system that:</p>
+<ul>
+<li><strong>Composes messages</strong> from Jinja2 templates with full access to event and impact data</li>
+<li><strong>Discovers recipients</strong> automatically from NetBox contacts via tenant relationships</li>
+<li><strong>Generates iCal attachments</strong> for maintenance events following the BCOP standard</li>
+<li><strong>Tracks message lifecycle</strong> from draft through delivery with full audit trail</li>
+</ul>
+<p>This is a <strong>content/delivery separation</strong> architecture:</p>
+<ul>
+<li><strong>This plugin handles:</strong> Templates, recipient discovery, message composition, and state tracking</li>
+<li><strong>External systems handle:</strong> Actual delivery (SMTP, Slack, Teams, webhooks, etc.)</li>
+</ul>
+<h3 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>                                    ┌─────────────────────┐
+                                    │   Maintenance or    │
+                                    │   Outage Event      │
+                                    └──────────┬──────────┘
+                                               │
+                    ┌──────────────────────────┼──────────────────────────┐
+                    │                          │                          │
+                    ▼                          ▼                          ▼
+           ┌────────────────┐        ┌────────────────┐        ┌────────────────┐
+           │ MessageTemplate│        │  TemplateScope │        │   Contacts     │
+           │   (Jinja2)     │◄───────│   (Matching)   │        │  (Recipients)  │
+           └────────┬───────┘        └────────────────┘        └────────┬───────┘
+                    │                                                   │
+                    └──────────────────┬────────────────────────────────┘
+                                       │
+                                       ▼
+                              ┌────────────────┐
+                              │PreparedMessage │
+                              │  (Rendered)    │
+                              └────────┬───────┘
+                                       │
+                                       ▼
+                              ┌────────────────┐
+                              │   REST API     │
+                              │ (Pull Model)   │
+                              └────────┬───────┘
+                                       │
+                                       ▼
+                              ┌────────────────┐
+                              │ External       │
+                              │ Delivery       │
+                              │ System         │
+                              └────────────────┘
+</code></pre></div>
+<h3 id="models">Models<a class="headerlink" href="#models" title="Permanent link">&para;</a></h3>
+<h4 id="messagetemplate">MessageTemplate<a class="headerlink" href="#messagetemplate" title="Permanent link">&para;</a></h4>
+<p>A Jinja template for generating outgoing notifications. Templates can be scoped to specific objects (tenants, providers, sites, etc.) via TemplateScope assignments, similar to Config Contexts.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>CharField</td>
+<td>Human-readable template name</td>
+</tr>
+<tr>
+<td><code>slug</code></td>
+<td>SlugField</td>
+<td>URL-safe identifier (unique)</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>TextField</td>
+<td>Optional description</td>
+</tr>
+<tr>
+<td><code>event_type</code></td>
+<td>CharField</td>
+<td>Which events this applies to: <code>maintenance</code>, <code>outage</code>, <code>both</code>, or <code>none</code></td>
+</tr>
+<tr>
+<td><code>granularity</code></td>
+<td>CharField</td>
+<td>Message grouping: <code>per_event</code>, <code>per_tenant</code>, or <code>per_impact</code></td>
+</tr>
+<tr>
+<td><code>subject_template</code></td>
+<td>TextField</td>
+<td>Jinja template for email subject</td>
+</tr>
+<tr>
+<td><code>body_template</code></td>
+<td>TextField</td>
+<td>Jinja template for message body</td>
+</tr>
+<tr>
+<td><code>body_format</code></td>
+<td>CharField</td>
+<td>Output format: <code>markdown</code>, <code>html</code>, or <code>text</code></td>
+</tr>
+<tr>
+<td><code>css_template</code></td>
+<td>TextField</td>
+<td>CSS styles for HTML output</td>
+</tr>
+<tr>
+<td><code>headers_template</code></td>
+<td>JSONField</td>
+<td>Email headers as Jinja templates</td>
+</tr>
+<tr>
+<td><code>include_ical</code></td>
+<td>BooleanField</td>
+<td>Generate iCal attachment (Maintenance only)</td>
+</tr>
+<tr>
+<td><code>ical_template</code></td>
+<td>TextField</td>
+<td>Jinja template for iCal content</td>
+</tr>
+<tr>
+<td><code>contact_roles</code></td>
+<td>M2M</td>
+<td>Contact roles to include in recipient discovery</td>
+</tr>
+<tr>
+<td><code>contact_priorities</code></td>
+<td>ArrayField</td>
+<td>Contact priorities: <code>primary</code>, <code>secondary</code>, <code>tertiary</code></td>
+</tr>
+<tr>
+<td><code>is_base_template</code></td>
+<td>BooleanField</td>
+<td>Whether this can be extended by other templates</td>
+</tr>
+<tr>
+<td><code>extends</code></td>
+<td>ForeignKey</td>
+<td>Parent template for Jinja block inheritance</td>
+</tr>
+<tr>
+<td><code>weight</code></td>
+<td>IntegerField</td>
+<td>Base weight for template matching (higher wins)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="templatescope">TemplateScope<a class="headerlink" href="#templatescope" title="Permanent link">&para;</a></h4>
+<p>Links a MessageTemplate to NetBox objects for Config Context-like matching. When generating messages, templates with matching scopes are selected and merged by weight.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>template</code></td>
+<td>ForeignKey</td>
+<td>Parent MessageTemplate</td>
+</tr>
+<tr>
+<td><code>content_type</code></td>
+<td>ForeignKey</td>
+<td>Type of object (e.g., Tenant, Provider, Site)</td>
+</tr>
+<tr>
+<td><code>object_id</code></td>
+<td>BigIntegerField</td>
+<td>Specific object ID, or null for all of that type</td>
+</tr>
+<tr>
+<td><code>event_type</code></td>
+<td>CharField</td>
+<td>Filter by event type (optional)</td>
+</tr>
+<tr>
+<td><code>event_status</code></td>
+<td>CharField</td>
+<td>Filter by event status (optional)</td>
+</tr>
+<tr>
+<td><code>weight</code></td>
+<td>IntegerField</td>
+<td>Weight for merge priority (higher wins)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="preparedmessage">PreparedMessage<a class="headerlink" href="#preparedmessage" title="Permanent link">&para;</a></h4>
+<p>A rendered message ready for delivery. Stores a snapshot of rendered content and recipients at generation time. Status transitions are validated via state machine.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>template</code></td>
+<td>ForeignKey</td>
+<td>Source MessageTemplate</td>
+</tr>
+<tr>
+<td><code>event_content_type</code></td>
+<td>ForeignKey</td>
+<td>Type of linked event (optional)</td>
+</tr>
+<tr>
+<td><code>event_id</code></td>
+<td>BigIntegerField</td>
+<td>ID of linked event (optional)</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>CharField</td>
+<td>Current status: <code>draft</code>, <code>ready</code>, <code>sent</code>, <code>delivered</code>, <code>failed</code></td>
+</tr>
+<tr>
+<td><code>contacts</code></td>
+<td>M2M</td>
+<td>Contacts to receive this message</td>
+</tr>
+<tr>
+<td><code>recipients</code></td>
+<td>JSONField</td>
+<td>Snapshot of recipients at approval time (read-only)</td>
+</tr>
+<tr>
+<td><code>subject</code></td>
+<td>CharField</td>
+<td>Rendered subject line</td>
+</tr>
+<tr>
+<td><code>body_text</code></td>
+<td>TextField</td>
+<td>Rendered plain text body</td>
+</tr>
+<tr>
+<td><code>body_html</code></td>
+<td>TextField</td>
+<td>Rendered HTML body</td>
+</tr>
+<tr>
+<td><code>headers</code></td>
+<td>JSONField</td>
+<td>Rendered email headers</td>
+</tr>
+<tr>
+<td><code>css</code></td>
+<td>TextField</td>
+<td>Rendered CSS</td>
+</tr>
+<tr>
+<td><code>ical_content</code></td>
+<td>TextField</td>
+<td>Rendered iCal attachment</td>
+</tr>
+<tr>
+<td><code>approved_by</code></td>
+<td>ForeignKey</td>
+<td>User who approved the message</td>
+</tr>
+<tr>
+<td><code>approved_at</code></td>
+<td>DateTimeField</td>
+<td>When the message was approved</td>
+</tr>
+<tr>
+<td><code>sent_at</code></td>
+<td>DateTimeField</td>
+<td>When the message was sent</td>
+</tr>
+<tr>
+<td><code>delivered_at</code></td>
+<td>DateTimeField</td>
+<td>When delivery was confirmed</td>
+</tr>
+<tr>
+<td><code>viewed_at</code></td>
+<td>DateTimeField</td>
+<td>When the message was viewed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="template-creation">Template Creation<a class="headerlink" href="#template-creation" title="Permanent link">&para;</a></h3>
+<h4 id="event-type-targeting">Event Type Targeting<a class="headerlink" href="#event-type-targeting" title="Permanent link">&para;</a></h4>
+<p>The <code>event_type</code> field determines which events a template can be used with:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>maintenance</code></td>
+<td>Only for Maintenance events</td>
+</tr>
+<tr>
+<td><code>outage</code></td>
+<td>Only for Outage events</td>
+</tr>
+<tr>
+<td><code>both</code></td>
+<td>For both Maintenance and Outage events</td>
+</tr>
+<tr>
+<td><code>none</code></td>
+<td>Standalone messages not linked to events</td>
+</tr>
+</tbody>
+</table>
+<h4 id="granularity">Granularity<a class="headerlink" href="#granularity" title="Permanent link">&para;</a></h4>
+<p>The <code>granularity</code> field controls how messages are grouped when generated from events:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>per_event</code></td>
+<td>One message for the entire event (all impacts in one message)</td>
+</tr>
+<tr>
+<td><code>per_tenant</code></td>
+<td>One message per affected tenant (group impacts by tenant)</td>
+</tr>
+<tr>
+<td><code>per_impact</code></td>
+<td>One message per impact record (individual notifications)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="template-syntax">Template Syntax<a class="headerlink" href="#template-syntax" title="Permanent link">&para;</a></h4>
+<p>Templates use Jinja2 syntax with full support for:</p>
+<ul>
+<li>Variable interpolation: <code>{{ maintenance.name }}</code></li>
+<li>Conditionals: <code>{% if maintenance.status == 'CONFIRMED' %}...{% endif %}</code></li>
+<li>Loops: <code>{% for impact in impacts %}...{% endfor %}</code></li>
+<li>Filters: <code>{{ maintenance.start|ical_datetime }}</code></li>
+<li>Block inheritance: <code>{% extends "base" %}{% block content %}...{% endblock %}</code></li>
+</ul>
+<p><strong>Example subject template:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="x">[</span><span class="cp">{{</span> <span class="nv">maintenance.status</span> <span class="cp">}}</span><span class="x">] </span><span class="cp">{{</span> <span class="nv">maintenance.provider.name</span> <span class="cp">}}</span><span class="x"> Maintenance: </span><span class="cp">{{</span> <span class="nv">maintenance.name</span> <span class="cp">}}</span>
+</code></pre></div>
+<p><strong>Example body template:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="x"># Maintenance Notification</span>
+
+<span class="x">**Provider:** </span><span class="cp">{{</span> <span class="nv">maintenance.provider.name</span> <span class="cp">}}</span>
+<span class="x">**Maintenance ID:** </span><span class="cp">{{</span> <span class="nv">maintenance.name</span> <span class="cp">}}</span>
+<span class="x">**Status:** </span><span class="cp">{{</span> <span class="nv">maintenance.status</span> <span class="cp">}}</span>
+
+<span class="x">## Schedule</span>
+
+<span class="x">- **Start:** </span><span class="cp">{{</span> <span class="nv">maintenance.start</span> <span class="cp">}}</span>
+<span class="x">- **End:** </span><span class="cp">{{</span> <span class="nv">maintenance.end</span> <span class="cp">}}</span>
+
+<span class="x">## Affected Services</span>
+
+<span class="cp">{%</span> <span class="k">for</span> <span class="nv">impact</span> <span class="k">in</span> <span class="nv">tenant_impacts</span> <span class="cp">%}</span>
+<span class="x">- </span><span class="cp">{{</span> <span class="nv">impact.target</span> <span class="cp">}}</span><span class="x"> (</span><span class="cp">{{</span> <span class="nv">impact.impact</span> <span class="cp">}}</span><span class="x">)</span>
+<span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
+
+<span class="x">## Summary</span>
+
+<span class="cp">{{</span> <span class="nv">maintenance.summary</span> <span class="cp">}}</span>
+
+<span class="x">---</span>
+<span class="x">This is an automated notification from NetBox.</span>
+<span class="x">View details: </span><span class="cp">{{</span> <span class="nv">netbox_url</span> <span class="cp">}}{{</span> <span class="nv">maintenance.get_absolute_url</span> <span class="cp">}}</span>
+</code></pre></div>
+<h4 id="context-variables">Context Variables<a class="headerlink" href="#context-variables" title="Permanent link">&para;</a></h4>
+<h5 id="all-templates">All Templates<a class="headerlink" href="#all-templates" title="Permanent link">&para;</a></h5>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>now</code></td>
+<td>Current datetime</td>
+</tr>
+<tr>
+<td><code>netbox_url</code></td>
+<td>NetBox base URL</td>
+</tr>
+<tr>
+<td><code>tenant</code></td>
+<td>Target tenant (when using per_tenant granularity)</td>
+</tr>
+<tr>
+<td><code>impacts</code></td>
+<td>All Impact records for this message scope</td>
+</tr>
+<tr>
+<td><code>contacts</code></td>
+<td>List of recipient Contact objects</td>
+</tr>
+</tbody>
+</table>
+<h5 id="maintenance-event-linked">Maintenance Event-Linked<a class="headerlink" href="#maintenance-event-linked" title="Permanent link">&para;</a></h5>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>maintenance</code></td>
+<td>The Maintenance object</td>
+</tr>
+<tr>
+<td><code>maintenance.provider</code></td>
+<td>Provider object</td>
+</tr>
+<tr>
+<td><code>maintenance.status</code></td>
+<td>Current status (TENTATIVE, CONFIRMED, etc.)</td>
+</tr>
+<tr>
+<td><code>maintenance.start</code></td>
+<td>Scheduled start time</td>
+</tr>
+<tr>
+<td><code>maintenance.end</code></td>
+<td>Scheduled end time</td>
+</tr>
+<tr>
+<td><code>maintenance.summary</code></td>
+<td>Maintenance summary text</td>
+</tr>
+<tr>
+<td><code>tenant_impacts</code></td>
+<td>Impacts filtered for current tenant</td>
+</tr>
+<tr>
+<td><code>highest_impact</code></td>
+<td>Worst impact level (OUTAGE &gt; DEGRADED &gt; REDUCED-REDUNDANCY &gt; NO-IMPACT)</td>
+</tr>
+<tr>
+<td><code>message_sequence</code></td>
+<td>Notification count for this tenant+event</td>
+</tr>
+</tbody>
+</table>
+<h5 id="outage-event-linked">Outage Event-Linked<a class="headerlink" href="#outage-event-linked" title="Permanent link">&para;</a></h5>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>outage</code></td>
+<td>The Outage object</td>
+</tr>
+<tr>
+<td><code>outage.reported_at</code></td>
+<td>When the outage was reported</td>
+</tr>
+<tr>
+<td><code>outage.estimated_time_to_repair</code></td>
+<td>ETR if known</td>
+</tr>
+<tr>
+<td><code>outage.status</code></td>
+<td>Current status (REPORTED, INVESTIGATING, etc.)</td>
+</tr>
+<tr>
+<td><code>outage.end</code></td>
+<td>Resolution time (if resolved)</td>
+</tr>
+</tbody>
+</table>
+<h5 id="per-impact-granularity">Per-Impact Granularity<a class="headerlink" href="#per-impact-granularity" title="Permanent link">&para;</a></h5>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>impact</code></td>
+<td>The specific Impact record</td>
+</tr>
+<tr>
+<td><code>impact.target</code></td>
+<td>The impacted object</td>
+</tr>
+<tr>
+<td><code>object</code></td>
+<td>Alias for <code>impact.target</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="custom-filters">Custom Filters<a class="headerlink" href="#custom-filters" title="Permanent link">&para;</a></h4>
+<h5 id="ical_datetime">ical_datetime<a class="headerlink" href="#ical_datetime" title="Permanent link">&para;</a></h5>
+<p>Formats a datetime as an iCal-compliant datetime string (YYYYMMDDTHHMMSSZ in UTC).</p>
+<div class="highlight"><pre><span></span><code><span class="x">DTSTART:</span><span class="cp">{{</span> <span class="nv">maintenance.start</span><span class="o">|</span><span class="nf">ical_datetime</span> <span class="cp">}}</span>
+</code></pre></div>
+<p>Output: <code>DTSTART:20260122T143000Z</code></p>
+<h5 id="markdown">markdown<a class="headerlink" href="#markdown" title="Permanent link">&para;</a></h5>
+<p>Renders Markdown text to HTML. Supports tables, fenced code blocks, and line breaks.</p>
+<div class="highlight"><pre><span></span><code><span class="cp">{{</span> <span class="nv">maintenance.summary</span><span class="o">|</span><span class="nf">markdown</span> <span class="cp">}}</span>
+</code></pre></div>
+<h3 id="recipient-discovery">Recipient Discovery<a class="headerlink" href="#recipient-discovery" title="Permanent link">&para;</a></h3>
+<p>Recipients are discovered automatically from NetBox contacts based on the template configuration:</p>
+<h4 id="flow">Flow<a class="headerlink" href="#flow" title="Permanent link">&para;</a></h4>
+<ol>
+<li><strong>Collect target objects</strong> from event impacts based on granularity</li>
+<li><strong>Resolve tenants</strong> from impacted objects via <code>object.tenant</code></li>
+<li><strong>Find contacts</strong> by querying ContactAssignments where:</li>
+<li>Role is in template's <code>contact_roles</code></li>
+<li>Priority is in template's <code>contact_priorities</code></li>
+<li>Priority is not <code>inactive</code></li>
+<li><strong>Populate PreparedMessage</strong> with discovered contacts</li>
+<li><strong>Snapshot recipients</strong> when message transitions to <code>ready</code> status</li>
+</ol>
+<h4 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h4>
+<p>A maintenance event impacts two circuits:</p>
+<ul>
+<li>Circuit A belongs to Tenant X</li>
+<li>Circuit B belongs to Tenant Y</li>
+</ul>
+<p>With <code>granularity=per_tenant</code> and <code>contact_roles=[NOC]</code>:</p>
+<ol>
+<li>System creates two PreparedMessages (one per tenant)</li>
+<li>For Tenant X's message, discovers contacts with NOC role assigned to Tenant X</li>
+<li>For Tenant Y's message, discovers contacts with NOC role assigned to Tenant Y</li>
+</ol>
+<h4 id="standalone-messages">Standalone Messages<a class="headerlink" href="#standalone-messages" title="Permanent link">&para;</a></h4>
+<p>For templates with <code>event_type=none</code>:</p>
+<ul>
+<li>No automatic recipient discovery</li>
+<li>User manually selects contacts while in <code>draft</code> status</li>
+<li>Same approval and delivery flow applies</li>
+</ul>
+<h3 id="template-matching">Template Matching<a class="headerlink" href="#template-matching" title="Permanent link">&para;</a></h3>
+<p>When generating messages from an event, templates are matched and merged based on scopes.</p>
+<h4 id="matching-algorithm">Matching Algorithm<a class="headerlink" href="#matching-algorithm" title="Permanent link">&para;</a></h4>
+<ol>
+<li><strong>Filter by event type:</strong></li>
+<li>Maintenance events match templates where <code>event_type</code> is <code>maintenance</code> or <code>both</code></li>
+<li>
+<p>Outage events match templates where <code>event_type</code> is <code>outage</code> or <code>both</code></p>
+</li>
+<li>
+<p><strong>Score templates by scope matches:</strong>
+   <div class="highlight"><pre><span></span><code>score = template.weight
+for each scope in template.scopes:
+    if scope matches context:
+        score += scope.weight
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Select templates:</strong></p>
+</li>
+<li>Include templates with at least one matching scope</li>
+<li>Include templates with no scopes (global defaults)</li>
+</ol>
+<h4 id="scope-matching">Scope Matching<a class="headerlink" href="#scope-matching" title="Permanent link">&para;</a></h4>
+<p>A scope matches when:</p>
+<ul>
+<li>Its <code>content_type</code> matches an object in the context (tenant, provider, etc.)</li>
+<li>Its <code>object_id</code> is null (matches all of that type) OR matches the specific object</li>
+<li>Its <code>event_type</code> is null OR matches the current event type</li>
+<li>Its <code>event_status</code> is null OR matches the current event status</li>
+</ul>
+<h4 id="field-level-merging">Field-Level Merging<a class="headerlink" href="#field-level-merging" title="Permanent link">&para;</a></h4>
+<p>When multiple templates match, fields are merged by weight (higher wins):</p>
+<ul>
+<li><code>subject_template</code></li>
+<li><code>body_template</code></li>
+<li><code>headers_template</code></li>
+<li><code>css_template</code></li>
+<li><code>ical_template</code></li>
+</ul>
+<p>If a higher-weighted template's field is empty/null, the value is inherited from lower-weighted templates.</p>
+<h3 id="ical-generation">iCal Generation<a class="headerlink" href="#ical-generation" title="Permanent link">&para;</a></h3>
+<h4 id="when-generated">When Generated<a class="headerlink" href="#when-generated" title="Permanent link">&para;</a></h4>
+<p>iCal attachments are generated when:</p>
+<ol>
+<li>Template has <code>include_ical=True</code></li>
+<li>Message is linked to a Maintenance event (not Outage)</li>
+<li>Template has a non-empty <code>ical_template</code></li>
+</ol>
+<h4 id="bcop-standard">BCOP Standard<a class="headerlink" href="#bcop-standard" title="Permanent link">&para;</a></h4>
+<p>The iCal format follows the <a href="https://github.com/mjethanandani/circuit-maintenance">BCOP (Best Current Operational Practice) standard</a> for circuit maintenance notifications.</p>
+<h4 id="required-x-maintnote--properties">Required X-MAINTNOTE-* Properties<a class="headerlink" href="#required-x-maintnote--properties" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>X-MAINTNOTE-PROVIDER</code></td>
+<td>Service provider identifier (e.g., provider slug)</td>
+</tr>
+<tr>
+<td><code>X-MAINTNOTE-ACCOUNT</code></td>
+<td>Customer account identifier (e.g., tenant name)</td>
+</tr>
+<tr>
+<td><code>X-MAINTNOTE-MAINTENANCE-ID</code></td>
+<td>Unique maintenance identifier</td>
+</tr>
+<tr>
+<td><code>X-MAINTNOTE-OBJECT-ID</code></td>
+<td>Affected service/circuit ID(s)</td>
+</tr>
+<tr>
+<td><code>X-MAINTNOTE-IMPACT</code></td>
+<td>Impact level: NO-IMPACT, REDUCED-REDUNDANCY, DEGRADED, OUTAGE</td>
+</tr>
+<tr>
+<td><code>X-MAINTNOTE-STATUS</code></td>
+<td>Status: TENTATIVE, CONFIRMED, CANCELLED, IN-PROCESS, COMPLETED</td>
+</tr>
+</tbody>
+</table>
+<h4 id="example-bcop-template">Example BCOP Template<a class="headerlink" href="#example-bcop-template" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//YourCompany//netbox-notices//EN
+METHOD:REQUEST
+BEGIN:VEVENT
+DTSTAMP:{{ now|ical_datetime }}
+DTSTART:{{ maintenance.start|ical_datetime }}
+DTEND:{{ maintenance.end|ical_datetime }}
+UID:{{ maintenance.pk }}-{{ tenant.pk }}@yourcompany.com
+SUMMARY:{{ maintenance.name }} - {{ maintenance.provider.name }}
+DESCRIPTION:{{ maintenance.summary | replace(&#39;\n&#39;, &#39;\\n&#39;) }}
+ORGANIZER;CN=&quot;{{ maintenance.provider.name }}&quot;:mailto:noc@yourcompany.com
+SEQUENCE:{{ message_sequence|default(0) }}
+X-MAINTNOTE-PROVIDER:{{ maintenance.provider.slug }}
+X-MAINTNOTE-ACCOUNT:{{ tenant.name }}
+X-MAINTNOTE-MAINTENANCE-ID;X-MAINTNOTE-PRECEDENCE=PRIMARY:{{ maintenance.name }}
+{% for impact in tenant_impacts %}
+X-MAINTNOTE-OBJECT-ID:{{ impact.target }}
+{% endfor %}
+X-MAINTNOTE-IMPACT:{{ highest_impact }}
+X-MAINTNOTE-STATUS:{{ maintenance.status }}
+END:VEVENT
+END:VCALENDAR
+</code></pre></div>
+<h3 id="state-machine">State Machine<a class="headerlink" href="#state-machine" title="Permanent link">&para;</a></h3>
+<p>PreparedMessage status transitions are enforced by a state machine with validation.</p>
+<h4 id="status-workflow">Status Workflow<a class="headerlink" href="#status-workflow" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>         ┌─────────────────────────────────┐
+         │                                 │
+         ▼                                 │
+      [draft] ──────&gt; [ready] ──────&gt; [sent] ──────&gt; [delivered]
+         │               │                │
+         │               │                │
+         ▼               │                ▼
+      (delete)           │            [failed]
+                         │                │
+                         │                │
+                         └────────────────┘
+                              (retry)
+</code></pre></div>
+<h4 id="valid-transitions">Valid Transitions<a class="headerlink" href="#valid-transitions" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>From</th>
+<th>To</th>
+<th>Trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>draft</code></td>
+<td><code>ready</code></td>
+<td>Approve message</td>
+</tr>
+<tr>
+<td><code>draft</code></td>
+<td>(delete)</td>
+<td>Delete draft</td>
+</tr>
+<tr>
+<td><code>ready</code></td>
+<td><code>sent</code></td>
+<td>External system picks up message</td>
+</tr>
+<tr>
+<td><code>sent</code></td>
+<td><code>delivered</code></td>
+<td>Delivery confirmed</td>
+</tr>
+<tr>
+<td><code>sent</code></td>
+<td><code>failed</code></td>
+<td>Delivery failed</td>
+</tr>
+<tr>
+<td><code>failed</code></td>
+<td><code>ready</code></td>
+<td>Retry delivery</td>
+</tr>
+</tbody>
+</table>
+<h4 id="validation-requirements">Validation Requirements<a class="headerlink" href="#validation-requirements" title="Permanent link">&para;</a></h4>
+<p><strong>draft -&gt; ready (approval):</strong></p>
+<ul>
+<li><code>recipients</code> must not be empty (computed from <code>contacts</code>)</li>
+<li>Sets <code>approved_by</code> to current user</li>
+<li>Sets <code>approved_at</code> to current timestamp</li>
+<li>Snapshots recipients JSON from contacts</li>
+</ul>
+<p><strong>ready -&gt; sent:</strong></p>
+<ul>
+<li>Sets <code>sent_at</code> to provided <code>timestamp</code> or current time</li>
+</ul>
+<p><strong>sent -&gt; delivered:</strong></p>
+<ul>
+<li>Sets <code>delivered_at</code> to provided <code>timestamp</code> or current time</li>
+</ul>
+<h4 id="optional-timestamp-parameter">Optional Timestamp Parameter<a class="headerlink" href="#optional-timestamp-parameter" title="Permanent link">&para;</a></h4>
+<p>External delivery systems may process messages in batches or have delayed polling. The <code>timestamp</code> parameter allows specifying when a transition actually occurred:</p>
+<div class="highlight"><pre><span></span><code><span class="err">PATCH /api/plugins/notices/prepared-messages/1/</span>
+<span class="err">{</span>
+<span class="err">    &quot;status&quot;: &quot;sent&quot;,</span>
+<span class="err">    &quot;timestamp&quot;: &quot;2026-01-27T10:00:00Z&quot;,</span>
+<span class="err">    &quot;message&quot;: &quot;Sent via batch processor&quot;</span>
+<span class="err">}</span>
+</code></pre></div>
+<p><strong>Timestamp validation:</strong></p>
+<ul>
+<li>Cannot be in the future</li>
+<li>Must respect chronological order:</li>
+<li><code>sent_at</code> &gt;= <code>approved_at</code></li>
+<li><code>delivered_at</code> &gt;= <code>sent_at</code></li>
+</ul>
+<p>If <code>timestamp</code> is not provided, the current time is used.</p>
+<h3 id="rest-api">REST API<a class="headerlink" href="#rest-api" title="Permanent link">&para;</a></h3>
+<h4 id="endpoints">Endpoints<a class="headerlink" href="#endpoints" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>GET    /api/plugins/notices/message-templates/
+POST   /api/plugins/notices/message-templates/
+GET    /api/plugins/notices/message-templates/{id}/
+PUT    /api/plugins/notices/message-templates/{id}/
+PATCH  /api/plugins/notices/message-templates/{id}/
+DELETE /api/plugins/notices/message-templates/{id}/
+
+GET    /api/plugins/notices/prepared-messages/
+POST   /api/plugins/notices/prepared-messages/
+GET    /api/plugins/notices/prepared-messages/{id}/
+PATCH  /api/plugins/notices/prepared-messages/{id}/
+DELETE /api/plugins/notices/prepared-messages/{id}/
+</code></pre></div>
+<h4 id="filtering-preparedmessages">Filtering PreparedMessages<a class="headerlink" href="#filtering-preparedmessages" title="Permanent link">&para;</a></h4>
+<p>Query messages by status for delivery system integration:</p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/plugins/notices/prepared-messages/?status=ready</span>
+</code></pre></div>
+<h4 id="creating-a-messagetemplate">Creating a MessageTemplate<a class="headerlink" href="#creating-a-messagetemplate" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="err">POST /api/plugins/notices/message-templates/</span>
+<span class="err">Content-Type: application/json</span>
+<span class="err">Authorization: Token YOUR_API_TOKEN</span>
+
+<span class="err">{</span>
+<span class="err">    &quot;name&quot;: &quot;Maintenance Notification&quot;,</span>
+<span class="err">    &quot;slug&quot;: &quot;maintenance-notification&quot;,</span>
+<span class="err">    &quot;event_type&quot;: &quot;maintenance&quot;,</span>
+<span class="err">    &quot;granularity&quot;: &quot;per_tenant&quot;,</span>
+<span class="err">    &quot;subject_template&quot;: &quot;[{{ maintenance.status }}] {{ maintenance.provider.name }}: {{ maintenance.name }}&quot;,</span>
+<span class="err">    &quot;body_template&quot;: &quot;# Maintenance Notice\n\n{{ maintenance.summary }}&quot;,</span>
+<span class="err">    &quot;body_format&quot;: &quot;markdown&quot;,</span>
+<span class="err">    &quot;include_ical&quot;: true,</span>
+<span class="err">    &quot;ical_template&quot;: &quot;BEGIN:VCALENDAR\n...\nEND:VCALENDAR&quot;,</span>
+<span class="err">    &quot;contact_priorities&quot;: [&quot;primary&quot;, &quot;secondary&quot;],</span>
+<span class="err">    &quot;weight&quot;: 1000</span>
+<span class="err">}</span>
+</code></pre></div>
+<p><strong>Response:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/api/plugins/notices/message-templates/1/&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;display&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Maintenance Notification&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Maintenance Notification&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;slug&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;maintenance-notification&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;event_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;maintenance&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;granularity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;per_tenant&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="err">...</span>
+<span class="p">}</span>
+</code></pre></div>
+<h4 id="creating-a-preparedmessage">Creating a PreparedMessage<a class="headerlink" href="#creating-a-preparedmessage" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="err">POST /api/plugins/notices/prepared-messages/</span>
+<span class="err">Content-Type: application/json</span>
+<span class="err">Authorization: Token YOUR_API_TOKEN</span>
+
+<span class="err">{</span>
+<span class="err">    &quot;template_id&quot;: 1,</span>
+<span class="err">    &quot;event_content_type&quot;: &quot;maintenance&quot;,</span>
+<span class="err">    &quot;event_id&quot;: 42,</span>
+<span class="err">    &quot;subject&quot;: &quot;Scheduled Maintenance: MAINT-001&quot;,</span>
+<span class="err">    &quot;body_text&quot;: &quot;This is a test notification...&quot;,</span>
+<span class="err">    &quot;contact_ids&quot;: [1, 2, 3]</span>
+<span class="err">}</span>
+</code></pre></div>
+<h4 id="updating-message-status">Updating Message Status<a class="headerlink" href="#updating-message-status" title="Permanent link">&para;</a></h4>
+<p>External delivery systems update status after processing:</p>
+<p><strong>Mark as sent:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PATCH /api/plugins/notices/prepared-messages/1/</span>
+<span class="err">Content-Type: application/json</span>
+<span class="err">Authorization: Token YOUR_API_TOKEN</span>
+
+<span class="err">{</span>
+<span class="err">    &quot;status&quot;: &quot;sent&quot;,</span>
+<span class="err">    &quot;message&quot;: &quot;Sent via SMTP relay&quot;</span>
+<span class="err">}</span>
+</code></pre></div>
+<p><strong>Mark as sent with custom timestamp (for batch processing):</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PATCH /api/plugins/notices/prepared-messages/1/</span>
+<span class="err">Content-Type: application/json</span>
+<span class="err">Authorization: Token YOUR_API_TOKEN</span>
+
+<span class="err">{</span>
+<span class="err">    &quot;status&quot;: &quot;sent&quot;,</span>
+<span class="err">    &quot;timestamp&quot;: &quot;2026-01-22T10:30:00Z&quot;,</span>
+<span class="err">    &quot;message&quot;: &quot;Sent via batch processor&quot;</span>
+<span class="err">}</span>
+</code></pre></div>
+<p><strong>Mark as delivered:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PATCH /api/plugins/notices/prepared-messages/1/</span>
+<span class="err">Content-Type: application/json</span>
+<span class="err">Authorization: Token YOUR_API_TOKEN</span>
+
+<span class="err">{</span>
+<span class="err">    &quot;status&quot;: &quot;delivered&quot;,</span>
+<span class="err">    &quot;timestamp&quot;: &quot;2026-01-22T10:31:00Z&quot;,</span>
+<span class="err">    &quot;message&quot;: &quot;Delivered to 5 recipients&quot;</span>
+<span class="err">}</span>
+</code></pre></div>
+<p><strong>Mark as failed (for retry):</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PATCH /api/plugins/notices/prepared-messages/1/</span>
+<span class="err">Content-Type: application/json</span>
+<span class="err">Authorization: Token YOUR_API_TOKEN</span>
+
+<span class="err">{</span>
+<span class="err">    &quot;status&quot;: &quot;failed&quot;,</span>
+<span class="err">    &quot;message&quot;: &quot;SMTP connection refused&quot;</span>
+<span class="err">}</span>
+</code></pre></div>
+<h4 id="journal-entries">Journal Entries<a class="headerlink" href="#journal-entries" title="Permanent link">&para;</a></h4>
+<p>When a <code>message</code> field is included in status updates, a journal entry is automatically created:</p>
+<table>
+<thead>
+<tr>
+<th>New Status</th>
+<th>Journal Kind</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ready</code></td>
+<td>info</td>
+</tr>
+<tr>
+<td><code>sent</code></td>
+<td>info</td>
+</tr>
+<tr>
+<td><code>delivered</code></td>
+<td>success</td>
+</tr>
+<tr>
+<td><code>failed</code></td>
+<td>warning</td>
+</tr>
+</tbody>
+</table>
+<h3 id="integration">Integration<a class="headerlink" href="#integration" title="Permanent link">&para;</a></h3>
+<h4 id="pull-based-api-model">Pull-Based API Model<a class="headerlink" href="#pull-based-api-model" title="Permanent link">&para;</a></h4>
+<p>The recommended integration pattern is pull-based:</p>
+<ol>
+<li>
+<p>External delivery system polls for ready messages:
+   <div class="highlight"><pre><span></span><code><span class="err">GET /api/plugins/notices/prepared-messages/?status=ready</span>
+</code></pre></div></p>
+</li>
+<li>
+<p>For each message, the delivery system:</p>
+</li>
+<li>Extracts recipient emails from <code>recipients</code> array</li>
+<li>Sends the message via appropriate channel (email, Slack, etc.)</li>
+<li>Updates status to <code>sent</code></li>
+<li>Updates status to <code>delivered</code> or <code>failed</code> based on result</li>
+</ol>
+<h4 id="webhook-integration">Webhook Integration<a class="headerlink" href="#webhook-integration" title="Permanent link">&para;</a></h4>
+<p>For push-based delivery, use NetBox's built-in Event Rules:</p>
+<ol>
+<li>Go to <strong>Operations &gt; Event Rules</strong></li>
+<li>Create a rule for <code>PreparedMessage</code> object type</li>
+<li>Set condition: status = "ready"</li>
+<li>Configure webhook URL for your delivery system</li>
+</ol>
+<p>When a PreparedMessage transitions to <code>ready</code> status, NetBox will POST the message data to your webhook endpoint.</p>
+<h4 id="example-delivery-script">Example Delivery Script<a class="headerlink" href="#example-delivery-script" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="ch">#!/usr/bin/env python3</span>
+<span class="sd">&quot;&quot;&quot;Example script to deliver prepared messages via SMTP.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">smtplib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">email.message</span><span class="w"> </span><span class="kn">import</span> <span class="n">EmailMessage</span>
+
+<span class="n">NETBOX_URL</span> <span class="o">=</span> <span class="s2">&quot;https://netbox.example.com&quot;</span>
+<span class="n">API_TOKEN</span> <span class="o">=</span> <span class="s2">&quot;your-api-token&quot;</span>
+<span class="n">SMTP_HOST</span> <span class="o">=</span> <span class="s2">&quot;smtp.example.com&quot;</span>
+
+<span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Token </span><span class="si">{</span><span class="n">API_TOKEN</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+
+<span class="c1"># Fetch ready messages</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">NETBOX_URL</span><span class="si">}</span><span class="s2">/api/plugins/notices/prepared-messages/&quot;</span><span class="p">,</span>
+    <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ready&quot;</span><span class="p">},</span>
+    <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">messages</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;results&quot;</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Build email</span>
+        <span class="n">email</span> <span class="o">=</span> <span class="n">EmailMessage</span><span class="p">()</span>
+        <span class="n">email</span><span class="p">[</span><span class="s2">&quot;Subject&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;subject&quot;</span><span class="p">]</span>
+        <span class="n">email</span><span class="p">[</span><span class="s2">&quot;From&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;noc@example.com&quot;</span>
+        <span class="n">email</span><span class="p">[</span><span class="s2">&quot;To&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;email&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;recipients&quot;</span><span class="p">])</span>
+        <span class="n">email</span><span class="o">.</span><span class="n">set_content</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s2">&quot;body_text&quot;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;body_html&quot;</span><span class="p">]:</span>
+            <span class="n">email</span><span class="o">.</span><span class="n">add_alternative</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s2">&quot;body_html&quot;</span><span class="p">],</span> <span class="n">subtype</span><span class="o">=</span><span class="s2">&quot;html&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;ical_content&quot;</span><span class="p">]:</span>
+            <span class="n">email</span><span class="o">.</span><span class="n">add_attachment</span><span class="p">(</span>
+                <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;ical_content&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span>
+                <span class="n">maintype</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
+                <span class="n">subtype</span><span class="o">=</span><span class="s2">&quot;calendar&quot;</span><span class="p">,</span>
+                <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;maintenance.ics&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Record send time before sending</span>
+        <span class="n">sent_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+        <span class="c1"># Send email</span>
+        <span class="k">with</span> <span class="n">smtplib</span><span class="o">.</span><span class="n">SMTP</span><span class="p">(</span><span class="n">SMTP_HOST</span><span class="p">)</span> <span class="k">as</span> <span class="n">smtp</span><span class="p">:</span>
+            <span class="n">smtp</span><span class="o">.</span><span class="n">send_message</span><span class="p">(</span><span class="n">email</span><span class="p">)</span>
+
+        <span class="c1"># Update status to sent with timestamp</span>
+        <span class="n">requests</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">NETBOX_URL</span><span class="si">}</span><span class="s2">/api/plugins/notices/prepared-messages/</span><span class="si">{</span><span class="n">msg</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/&quot;</span><span class="p">,</span>
+            <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;sent&quot;</span><span class="p">,</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">sent_at</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Sent via SMTP&quot;</span><span class="p">},</span>
+            <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Update status to delivered</span>
+        <span class="n">delivered_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+        <span class="n">requests</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">NETBOX_URL</span><span class="si">}</span><span class="s2">/api/plugins/notices/prepared-messages/</span><span class="si">{</span><span class="n">msg</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/&quot;</span><span class="p">,</span>
+            <span class="n">json</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;delivered&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">delivered_at</span><span class="p">,</span>
+                <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Delivered to </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s1">&#39;recipients&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2"> recipients&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="c1"># Mark as failed</span>
+        <span class="n">requests</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">NETBOX_URL</span><span class="si">}</span><span class="s2">/api/plugins/notices/prepared-messages/</span><span class="si">{</span><span class="n">msg</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/&quot;</span><span class="p">,</span>
+            <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;failed&quot;</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)},</span>
+            <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div>
+<h4 id="slack-integration-example">Slack Integration Example<a class="headerlink" href="#slack-integration-example" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;Example: Post prepared messages to Slack.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+
+<span class="n">NETBOX_URL</span> <span class="o">=</span> <span class="s2">&quot;https://netbox.example.com&quot;</span>
+<span class="n">API_TOKEN</span> <span class="o">=</span> <span class="s2">&quot;your-netbox-token&quot;</span>
+<span class="n">SLACK_WEBHOOK</span> <span class="o">=</span> <span class="s2">&quot;https://hooks.slack.com/services/...&quot;</span>
+
+<span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Token </span><span class="si">{</span><span class="n">API_TOKEN</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">NETBOX_URL</span><span class="si">}</span><span class="s2">/api/plugins/notices/prepared-messages/&quot;</span><span class="p">,</span>
+    <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ready&quot;</span><span class="p">},</span>
+    <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;results&quot;</span><span class="p">]:</span>
+    <span class="c1"># Post to Slack</span>
+    <span class="n">slack_payload</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;subject&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;blocks&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;header&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;plain_text&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;subject&quot;</span><span class="p">]}},</span>
+            <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;section&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;mrkdwn&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;body_text&quot;</span><span class="p">][:</span><span class="mi">3000</span><span class="p">]}},</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">SLACK_WEBHOOK</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">slack_payload</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+        <span class="n">requests</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">NETBOX_URL</span><span class="si">}</span><span class="s2">/api/plugins/notices/prepared-messages/</span><span class="si">{</span><span class="n">msg</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/&quot;</span><span class="p">,</span>
+            <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;delivered&quot;</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Posted to Slack&quot;</span><span class="p">},</span>
+            <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div>
+<h4 id="aws-ses-integration">AWS SES Integration<a class="headerlink" href="#aws-ses-integration" title="Permanent link">&para;</a></h4>
+<p>For a complete, deployable AWS SES integration that handles outbound delivery with full delivery lifecycle tracking (delivery confirmation, bounce/complaint handling, open/click tracking), see the <a href="../integrations_aws_ses/">AWS SES Integration</a> guide.</p>
+<p>The SES integration provides:</p>
+<ul>
+<li>Scheduled polling for ready notifications</li>
+<li>MIME email construction with HTML, plain text, and iCal attachments</li>
+<li>SES Configuration Set with SNS event destinations for tracking</li>
+<li>Automatic status updates (sent, delivered, failed) based on SES events</li>
+<li>Journal entries for informational events (open, click, delivery delay)</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/jsenecal/netbox-notices" target="_blank" rel="noopener" title="Github" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.indexes", "navigation.instant", "navigation.tabs.sticky"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

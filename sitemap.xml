@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://jsenecal.github.io/netbox-notices/</loc>
+         <lastmod>2026-02-19</lastmod>
+    </url>
+    <url>
+         <loc>https://jsenecal.github.io/netbox-notices/changelog/</loc>
+         <lastmod>2026-02-19</lastmod>
+    </url>
+    <url>
+         <loc>https://jsenecal.github.io/netbox-notices/contributing/</loc>
+         <lastmod>2026-02-19</lastmod>
+    </url>
+    <url>
+         <loc>https://jsenecal.github.io/netbox-notices/integrations_aws_ses/</loc>
+         <lastmod>2026-02-19</lastmod>
+    </url>
+    <url>
+         <loc>https://jsenecal.github.io/netbox-notices/outgoing-notifications/</loc>
+         <lastmod>2026-02-19</lastmod>
+    </url>
+    <url>
+         <loc>https://jsenecal.github.io/netbox-notices/parsers/</loc>
+         <lastmod>2026-02-19</lastmod>
+    </url>
+    <url>
+         <loc>https://jsenecal.github.io/netbox-notices/parsers_sns_lambda/</loc>
+         <lastmod>2026-02-19</lastmod>
+    </url>
+</urlset>
