@@ -1,0 +1,2550 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://jsenecal.github.io/netbox-notices/integrations_aws_ses/">
+      
+      
+        <link rel="prev" href="../parsers_sns_lambda/">
+      
+      
+        <link rel="next" href="../contributing/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>AWS SES - NetBox Notices Plugin</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#aws-ses-integration" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="NetBox Notices Plugin" class="md-header__button md-logo" aria-label="NetBox Notices Plugin" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NetBox Notices Plugin
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              AWS SES
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jsenecal/netbox-notices" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jsenecal/netbox-notices
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="NetBox Notices Plugin" class="md-nav__button md-logo" aria-label="NetBox Notices Plugin" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NetBox Notices Plugin
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jsenecal/netbox-notices" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jsenecal/netbox-notices
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../outgoing-notifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Outgoing Notifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automated Parsers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Automated Parsers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parsers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a parser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parsers_sns_lambda/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AWS SNS & Lambda
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integrations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AWS SES
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AWS SES
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#aws-ses-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AWS SES Integration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aws-ses-integration-for-netbox-notices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AWS SES Integration for netbox-notices
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="AWS SES Integration for netbox-notices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick Start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-clone-and-configure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Clone and configure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Build
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-deploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Deploy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-activate-the-ses-receipt-rule-set-inbound-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Activate the SES Receipt Rule Set (Inbound only)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-verify-it-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Verify it works
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration Reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment Variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#provider-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provider Map
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ses-event--netbox-status-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SES Event &rarr; NetBox Status Mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manual-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual Setup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Manual Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-create-the-s3-bucket" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Create the S3 Bucket
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-create-the-ses-configuration-set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Create the SES Configuration Set
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-create-lambda-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Create Lambda Functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-wire-up-triggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: Wire Up Triggers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-create-ses-receipt-rule-inbound" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: Create SES Receipt Rule (Inbound)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#local-testing-with-sam" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local Testing with SAM
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outbound-delivery-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outbound Delivery Mode
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Outbound Delivery Mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#choosing-a-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing a mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enabling-the-webhook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enabling the Webhook
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuring-netbox" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuring NetBox
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vpc-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VPC Deployment
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="VPC Deployment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#when-you-need-vpc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When you need VPC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#network-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Network requirements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#static-ip-for-firewall-allowlisting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Static IP for firewall allowlisting
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#email-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email Authentication
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Email Authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#spf-sender-policy-framework" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SPF (Sender Policy Framework)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dkim-domainkeys-identified-mail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DKIM (DomainKeys Identified Mail)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dmarc-domain-based-message-authentication-reporting--conformance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DMARC (Domain-based Message Authentication, Reporting &amp; Conformance)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-mail-from-domain-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom MAIL FROM domain (optional)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inbound-mx-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inbound MX records
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#customization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Customization
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Customization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multiple-recipients-per-notification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multiple Recipients per Notification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#html-styling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTML Styling
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outbound-lambda-sends-but-status-not-updated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outbound Lambda sends but status not updated
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tracking-events-not-arriving" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tracking events not arriving
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inbound-emails-not-parsed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inbound emails not parsed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ses-sending-in-sandbox" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SES sending in sandbox
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#permission-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permission errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#aws-ses-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AWS SES Integration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aws-ses-integration-for-netbox-notices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AWS SES Integration for netbox-notices
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="AWS SES Integration for netbox-notices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick Start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-clone-and-configure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Clone and configure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Build
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-deploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Deploy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-activate-the-ses-receipt-rule-set-inbound-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Activate the SES Receipt Rule Set (Inbound only)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-verify-it-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Verify it works
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration Reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment Variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#provider-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provider Map
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ses-event--netbox-status-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SES Event &rarr; NetBox Status Mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manual-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual Setup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Manual Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-create-the-s3-bucket" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Create the S3 Bucket
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-create-the-ses-configuration-set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Create the SES Configuration Set
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-create-lambda-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Create Lambda Functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-wire-up-triggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: Wire Up Triggers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-create-ses-receipt-rule-inbound" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: Create SES Receipt Rule (Inbound)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#local-testing-with-sam" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local Testing with SAM
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outbound-delivery-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outbound Delivery Mode
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Outbound Delivery Mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#choosing-a-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing a mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enabling-the-webhook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enabling the Webhook
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuring-netbox" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuring NetBox
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vpc-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VPC Deployment
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="VPC Deployment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#when-you-need-vpc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When you need VPC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#network-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Network requirements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#static-ip-for-firewall-allowlisting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Static IP for firewall allowlisting
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#email-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email Authentication
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Email Authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#spf-sender-policy-framework" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SPF (Sender Policy Framework)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dkim-domainkeys-identified-mail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DKIM (DomainKeys Identified Mail)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dmarc-domain-based-message-authentication-reporting--conformance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DMARC (Domain-based Message Authentication, Reporting &amp; Conformance)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-mail-from-domain-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom MAIL FROM domain (optional)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inbound-mx-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inbound MX records
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#customization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Customization
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Customization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multiple-recipients-per-notification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multiple Recipients per Notification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#html-styling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTML Styling
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outbound-lambda-sends-but-status-not-updated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outbound Lambda sends but status not updated
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tracking-events-not-arriving" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tracking events not arriving
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inbound-emails-not-parsed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inbound emails not parsed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ses-sending-in-sandbox" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SES sending in sandbox
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#permission-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permission errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+  <h1>AWS SES</h1>
+
+<h2 id="aws-ses-integration">AWS SES Integration<a class="headerlink" href="#aws-ses-integration" title="Permanent link">&para;</a></h2>
+<h2 id="aws-ses-integration-for-netbox-notices">AWS SES Integration for netbox-notices<a class="headerlink" href="#aws-ses-integration-for-netbox-notices" title="Permanent link">&para;</a></h2>
+<p>A self-contained AWS SAM application that provides complete email lifecycle management for the netbox-notices plugin:</p>
+<ul>
+<li><strong>Inbound</strong> — Parse provider maintenance emails (SES &rarr; S3 &rarr; Lambda &rarr; NetBox API)</li>
+<li><strong>Outbound</strong> — Deliver prepared notifications via SES with tracking</li>
+<li><strong>Tracking</strong> — Process SES delivery events and update notification status in NetBox</li>
+</ul>
+<h3 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>                    INBOUND                           OUTBOUND
+                    ───────                           ────────
+Provider Email                                    NetBox API
+      │                                          (prepared-notifications)
+      ▼                                               │
+┌──────────┐                                    ┌─────┴─────┐
+│  AWS SES  │                                    │  Outbound  │
+│ (Receipt) │                                    │   Lambda   │◄── EventBridge
+└────┬──────┘                                    └─────┬──────┘    (schedule)
+     │                                                 │
+     ├──► S3 (raw email)                               │ ses:SendRawEmail
+     │                                                 │ + notification_id tag
+     ▼                                                 ▼
+┌──────────┐                                    ┌──────────┐
+│ Inbound  │                                    │  AWS SES  │
+│  Lambda  │──► NetBox API                      │ (Send)    │
+└──────────┘    (maintenance,                   └─────┬─────┘
+                 impact,                              │
+                 eventnotification)                   │
+                                                      ▼
+                    TRACKING                   ┌──────────────┐
+                    ────────                   │Configuration │
+                                               │    Set       │
+              NetBox API ◄──┐                  └──────┬───────┘
+         (status updates,   │                         │
+          journal entries)  │                         ▼
+                            │                  ┌──────────┐
+                      ┌─────┴─────┐            │ SNS Topic│
+                      │ Tracking  │◄───────────└──────────┘
+                      │  Lambda   │
+                      └───────────┘
+</code></pre></div>
+<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>AWS CLI</strong> configured with appropriate credentials</li>
+<li><strong>AWS SAM CLI</strong> (<code>pip install aws-sam-cli</code>)</li>
+<li><strong>Python 3.12</strong> (for local testing)</li>
+<li><strong>NetBox</strong> with the netbox-notices plugin installed and the outgoing notifications feature configured</li>
+<li><strong>AWS SES</strong> — domain verified for sending (see <a href="#email-authentication">Email Authentication</a> below); for inbound, domain also needs MX records pointing to SES</li>
+<li><strong>Network</strong> — Lambda functions must be able to reach the NetBox API over HTTPS. If NetBox is not publicly accessible, see <a href="#vpc-deployment">VPC Deployment</a></li>
+</ul>
+<h3 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h3>
+<h4 id="1-clone-and-configure">1. Clone and configure<a class="headerlink" href="#1-clone-and-configure" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>integrations/aws-ses/
+
+<span class="c1"># Review and edit parameters in samconfig.toml (optional)</span>
+<span class="c1"># Or pass them at deploy time</span>
+</code></pre></div>
+<h4 id="2-build">2. Build<a class="headerlink" href="#2-build" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>sam<span class="w"> </span>build
+</code></pre></div>
+<h4 id="3-deploy">3. Deploy<a class="headerlink" href="#3-deploy" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>sam<span class="w"> </span>deploy<span class="w"> </span>--guided
+</code></pre></div>
+<p>You will be prompted for:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NetBoxUrl</code></td>
+<td>Your NetBox URL (e.g. <code>https://netbox.example.com</code>)</td>
+</tr>
+<tr>
+<td><code>NetBoxApiToken</code></td>
+<td>API token with write access to the notices plugin</td>
+</tr>
+<tr>
+<td><code>SesReceiptDomain</code></td>
+<td>Domain for inbound emails (leave empty to skip inbound)</td>
+</tr>
+<tr>
+<td><code>SesFromAddress</code></td>
+<td>Verified sender address for outbound emails</td>
+</tr>
+<tr>
+<td><code>SesConfigSetName</code></td>
+<td>Name for the SES Configuration Set (default: <code>netbox-notices-tracking</code>)</td>
+</tr>
+<tr>
+<td><code>EnableOutboundPolling</code></td>
+<td>Enable scheduled polling: <code>true</code> or <code>false</code> (default: <code>true</code>)</td>
+</tr>
+<tr>
+<td><code>OutboundPollInterval</code></td>
+<td>How often to poll for ready notifications (default: <code>rate(5 minutes)</code>)</td>
+</tr>
+<tr>
+<td><code>InboundS3BucketName</code></td>
+<td>Globally unique S3 bucket name for inbound emails</td>
+</tr>
+<tr>
+<td><code>WebhookSecret</code></td>
+<td>Shared secret for NetBox webhook signature verification (leave empty to disable webhook)</td>
+</tr>
+<tr>
+<td><code>VpcSubnetIds</code></td>
+<td>Comma-separated private subnet IDs for VPC deployment (leave empty to skip)</td>
+</tr>
+<tr>
+<td><code>VpcSecurityGroupIds</code></td>
+<td>Comma-separated security group IDs for VPC deployment (leave empty to skip)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="4-activate-the-ses-receipt-rule-set-inbound-only">4. Activate the SES Receipt Rule Set (Inbound only)<a class="headerlink" href="#4-activate-the-ses-receipt-rule-set-inbound-only" title="Permanent link">&para;</a></h4>
+<p>SES receipt rule sets must be activated manually:</p>
+<div class="highlight"><pre><span></span><code>aws<span class="w"> </span>ses<span class="w"> </span>set-active-receipt-rule-set<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--rule-set-name<span class="w"> </span>netbox-notices-ses-inbound-rules
+</code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> Only one receipt rule set can be active per AWS account in a given region. If you have an existing active rule set, add the receipt rule to it instead.</p>
+</blockquote>
+<h4 id="5-verify-it-works">5. Verify it works<a class="headerlink" href="#5-verify-it-works" title="Permanent link">&para;</a></h4>
+<p><strong>Outbound (polling):</strong> Create a PreparedNotification in NetBox, approve it (status &rarr; ready), and wait for the next poll interval. The Lambda will pick it up, send via SES, and update the status to <code>sent</code>.</p>
+<p><strong>Outbound (webhook):</strong> Approve a PreparedNotification — the NetBox Event Rule fires immediately, and the Lambda sends within seconds.</p>
+<p><strong>Tracking:</strong> After the email is delivered, SES publishes a Delivery event to SNS, which triggers the tracking Lambda to update the notification status to <code>delivered</code>.</p>
+<p><strong>Inbound:</strong> Forward a provider maintenance email to your SES receipt domain. The Lambda will parse it and create a Maintenance event in NetBox.</p>
+<h3 id="configuration-reference">Configuration Reference<a class="headerlink" href="#configuration-reference" title="Permanent link">&para;</a></h3>
+<h4 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h4>
+<p>All Lambda functions share:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NETBOX_URL</code></td>
+<td>NetBox base URL</td>
+</tr>
+<tr>
+<td><code>NETBOX_API_TOKEN</code></td>
+<td>API token for NetBox</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Inbound-specific:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>S3_BUCKET_NAME</code></td>
+<td>S3 bucket where SES stores raw emails</td>
+</tr>
+<tr>
+<td><code>PROVIDER_MAP</code></td>
+<td>JSON object mapping email domains to parser names (optional, has sensible defaults)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Outbound-specific:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SES_FROM_ADDRESS</code></td>
+<td>Verified sender email address</td>
+</tr>
+<tr>
+<td><code>SES_CONFIGURATION_SET</code></td>
+<td>SES Configuration Set name for tracking</td>
+</tr>
+<tr>
+<td><code>WEBHOOK_SECRET</code></td>
+<td>Shared secret for validating NetBox webhook signatures (optional)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="provider-map">Provider Map<a class="headerlink" href="#provider-map" title="Permanent link">&para;</a></h4>
+<p>The inbound Lambda identifies providers by matching the sender's email domain. The default map covers major providers:</p>
+<table>
+<thead>
+<tr>
+<th>Domain</th>
+<th>Provider</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>zayo.com</code></td>
+<td>zayo</td>
+</tr>
+<tr>
+<td><code>colt.net</code></td>
+<td>colt</td>
+</tr>
+<tr>
+<td><code>verizonbusiness.com</code></td>
+<td>verizon</td>
+</tr>
+<tr>
+<td><code>cogentco.com</code></td>
+<td>cogent</td>
+</tr>
+<tr>
+<td><code>aquacomms.com</code></td>
+<td>aquacomms</td>
+</tr>
+<tr>
+<td><code>arelion.com</code></td>
+<td>arelion</td>
+</tr>
+<tr>
+<td><code>amazon.com</code></td>
+<td>aws</td>
+</tr>
+<tr>
+<td><code>bso.co</code></td>
+<td>bso</td>
+</tr>
+<tr>
+<td><code>equinix.com</code></td>
+<td>equinix</td>
+</tr>
+<tr>
+<td><code>lumen.com</code></td>
+<td>lumen</td>
+</tr>
+<tr>
+<td><code>momentumtelecom.com</code></td>
+<td>momentum</td>
+</tr>
+<tr>
+<td><code>superonline.net</code></td>
+<td>seaborn</td>
+</tr>
+<tr>
+<td><code>tisparkle.com</code></td>
+<td>sparkle</td>
+</tr>
+<tr>
+<td><code>telstra.com</code></td>
+<td>telstra</td>
+</tr>
+</tbody>
+</table>
+<p>Override by setting the <code>PROVIDER_MAP</code> environment variable to a JSON object:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;zayo.com&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;zayo&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;customcarrier.com&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;genericprovider&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+<h4 id="ses-event--netbox-status-mapping">SES Event &rarr; NetBox Status Mapping<a class="headerlink" href="#ses-event--netbox-status-mapping" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>SES Event</th>
+<th>NetBox Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Delivery</td>
+<td>Status &rarr; <code>delivered</code></td>
+</tr>
+<tr>
+<td>Bounce</td>
+<td>Status &rarr; <code>failed</code></td>
+</tr>
+<tr>
+<td>Complaint</td>
+<td>Status &rarr; <code>failed</code></td>
+</tr>
+<tr>
+<td>Reject</td>
+<td>Status &rarr; <code>failed</code></td>
+</tr>
+<tr>
+<td>Rendering Failure</td>
+<td>Status &rarr; <code>failed</code></td>
+</tr>
+<tr>
+<td>Send</td>
+<td>Journal entry (informational)</td>
+</tr>
+<tr>
+<td>Open</td>
+<td>Journal entry (informational)</td>
+</tr>
+<tr>
+<td>Click</td>
+<td>Journal entry (informational)</td>
+</tr>
+<tr>
+<td>DeliveryDelay</td>
+<td>Journal entry (informational)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="manual-setup">Manual Setup<a class="headerlink" href="#manual-setup" title="Permanent link">&para;</a></h3>
+<p>If you prefer to set up resources manually instead of using SAM:</p>
+<h4 id="step-1-create-the-s3-bucket">Step 1: Create the S3 Bucket<a class="headerlink" href="#step-1-create-the-s3-bucket" title="Permanent link">&para;</a></h4>
+<p>Create an S3 bucket for inbound emails with a 30-day lifecycle policy. Add a bucket policy allowing SES to write objects:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;Version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2012-10-17&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;Statement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AllowSESPuts&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Principal&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;Service&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ses.amazonaws.com&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3:PutObject&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:s3:::YOUR-BUCKET/*&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Condition&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;StringEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;AWS:SourceAccount&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR-ACCOUNT-ID&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<h4 id="step-2-create-the-ses-configuration-set">Step 2: Create the SES Configuration Set<a class="headerlink" href="#step-2-create-the-ses-configuration-set" title="Permanent link">&para;</a></h4>
+<ol>
+<li>Go to <strong>SES &rarr; Configuration sets &rarr; Create set</strong></li>
+<li>Name it <code>netbox-notices-tracking</code></li>
+<li>Add an <strong>Event destination</strong>:</li>
+<li>Name: <code>sns-tracking</code></li>
+<li>Events: Send, Delivery, Bounce, Complaint, Reject, Open, Click, Rendering Failure, Delivery Delay</li>
+<li>Destination: SNS topic (create one, allow SES to publish to it)</li>
+</ol>
+<h4 id="step-3-create-lambda-functions">Step 3: Create Lambda Functions<a class="headerlink" href="#step-3-create-lambda-functions" title="Permanent link">&para;</a></h4>
+<p>Create three Lambda functions (Python 3.12, 256 MB, 120s timeout) from the <code>functions/</code> directories. Set the environment variables as described above.</p>
+<p><strong>IAM policies needed:</strong></p>
+<ul>
+<li><strong>Inbound:</strong> <code>s3:GetObject</code> on the inbound email bucket</li>
+<li><strong>Outbound:</strong> <code>ses:SendRawEmail</code></li>
+<li><strong>Tracking:</strong> No additional policies (only calls NetBox API)</li>
+</ul>
+<h4 id="step-4-wire-up-triggers">Step 4: Wire Up Triggers<a class="headerlink" href="#step-4-wire-up-triggers" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>Inbound:</strong> SES receipt rule &rarr; S3 action (store email) + Lambda action (invoke inbound function)</li>
+<li><strong>Outbound (polling):</strong> EventBridge scheduled rule &rarr; invoke outbound function every N minutes</li>
+<li><strong>Outbound (webhook):</strong> API Gateway HTTP API &rarr; POST /webhook/outbound &rarr; invoke outbound function. Set <code>WEBHOOK_SECRET</code> env var on the Lambda to match the secret in the NetBox Webhook.</li>
+<li><strong>Tracking:</strong> SNS subscription on the tracking topic &rarr; invoke tracking function</li>
+</ul>
+<h4 id="step-5-create-ses-receipt-rule-inbound">Step 5: Create SES Receipt Rule (Inbound)<a class="headerlink" href="#step-5-create-ses-receipt-rule-inbound" title="Permanent link">&para;</a></h4>
+<ol>
+<li>Go to <strong>SES &rarr; Email receiving &rarr; Rule sets</strong></li>
+<li>Create a rule set and add a rule with:</li>
+<li>Recipient: your inbound domain</li>
+<li>Actions: S3 (deliver to bucket) then Lambda (invoke inbound function)</li>
+<li>Set the rule set as active</li>
+</ol>
+<h3 id="local-testing-with-sam">Local Testing with SAM<a class="headerlink" href="#local-testing-with-sam" title="Permanent link">&para;</a></h3>
+<p>Use the provided test events for local invoke:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Build first</span>
+sam<span class="w"> </span>build
+
+<span class="c1"># Test inbound (requires S3 bucket with a test email)</span>
+sam<span class="w"> </span><span class="nb">local</span><span class="w"> </span>invoke<span class="w"> </span>InboundFunction<span class="w"> </span>-e<span class="w"> </span>events/inbound_ses.json
+
+<span class="c1"># Test outbound — scheduled poll (requires NetBox to be reachable)</span>
+sam<span class="w"> </span><span class="nb">local</span><span class="w"> </span>invoke<span class="w"> </span>OutboundFunction<span class="w"> </span>-e<span class="w"> </span>events/outbound_schedule.json
+
+<span class="c1"># Test outbound — webhook trigger (signature will fail without valid HMAC)</span>
+sam<span class="w"> </span><span class="nb">local</span><span class="w"> </span>invoke<span class="w"> </span>OutboundFunction<span class="w"> </span>-e<span class="w"> </span>events/outbound_webhook.json
+
+<span class="c1"># Test tracking events</span>
+sam<span class="w"> </span><span class="nb">local</span><span class="w"> </span>invoke<span class="w"> </span>TrackingFunction<span class="w"> </span>-e<span class="w"> </span>events/tracking_delivery.json
+sam<span class="w"> </span><span class="nb">local</span><span class="w"> </span>invoke<span class="w"> </span>TrackingFunction<span class="w"> </span>-e<span class="w"> </span>events/tracking_bounce.json
+sam<span class="w"> </span><span class="nb">local</span><span class="w"> </span>invoke<span class="w"> </span>TrackingFunction<span class="w"> </span>-e<span class="w"> </span>events/tracking_open.json
+</code></pre></div>
+<p>Override environment variables for local testing:</p>
+<div class="highlight"><pre><span></span><code>sam<span class="w"> </span><span class="nb">local</span><span class="w"> </span>invoke<span class="w"> </span>OutboundFunction<span class="w"> </span>-e<span class="w"> </span>events/outbound_schedule.json<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--env-vars<span class="w"> </span><span class="s1">&#39;{&quot;OutboundFunction&quot;: {&quot;NETBOX_URL&quot;: &quot;http://localhost:8008&quot;, &quot;NETBOX_API_TOKEN&quot;: &quot;your-token&quot;, &quot;SES_FROM_ADDRESS&quot;: &quot;test@example.com&quot;, &quot;SES_CONFIGURATION_SET&quot;: &quot;&quot;}}&#39;</span>
+</code></pre></div>
+<h3 id="outbound-delivery-mode">Outbound Delivery Mode<a class="headerlink" href="#outbound-delivery-mode" title="Permanent link">&para;</a></h3>
+<p>The outbound Lambda supports two independent trigger modes. You choose one or both at deploy time:</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Trigger</th>
+<th>Latency</th>
+<th>Controlled by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Polling</strong></td>
+<td>EventBridge schedule</td>
+<td>Up to poll interval</td>
+<td><code>EnableOutboundPolling</code> (default <code>true</code>)</td>
+</tr>
+<tr>
+<td><strong>Webhook</strong></td>
+<td>NetBox Event Rule</td>
+<td>Seconds</td>
+<td><code>WebhookSecret</code> (default empty = off)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="choosing-a-mode">Choosing a mode<a class="headerlink" href="#choosing-a-mode" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Parameters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Polling only</strong> (default)</td>
+<td><code>EnableOutboundPolling=true</code></td>
+</tr>
+<tr>
+<td><strong>Webhook only</strong></td>
+<td><code>EnableOutboundPolling=false</code>, <code>WebhookSecret=&lt;secret&gt;</code></td>
+</tr>
+<tr>
+<td><strong>Both</strong> (belt-and-suspenders)</td>
+<td><code>EnableOutboundPolling=true</code>, <code>WebhookSecret=&lt;secret&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<p>When both are enabled, the webhook provides near-instant delivery while the schedule acts as a safety net for any notifications the webhook might miss (the schedule simply skips already-sent notifications).</p>
+<h4 id="enabling-the-webhook">Enabling the Webhook<a class="headerlink" href="#enabling-the-webhook" title="Permanent link">&para;</a></h4>
+<p>Set the <code>WebhookSecret</code> parameter during deployment. This creates an API Gateway HTTP API endpoint and outputs the URL:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Webhook only</span>
+sam<span class="w"> </span>deploy<span class="w"> </span>--parameter-overrides<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nv">EnableOutboundPolling</span><span class="o">=</span><span class="nb">false</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nv">WebhookSecret</span><span class="o">=</span>my-secret-value<span class="w"> </span>...
+
+<span class="c1"># Both modes</span>
+sam<span class="w"> </span>deploy<span class="w"> </span>--parameter-overrides<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nv">WebhookSecret</span><span class="o">=</span>my-secret-value<span class="w"> </span>...
+</code></pre></div>
+<p>After deployment, the stack outputs a <code>WebhookUrl</code> like:
+<div class="highlight"><pre><span></span><code>https://abc123.execute-api.us-east-1.amazonaws.com/prod/webhook/outbound
+</code></pre></div></p>
+<h4 id="configuring-netbox">Configuring NetBox<a class="headerlink" href="#configuring-netbox" title="Permanent link">&para;</a></h4>
+<ol>
+<li>Go to <strong>Operations &rarr; Webhooks</strong> and create a new Webhook:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Name</td>
+<td><code>SES Outbound Delivery</code></td>
+</tr>
+<tr>
+<td>Payload URL</td>
+<td><code>https://abc123.execute-api.../prod/webhook/outbound</code> (from stack outputs)</td>
+</tr>
+<tr>
+<td>HTTP method</td>
+<td><code>POST</code></td>
+</tr>
+<tr>
+<td>HTTP content type</td>
+<td><code>application/json</code></td>
+</tr>
+<tr>
+<td>Secret</td>
+<td>Same value as <code>WebhookSecret</code> parameter</td>
+</tr>
+</tbody>
+</table>
+<ol>
+<li>Go to <strong>Operations &rarr; Event Rules</strong> and create a new Event Rule:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Name</td>
+<td><code>Send notification on ready</code></td>
+</tr>
+<tr>
+<td>Object types</td>
+<td><code>Notices &gt; Prepared notification</code></td>
+</tr>
+<tr>
+<td>Events</td>
+<td><code>Object updated</code></td>
+</tr>
+<tr>
+<td>Conditions</td>
+<td><code>{"and": [{"attr": "status.value", "value": "ready"}]}</code></td>
+</tr>
+<tr>
+<td>Action type</td>
+<td><code>Webhook</code></td>
+</tr>
+<tr>
+<td>Action</td>
+<td><code>SES Outbound Delivery</code></td>
+</tr>
+</tbody>
+</table>
+<p>When a PreparedNotification transitions to <code>ready</code>, NetBox fires the webhook. The Lambda validates the <code>X-Hook-Signature</code> (HMAC-SHA512), fetches the full notification from NetBox, and sends it via SES immediately.</p>
+<h4 id="security">Security<a class="headerlink" href="#security" title="Permanent link">&para;</a></h4>
+<p>The webhook endpoint validates every request using NetBox's built-in HMAC-SHA512 signature:</p>
+<ol>
+<li>NetBox computes <code>HMAC-SHA512(secret, request_body)</code> and sends it in the <code>X-Hook-Signature</code> header</li>
+<li>The Lambda recomputes the HMAC with the same secret and uses constant-time comparison</li>
+<li>Requests with invalid or missing signatures are rejected with HTTP 403</li>
+</ol>
+<h4 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>NetBox Event Rule                    API Gateway              Outbound Lambda
+     │                                   │                        │
+     │ PreparedNotification              │                        │
+     │ status → &quot;ready&quot;                  │                        │
+     │                                   │                        │
+     ├──── POST /webhook/outbound ──────►│                        │
+     │     X-Hook-Signature: hmac...     ├───── invoke ──────────►│
+     │     {event, model, data...}       │                        │
+     │                                   │         ┌──────────────┤
+     │                                   │         │ 1. Verify    │
+     │                                   │         │    signature │
+     │                                   │         │ 2. Fetch     │
+     │                                   │         │    full      │
+     │                                   │         │    notif.    │
+     │                                   │         │ 3. Send SES  │
+     │                                   │         │ 4. PATCH     │
+     │                                   │         │    → &quot;sent&quot;  │
+     │                                   │         └──────────────┤
+     │                                   │◄──── 200 OK ───────────┤
+</code></pre></div>
+<h3 id="vpc-deployment">VPC Deployment<a class="headerlink" href="#vpc-deployment" title="Permanent link">&para;</a></h3>
+<p>By default, Lambda functions run outside a VPC and access NetBox over the public internet. If NetBox is on a private network, deploy the Lambdas into a VPC with connectivity to it.</p>
+<h4 id="when-you-need-vpc">When you need VPC<a class="headerlink" href="#when-you-need-vpc" title="Permanent link">&para;</a></h4>
+<ul>
+<li>NetBox is behind a firewall, VPN, or private subnet</li>
+<li>You need a predictable source IP to allowlist (via NAT Gateway Elastic IP)</li>
+<li>Security policy requires all traffic to stay within the AWS network</li>
+</ul>
+<h4 id="network-requirements">Network requirements<a class="headerlink" href="#network-requirements" title="Permanent link">&para;</a></h4>
+<p>Lambda functions in a VPC need <strong>outbound internet access</strong> for:</p>
+<ul>
+<li><strong>NetBox API</strong> (HTTPS) — all three functions</li>
+<li><strong>AWS SES API</strong> (HTTPS) — outbound function (<code>ses:SendRawEmail</code>)</li>
+<li><strong>AWS S3 API</strong> (HTTPS) — inbound function (fetch raw email)</li>
+</ul>
+<p>This requires either:</p>
+<ol>
+<li><strong>NAT Gateway</strong> in a public subnet (most common) — gives Lambda internet access and a static Elastic IP</li>
+<li><strong>VPC Endpoints</strong> for S3 and SES (avoids NAT for AWS services, but still need NAT or direct connectivity for NetBox if it's external)</li>
+</ol>
+<h4 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h4>
+<ol>
+<li>Create or identify <strong>private subnets</strong> with a route to a NAT Gateway</li>
+<li>Create a <strong>security group</strong> that allows outbound HTTPS (port 443)</li>
+<li>Deploy with VPC parameters:</li>
+</ol>
+<div class="highlight"><pre><span></span><code>sam<span class="w"> </span>deploy<span class="w"> </span>--parameter-overrides<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nv">VpcSubnetIds</span><span class="o">=</span>subnet-aaa,subnet-bbb<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nv">VpcSecurityGroupIds</span><span class="o">=</span>sg-xxx<span class="w"> </span>...
+</code></pre></div>
+<p>SAM automatically attaches the <code>AWSLambdaVPCAccessExecutionRole</code> managed policy (ENI permissions) when VPC config is present.</p>
+<h4 id="static-ip-for-firewall-allowlisting">Static IP for firewall allowlisting<a class="headerlink" href="#static-ip-for-firewall-allowlisting" title="Permanent link">&para;</a></h4>
+<p>When Lambda runs in a VPC with a NAT Gateway, all outbound traffic exits through the NAT Gateway's Elastic IP. Allowlist that IP on your firewall to grant Lambda access to NetBox:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Find your NAT Gateway&#39;s Elastic IP</span>
+aws<span class="w"> </span>ec2<span class="w"> </span>describe-nat-gateways<span class="w"> </span>--filter<span class="w"> </span><span class="nv">Name</span><span class="o">=</span>subnet-id,Values<span class="o">=</span>subnet-public<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--query<span class="w"> </span><span class="s1">&#39;NatGateways[].NatGatewayAddresses[].PublicIp&#39;</span>
+</code></pre></div>
+<h3 id="email-authentication">Email Authentication<a class="headerlink" href="#email-authentication" title="Permanent link">&para;</a></h3>
+<p>For outbound emails to be delivered reliably and not marked as spam, configure these DNS records for your sending domain.</p>
+<h4 id="spf-sender-policy-framework">SPF (Sender Policy Framework)<a class="headerlink" href="#spf-sender-policy-framework" title="Permanent link">&para;</a></h4>
+<p>SPF tells receiving mail servers that SES is authorized to send on behalf of your domain. Add a TXT record:</p>
+<div class="highlight"><pre><span></span><code>v=spf1 include:amazonses.com ~all
+</code></pre></div>
+<p>If you already have an SPF record, add <code>include:amazonses.com</code> to it.</p>
+<h4 id="dkim-domainkeys-identified-mail">DKIM (DomainKeys Identified Mail)<a class="headerlink" href="#dkim-domainkeys-identified-mail" title="Permanent link">&para;</a></h4>
+<p>DKIM cryptographically signs emails so recipients can verify they haven't been tampered with. SES provides Easy DKIM:</p>
+<ol>
+<li>Go to <strong>SES &rarr; Verified identities &rarr; your domain</strong></li>
+<li>Under <strong>Authentication</strong>, select <strong>Easy DKIM</strong></li>
+<li>SES generates three CNAME records — add them to your DNS:</li>
+</ol>
+<div class="highlight"><pre><span></span><code>selector1._domainkey.example.com  CNAME  selector1.dkim.amazonses.com
+selector2._domainkey.example.com  CNAME  selector2.dkim.amazonses.com
+selector3._domainkey.example.com  CNAME  selector3.dkim.amazonses.com
+</code></pre></div>
+<p>Once DNS propagates, SES automatically signs all outbound emails.</p>
+<h4 id="dmarc-domain-based-message-authentication-reporting--conformance">DMARC (Domain-based Message Authentication, Reporting &amp; Conformance)<a class="headerlink" href="#dmarc-domain-based-message-authentication-reporting--conformance" title="Permanent link">&para;</a></h4>
+<p>DMARC builds on SPF and DKIM to tell receivers what to do with messages that fail authentication. Add a TXT record:</p>
+<div class="highlight"><pre><span></span><code>_dmarc.example.com  TXT  &quot;v=DMARC1; p=quarantine; rua=mailto:dmarc-reports@example.com&quot;
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Policy</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>p=none</code></td>
+<td>Monitor only (start here)</td>
+</tr>
+<tr>
+<td><code>p=quarantine</code></td>
+<td>Send failures to spam</td>
+</tr>
+<tr>
+<td><code>p=reject</code></td>
+<td>Reject failures outright</td>
+</tr>
+</tbody>
+</table>
+<p>Start with <code>p=none</code> to collect reports, then tighten to <code>quarantine</code> or <code>reject</code> once you've confirmed everything is working.</p>
+<h4 id="custom-mail-from-domain-optional">Custom MAIL FROM domain (optional)<a class="headerlink" href="#custom-mail-from-domain-optional" title="Permanent link">&para;</a></h4>
+<p>By default, SES uses <code>amazonses.com</code> as the MAIL FROM domain. For full SPF alignment (required for strict DMARC), configure a custom MAIL FROM:</p>
+<ol>
+<li>Go to <strong>SES &rarr; Verified identities &rarr; your domain &rarr; Custom MAIL FROM domain</strong></li>
+<li>Set it to a subdomain (e.g. <code>mail.example.com</code>)</li>
+<li>Add the MX and TXT records SES provides:</li>
+</ol>
+<div class="highlight"><pre><span></span><code>mail.example.com  MX   10 feedback-smtp.us-east-1.amazonses.com
+mail.example.com  TXT  &quot;v=spf1 include:amazonses.com ~all&quot;
+</code></pre></div>
+<h4 id="inbound-mx-records">Inbound MX records<a class="headerlink" href="#inbound-mx-records" title="Permanent link">&para;</a></h4>
+<p>For the inbound flow (receiving provider maintenance emails), point your receipt domain's MX record to SES:</p>
+<div class="highlight"><pre><span></span><code>notices.example.com  MX  10 inbound-smtp.us-east-1.amazonaws.com
+</code></pre></div>
+<p>Use the correct regional endpoint for your SES region.</p>
+<h3 id="customization">Customization<a class="headerlink" href="#customization" title="Permanent link">&para;</a></h3>
+<h4 id="multiple-recipients-per-notification">Multiple Recipients per Notification<a class="headerlink" href="#multiple-recipients-per-notification" title="Permanent link">&para;</a></h4>
+<p>Each PreparedNotification can have multiple recipients. The outbound Lambda sends a single email with all recipients in the <code>To:</code> header. For individual emails per recipient, modify <code>_build_mime()</code> to iterate over recipients.</p>
+<h4 id="html-styling">HTML Styling<a class="headerlink" href="#html-styling" title="Permanent link">&para;</a></h4>
+<p>The outbound Lambda inlines CSS from the notification's <code>css</code> field into a <code>&lt;style&gt;</code> tag in the HTML <code>&lt;head&gt;</code>. For more aggressive CSS inlining (into element <code>style</code> attributes), consider adding a library like <code>premailer</code>.</p>
+<h3 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h3>
+<h4 id="outbound-lambda-sends-but-status-not-updated">Outbound Lambda sends but status not updated<a class="headerlink" href="#outbound-lambda-sends-but-status-not-updated" title="Permanent link">&para;</a></h4>
+<p>Check CloudWatch Logs for the outbound Lambda. Common causes:
+- NetBox API token doesn't have write permission
+- NetBox URL is not reachable from Lambda (check VPC/security groups)</p>
+<h4 id="tracking-events-not-arriving">Tracking events not arriving<a class="headerlink" href="#tracking-events-not-arriving" title="Permanent link">&para;</a></h4>
+<ol>
+<li>Verify the SES Configuration Set is attached to outbound emails (check <code>SES_CONFIGURATION_SET</code> env var)</li>
+<li>Verify the SNS topic policy allows SES to publish</li>
+<li>Check that the Lambda has an SNS trigger subscription</li>
+</ol>
+<h4 id="inbound-emails-not-parsed">Inbound emails not parsed<a class="headerlink" href="#inbound-emails-not-parsed" title="Permanent link">&para;</a></h4>
+<ol>
+<li>Check S3 bucket for the raw email (SES should store it)</li>
+<li>Check CloudWatch Logs for the inbound Lambda</li>
+<li>Verify the sender matches a provider in the provider map</li>
+<li>Ensure the email format is supported by <code>circuit-maintenance-parser</code></li>
+</ol>
+<h4 id="ses-sending-in-sandbox">SES sending in sandbox<a class="headerlink" href="#ses-sending-in-sandbox" title="Permanent link">&para;</a></h4>
+<p>New SES accounts start in sandbox mode (can only send to verified addresses). Request production access in the SES console.</p>
+<h4 id="permission-errors">Permission errors<a class="headerlink" href="#permission-errors" title="Permanent link">&para;</a></h4>
+<p>Ensure the NetBox API token has permission to:
+- Read/write <code>notices.maintenance</code>, <code>notices.impact</code>, <code>notices.eventnotification</code>
+- Read/write <code>notices.preparednotification</code>
+- Create <code>extras.journalentry</code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/jsenecal/netbox-notices" target="_blank" rel="noopener" title="Github" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.indexes", "navigation.instant", "navigation.tabs.sticky"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
