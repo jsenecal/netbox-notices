@@ -13,45 +13,43 @@ notices = ["templates/**/*", "static/**/*"]
 [project]
 name = "netbox-notices"
 keywords = ['notices']
-version = "1.1.1"
+version = "1.1.2"
 description = "Track maintenance and outage events across various NetBox models from vendors and internal sources."
 readme = "README.md"
 authors = [
-    { name = "Jonathan Senecal", email = "contact@jonathansenecal.com" },
-    { name = "Jason Yates", email = "me@jasonyates.co.uk" }
+  { name = "Jonathan Senecal", email = "contact@jonathansenecal.com" },
+  { name = "Jason Yates", email = "me@jasonyates.co.uk" },
 ]
 license-files = ["LICENSE"]
 
 classifiers = [
-    'Development Status :: 4 - Beta',
-    'Intended Audience :: Developers',
-    'Natural Language :: English',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.12',
-    'Programming Language :: Python :: 3.13',
+  'Development Status :: 4 - Beta',
+  'Intended Audience :: Developers',
+  'Natural Language :: English',
+  'Programming Language :: Python :: 3',
+  'Programming Language :: Python :: 3.12',
+  'Programming Language :: Python :: 3.13',
 ]
 
 requires-python = ">=3.12.0"
 
-dependencies = [
-    "icalendar>=5.0.0",
-]
+dependencies = ["icalendar>=5.0.0"]
 
 [project.optional-dependencies]
 dev = [
-    "black==25.1.0",
-    "bumpver",
-    "isort==6.0.1",
-    "pip-tools",
-    "pre-commit>=4.0.0",
-    "pytest",
-    "pytest-django>=4.5.0",
-    "pytest-cov>=3.0.0",
-    "flake8>=7.0.0",
-    "pyproject-flake8>=7.0.0",
-    "twine==6.1.0",
-    "Sphinx==8.2.3",
-    "watchdog==6.0.0",
+  "black==25.1.0",
+  "bumpver",
+  "isort==6.0.1",
+  "pip-tools",
+  "pre-commit>=4.0.0",
+  "pytest",
+  "pytest-django>=4.5.0",
+  "pytest-cov>=3.0.0",
+  "flake8>=7.0.0",
+  "pyproject-flake8>=7.0.0",
+  "twine==6.1.0",
+  "Sphinx==8.2.3",
+  "watchdog==6.0.0",
 ]
 
 [project.urls]
@@ -62,7 +60,7 @@ Tracker = "https://github.com/jsenecal/netbox-notices/issues"
 
 
 [tool.bumpver]
-current_version = "1.1.1"
+current_version = "1.1.2"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "chore: bump version {old_version} -> {new_version}"
 tag_pattern = "vMAJOR.MINOR.PATCH"
@@ -71,13 +69,8 @@ tag = true
 push = true
 
 [tool.bumpver.file_patterns]
-"pyproject.toml" = [
-    'current_version = "{version}"',
-    'version = "{version}"',
-]
-"notices/__init__.py" = [
-    '__version__ = "{version}"',
-]
+"pyproject.toml" = ['current_version = "{version}"', 'version = "{version}"']
+"notices/__init__.py" = ['__version__ = "{version}"']
 
 [tool.flake8]
 max-line-length = 120
@@ -85,19 +78,19 @@ max-complexity = 18
 extend-ignore = ["E203", "E266", "W503"]
 per-file-ignores = ["__init__.py:F401"]
 exclude = [
-    ".git",
-    "__pycache__",
-    "setup.py",
-    "build",
-    "dist",
-    "docs",
-    "releases",
-    ".venv",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".vscode",
-    ".github",
+  ".git",
+  "__pycache__",
+  "setup.py",
+  "build",
+  "dist",
+  "docs",
+  "releases",
+  ".venv",
+  ".tox",
+  ".mypy_cache",
+  ".pytest_cache",
+  ".vscode",
+  ".github",
 ]
 # By default test codes will be linted.
 # tests
@@ -115,8 +108,15 @@ max-complexity = 18
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
 "parsers/*" = ["E711", "E722"]
-"notices/tables.py" = ["E501"]  # Template strings in ActionsColumn can exceed line length
-".devcontainer/load_plugin_demo.py" = ["E402", "E501", "F841", "C901"]  # Django setup requires late imports, demo script complexity OK
+"notices/tables.py" = [
+  "E501",
+] # Template strings in ActionsColumn can exceed line length
+".devcontainer/load_plugin_demo.py" = [
+  "E402",
+  "E501",
+  "F841",
+  "C901",
+] # Django setup requires late imports, demo script complexity OK
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
