@@ -10,6 +10,15 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        netbox-version:
+          - v4.5.2
+          - v4.5.8
+
+    name: NetBox ${{ matrix.netbox-version }}
+
     services:
       postgres:
         image: postgres:15-alpine
@@ -48,7 +57,7 @@ jobs:
       - name: Install NetBox
         run: |
           # Clone NetBox
-          git clone --depth 1 --branch v4.5.2 https://github.com/netbox-community/netbox.git /tmp/netbox
+          git clone --depth 1 --branch ${{ matrix.netbox-version }} https://github.com/netbox-community/netbox.git /tmp/netbox
 
           # Install NetBox dependencies
           pip install --upgrade pip
