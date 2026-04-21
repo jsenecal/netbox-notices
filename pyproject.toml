@@ -50,7 +50,7 @@ dev = [
     "flake8>=7.0.0",
     "pyproject-flake8>=7.0.0",
     "twine==6.2.0",
-    "Sphinx==8.2.3",
+    "Sphinx==9.1.0",
     "watchdog==6.0.0",
 ]
 
