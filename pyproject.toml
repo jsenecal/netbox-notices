@@ -39,7 +39,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "black==25.1.0",
+    "black==25.12.0",
     "bumpver",
     "isort==6.1.0",
     "pip-tools",
