@@ -14,7 +14,6 @@ jobs:
       fail-fast: false
       matrix:
         netbox-version:
-          - v4.4.10
           - v4.5.2
           - v4.5.8
 
