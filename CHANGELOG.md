@@ -12,17 +12,17 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 - Canonical normalize-toolkit CI/CD shape: 5 GHA workflows (`ci.yml`, `publish.yml`, `docs.yml`, `release-drafter.yml`, `pr-title.yml`) + `.github/release-drafter.yml`. Replaces the previous `mkdocs.yml` workflow.
 - Local `commit-msg` pre-commit stage that rejects AI/Claude attribution lines.
-- `.git-template/hooks/commit-msg` — canonical hook tracked in-tree, referenced by pre-commit.
-- `docs/zensical.toml` — migrated from mkdocs-material to zensical (matches the toolkit canonical).
+- `.git-template/hooks/commit-msg` -- canonical hook tracked in-tree, referenced by pre-commit.
+- `docs/zensical.toml` -- migrated from mkdocs-material to zensical (matches the toolkit canonical).
 - `uv.lock` committed for reproducible CI/dev environments.
 
 ### Changed
 
 - CI: switched dependency installation to `uv` for faster caching; activates the workspace `.venv` via `GITHUB_PATH` so plain `python` works from `/tmp/netbox/netbox`. Codecov upload uses OIDC (tokenless), gated to the 3.13 + 4.5.8 leg.
 - `publish.yml`: switched build/publish jobs to `uv build` (was `python -m build`); pinned `actions/upload-artifact` and `actions/download-artifact` to v4 (matches canonical).
-- `pyproject.toml`: dropped `black`, `isort`, `flake8`, `pyproject-flake8`, `pip-tools`, `twine`, `Sphinx`, `watchdog`, `tox` from dev deps — all superseded by ruff or moved to per-step CI installs. Removed legacy `[tool.flake8]` and `[tool.tox]` sections. Added `[docs]` extra (`zensical`). Expanded ruff selectors with `N`, `UP`, `S`, `B`, `A`, `DJ`, `PIE`. Several pre-existing issues (`B904`, `S701`, `S324`, `S308`, `A004`, `DJ001`) are temporarily globally ignored — see TODO comment in `[tool.ruff.lint]`. Test per-file ignores added for `E402`, `F841`, `B011`. Added `extend-exclude` for `migrations/` and `parsers/`. Added bumpver `CHANGELOG.md` file pattern so the Unreleased section is promoted on every version bump.
-- `mkdocs.yml` (root) and `.github/workflows/mkdocs.yml` removed — replaced by `docs/zensical.toml` + `.github/workflows/docs.yml`.
-- README trimmed from 542 lines to ~95 — substantive content now lives in the published docs site.
+- `pyproject.toml`: dropped `black`, `isort`, `flake8`, `pyproject-flake8`, `pip-tools`, `twine`, `Sphinx`, `watchdog`, `tox` from dev deps -- all superseded by ruff or moved to per-step CI installs. Removed legacy `[tool.flake8]` and `[tool.tox]` sections. Added `[docs]` extra (`zensical`). Expanded ruff selectors with `N`, `UP`, `S`, `B`, `A`, `DJ`, `PIE`. Several pre-existing issues (`B904`, `S701`, `S324`, `S308`, `A004`, `DJ001`) are temporarily globally ignored -- see TODO comment in `[tool.ruff.lint]`. Test per-file ignores added for `E402`, `F841`, `B011`. Added `extend-exclude` for `migrations/` and `parsers/`. Added bumpver `CHANGELOG.md` file pattern so the Unreleased section is promoted on every version bump.
+- `mkdocs.yml` (root) and `.github/workflows/mkdocs.yml` removed -- replaced by `docs/zensical.toml` + `.github/workflows/docs.yml`.
+- README trimmed from 542 lines to ~95 -- substantive content now lives in the published docs site.
 
 ## 1.0.0 (2026-02-09)
 
@@ -32,14 +32,14 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
   * NotificationTemplate model with Jinja templating support
   * Template scoping (similar to Config Contexts) for tenant/provider/site-specific templates
   * Template inheritance for customization
-  * PreparedNotification model with approval workflow (draft → ready → sent → delivered/failed)
+  * PreparedNotification model with approval workflow (draft -> ready -> sent -> delivered/failed)
   * SentNotification proxy model for viewing sent/delivered notifications
   * Recipient discovery based on contact roles and priorities
   * iCal attachment support for maintenance notifications
 * **AWS SES Integration** (`integrations/aws-ses/`): Complete AWS SAM application for email delivery
-  * **Inbound Lambda** — SES receipt rule → S3 → parse with circuit-maintenance-parser → NetBox API
-  * **Outbound Lambda** — Poll NetBox for ready notifications → build MIME → send via SES
-  * **Tracking Lambda** — SES delivery events (delivery, bounce, complaint, open, click) via SNS → NetBox status updates
+  * **Inbound Lambda** -- SES receipt rule -> S3 -> parse with circuit-maintenance-parser -> NetBox API
+  * **Outbound Lambda** -- Poll NetBox for ready notifications -> build MIME -> send via SES
+  * **Tracking Lambda** -- SES delivery events (delivery, bounce, complaint, open, click) via SNS -> NetBox status updates
   * Webhook support via API Gateway for immediate delivery on status change (alternative to polling)
   * Polling and webhook modes independently toggleable (can use either or both)
   * Optional VPC deployment for Lambda functions (private subnets with NAT Gateway)

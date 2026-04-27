@@ -5,9 +5,9 @@
 [![CI Tests](https://github.com/jsenecal/netbox-notices/actions/workflows/ci.yml/badge.svg)](https://github.com/jsenecal/netbox-notices/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/jsenecal/netbox-notices/graph/badge.svg)](https://codecov.io/gh/jsenecal/netbox-notices)
 
-**Repository:** [github.com/jsenecal/netbox-notices](https://github.com/jsenecal/netbox-notices)  
-**Documentation:** [jsenecal.github.io/netbox-notices](https://jsenecal.github.io/netbox-notices)  
-**PyPI:** [pypi.org/project/netbox-notices](https://pypi.org/project/netbox-notices)  
+**Repository:** [github.com/jsenecal/netbox-notices](https://github.com/jsenecal/netbox-notices)
+**Documentation:** [jsenecal.github.io/netbox-notices](https://jsenecal.github.io/netbox-notices)
+**PyPI:** [pypi.org/project/netbox-notices](https://pypi.org/project/netbox-notices)
 
 **Original Project:** Forked and inspired from [jasonyates/netbox-circuitmaintenance](https://github.com/jasonyates/netbox-circuitmaintenance), differs in the ability to track more than just maintenances, and circuits.
 
@@ -214,7 +214,7 @@ The plugin provides an interactive calendar view and iCal feed for integrating m
 
 ### Calendar View
 
-Access the calendar at **Plugins → Notices → Calendar**. Features include:
+Access the calendar at **Plugins -> Notices -> Calendar**. Features include:
 
 - **Interactive FullCalendar**: Month, week, and day views
 - **Color-coded events**: Different colors for maintenance vs outage, and by status
@@ -231,9 +231,9 @@ https://your-netbox/api/plugins/notices/ical/?token=YOUR_API_TOKEN
 ```
 
 **Supported Calendar Apps:**
-- **Google Calendar**: Settings → Add calendar → From URL
-- **Outlook**: Calendar → Add calendar → Subscribe from web
-- **Apple Calendar**: File → New Calendar Subscription
+- **Google Calendar**: Settings -> Add calendar -> From URL
+- **Outlook**: Calendar -> Add calendar -> Subscribe from web
+- **Apple Calendar**: File -> New Calendar Subscription
 
 **Query Parameters:**
 - `token`: Your NetBox API token (required)
@@ -363,7 +363,7 @@ The plugin supports generating and tracking outgoing notifications to customers 
 - **Template Scoping**: Scope templates to specific tenants, providers, sites, etc. (similar to Config Contexts)
 - **Template Inheritance**: Base templates can be extended for customization
 - **Recipient Discovery**: Automatically discover contacts based on roles and priorities
-- **Approval Workflow**: Notifications go through draft → ready → approved → sent states
+- **Approval Workflow**: Notifications go through draft -> ready -> approved -> sent states
 - **Delivery Tracking**: Track when notifications are sent, delivered, and viewed
 - **iCal Support**: Generate iCal attachments for maintenance notifications
 
@@ -485,7 +485,7 @@ The outage detail view tracks unplanned incidents with ETR (Estimated Time to Re
 ![Outage Event View](docs/img/outage_detail.png)
 
 **Key Features Shown:**
-- Outage-specific status workflow (Reported → Investigating → Identified → Monitoring → Resolved)
+- Outage-specific status workflow (Reported -> Investigating -> Identified -> Monitoring -> Resolved)
 - ETR tracking with changelog history
 - Optional end time (required only when resolving)
 - Impact and notification tracking
