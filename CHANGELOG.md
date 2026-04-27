@@ -1,5 +1,29 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
+
+## [Unreleased]
+
+### Added
+
+- Canonical normalize-toolkit CI/CD shape: 5 GHA workflows (`ci.yml`, `publish.yml`, `docs.yml`, `release-drafter.yml`, `pr-title.yml`) + `.github/release-drafter.yml`. Replaces the previous `mkdocs.yml` workflow.
+- Local `commit-msg` pre-commit stage that rejects AI/Claude attribution lines.
+- `.git-template/hooks/commit-msg` — canonical hook tracked in-tree, referenced by pre-commit.
+- `docs/zensical.toml` — migrated from mkdocs-material to zensical (matches the toolkit canonical).
+- `uv.lock` committed for reproducible CI/dev environments.
+
+### Changed
+
+- CI: switched dependency installation to `uv` for faster caching; activates the workspace `.venv` via `GITHUB_PATH` so plain `python` works from `/tmp/netbox/netbox`. Codecov upload uses OIDC (tokenless), gated to the 3.13 + 4.5.8 leg.
+- `publish.yml`: switched build/publish jobs to `uv build` (was `python -m build`); pinned `actions/upload-artifact` and `actions/download-artifact` to v4 (matches canonical).
+- `pyproject.toml`: dropped `black`, `isort`, `flake8`, `pyproject-flake8`, `pip-tools`, `twine`, `Sphinx`, `watchdog`, `tox` from dev deps — all superseded by ruff or moved to per-step CI installs. Removed legacy `[tool.flake8]` and `[tool.tox]` sections. Added `[docs]` extra (`zensical`). Expanded ruff selectors with `N`, `UP`, `S`, `B`, `A`, `DJ`, `PIE`. Several pre-existing issues (`B904`, `S701`, `S324`, `S308`, `A004`, `DJ001`) are temporarily globally ignored — see TODO comment in `[tool.ruff.lint]`. Test per-file ignores added for `E402`, `F841`, `B011`. Added `extend-exclude` for `migrations/` and `parsers/`. Added bumpver `CHANGELOG.md` file pattern so the Unreleased section is promoted on every version bump.
+- `mkdocs.yml` (root) and `.github/workflows/mkdocs.yml` removed — replaced by `docs/zensical.toml` + `.github/workflows/docs.yml`.
+- README trimmed from 542 lines to ~95 — substantive content now lives in the published docs site.
+
 ## 1.0.0 (2026-02-09)
 
 ### New Features
@@ -132,5 +156,3 @@ This is a completely new plugin architecture. Previous versions (0.6.0 and earli
 ## 0.1.0 (2023-01-15)
 
 * First release on PyPI.
-
-

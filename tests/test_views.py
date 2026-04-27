@@ -19,7 +19,7 @@ class TestViewsStructure(unittest.TestCase):
             "notices",
             "views.py",
         )
-        with open(views_path, "r") as f:
+        with open(views_path) as f:
             return ast.parse(f.read())
 
     def _find_class(self, tree, class_name):

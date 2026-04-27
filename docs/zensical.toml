@@ -1,0 +1,45 @@
+[project]
+site_name = "NetBox Notices"
+site_url = "https://jsenecal.github.io/netbox-notices/"
+site_description = "Track maintenance and outage events across various NetBox models from vendors and internal sources"
+site_author = "Jonathan Senecal"
+repo_url = "https://github.com/jsenecal/netbox-notices"
+repo_name = "jsenecal/netbox-notices"
+edit_uri = "edit/main/docs/"
+docs_dir = "."
+nav = [
+  { "Home" = "index.md" },
+  { "Outgoing Notifications" = "outgoing-notifications.md" },
+  { "Automated Parsers" = [
+    { "Using a parser" = "parsers.md" },
+    { "AWS SNS & Lambda" = "parsers_sns_lambda.md" },
+  ] },
+  { "Integrations" = [
+    { "AWS SES" = "integrations_aws_ses.md" },
+  ] },
+  { "Contributing" = "contributing.md" },
+  { "Changelog" = "changelog.md" },
+]
+
+[project.theme]
+features = [
+  "content.action.edit",
+  "content.action.view",
+]
+
+[[project.theme.palette]]
+scheme = "default"
+primary = "indigo"
+accent = "indigo"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+primary = "indigo"
+accent = "indigo"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+[project.theme.icon]
+repo = "fontawesome/brands/github"

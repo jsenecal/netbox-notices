@@ -1,7 +1,6 @@
 """Integration tests for iCal feed endpoint."""
 
-from datetime import datetime, timedelta
-from datetime import timezone as dt_timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from circuits.models import Provider
@@ -26,8 +25,8 @@ class TestMaintenanceICalViewAuthentication:
             name="M1",
             summary="Test",
             provider=provider,
-            start=datetime.now(dt_timezone.utc),
-            end=datetime.now(dt_timezone.utc) + timedelta(hours=2),
+            start=datetime.now(UTC),
+            end=datetime.now(UTC) + timedelta(hours=2),
             status="CONFIRMED",
         )
 
@@ -60,8 +59,8 @@ class TestMaintenanceICalViewAuthentication:
             name="M1",
             summary="Test",
             provider=provider,
-            start=datetime.now(dt_timezone.utc),
-            end=datetime.now(dt_timezone.utc) + timedelta(hours=2),
+            start=datetime.now(UTC),
+            end=datetime.now(UTC) + timedelta(hours=2),
             status="CONFIRMED",
         )
 
@@ -88,7 +87,7 @@ class TestMaintenanceICalViewFiltering:
         provider = Provider.objects.create(name="Test", slug="test")
 
         # Create old maintenance (60 days ago)
-        old_start = datetime.now(dt_timezone.utc) - timedelta(days=60)
+        old_start = datetime.now(UTC) - timedelta(days=60)
         Maintenance.objects.create(
             name="OLD",
             summary="Old",
@@ -99,7 +98,7 @@ class TestMaintenanceICalViewFiltering:
         )
 
         # Create recent maintenance (10 days ago)
-        recent_start = datetime.now(dt_timezone.utc) - timedelta(days=10)
+        recent_start = datetime.now(UTC) - timedelta(days=10)
         Maintenance.objects.create(
             name="RECENT",
             summary="Recent",
@@ -125,7 +124,7 @@ class TestMaintenanceICalViewFiltering:
         provider1 = Provider.objects.create(name="AWS", slug="aws")
         provider2 = Provider.objects.create(name="Azure", slug="azure")
 
-        now = datetime.now(dt_timezone.utc)
+        now = datetime.now(UTC)
         Maintenance.objects.create(
             name="AWS-1",
             summary="AWS",
@@ -150,7 +149,7 @@ class TestMaintenanceICalViewFiltering:
 
     def test_status_filter(self):
         provider = Provider.objects.create(name="Test", slug="test")
-        now = datetime.now(dt_timezone.utc)
+        now = datetime.now(UTC)
 
         Maintenance.objects.create(
             name="CONF",
@@ -194,7 +193,7 @@ class TestMaintenanceICalViewCaching:
 
     def test_response_includes_cache_headers(self):
         provider = Provider.objects.create(name="Test", slug="test")
-        now = datetime.now(dt_timezone.utc)
+        now = datetime.now(UTC)
         Maintenance.objects.create(
             name="M1",
             summary="Test",
@@ -213,7 +212,7 @@ class TestMaintenanceICalViewCaching:
 
     def test_etag_matches_returns_304(self):
         provider = Provider.objects.create(name="Test", slug="test")
-        now = datetime.now(dt_timezone.utc)
+        now = datetime.now(UTC)
         Maintenance.objects.create(
             name="M1",
             summary="Test",
@@ -261,7 +260,7 @@ class TestMaintenanceICalViewTokenValidation:
         token = Token.objects.create(
             user=user,
             version=1,
-            expires=datetime.now(dt_timezone.utc) - timedelta(days=1),
+            expires=datetime.now(UTC) - timedelta(days=1),
         )
 
         client = Client()
@@ -293,8 +292,8 @@ class TestMaintenanceICalViewTokenValidation:
             name="M1",
             summary="Test",
             provider=provider,
-            start=datetime.now(dt_timezone.utc),
-            end=datetime.now(dt_timezone.utc) + timedelta(hours=2),
+            start=datetime.now(UTC),
+            end=datetime.now(UTC) + timedelta(hours=2),
             status="CONFIRMED",
         )
 
@@ -322,7 +321,7 @@ class TestMaintenanceICalViewParseQueryParams:
 
     def test_negative_past_days_uses_default(self):
         provider = Provider.objects.create(name="Test", slug="test")
-        now = datetime.now(dt_timezone.utc)
+        now = datetime.now(UTC)
         Maintenance.objects.create(
             name="M1",
             summary="Test",
@@ -356,7 +355,7 @@ class TestMaintenanceICalViewBuildQueryset:
 
     def test_provider_id_filter(self):
         provider = Provider.objects.create(name="ByID", slug="byid")
-        now = datetime.now(dt_timezone.utc)
+        now = datetime.now(UTC)
         Maintenance.objects.create(
             name="BY-ID-1",
             summary="Test",
@@ -381,7 +380,7 @@ class TestMaintenanceICalViewBuildQueryset:
 
     def test_comma_separated_status_filter(self):
         provider = Provider.objects.create(name="Multi", slug="multi")
-        now = datetime.now(dt_timezone.utc)
+        now = datetime.now(UTC)
         Maintenance.objects.create(
             name="CONF1",
             summary="T",
@@ -418,7 +417,7 @@ class TestMaintenanceICalViewBuildQueryset:
 
     def test_download_mode(self):
         provider = Provider.objects.create(name="DL", slug="dl")
-        now = datetime.now(dt_timezone.utc)
+        now = datetime.now(UTC)
         Maintenance.objects.create(
             name="DL1",
             summary="T",

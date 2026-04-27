@@ -1,7 +1,6 @@
 """Tests for iCal utility functions."""
 
-from datetime import datetime
-from datetime import timezone as dt_timezone
+from datetime import UTC, datetime
 
 import pytest
 from circuits.models import Circuit, CircuitType, Provider
@@ -62,8 +61,8 @@ class TestETagCalculation:
         assert etag1 != etag2
 
     def test_etag_includes_latest_modified(self):
-        dt1 = datetime(2025, 1, 1, 12, 0, 0, tzinfo=dt_timezone.utc)
-        dt2 = datetime(2025, 1, 2, 12, 0, 0, tzinfo=dt_timezone.utc)
+        dt1 = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
+        dt2 = datetime(2025, 1, 2, 12, 0, 0, tzinfo=UTC)
         etag1 = calculate_etag(count=5, latest_modified=dt1, params={})
         etag2 = calculate_etag(count=5, latest_modified=dt2, params={})
         assert etag1 != etag2
@@ -74,7 +73,7 @@ class TestETagCalculation:
         assert len(etag) == 32
 
     def test_etag_deterministic(self):
-        dt = datetime(2025, 1, 1, 12, 0, 0, tzinfo=dt_timezone.utc)
+        dt = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
         params = {"provider": "aws"}
         etag1 = calculate_etag(count=5, latest_modified=dt, params=params)
         etag2 = calculate_etag(count=5, latest_modified=dt, params=params)
@@ -92,8 +91,8 @@ class TestICalGeneration:
             name="MAINT-001",
             summary="Test maintenance",
             provider=provider,
-            start=datetime(2025, 2, 1, 10, 0, 0, tzinfo=dt_timezone.utc),
-            end=datetime(2025, 2, 1, 14, 0, 0, tzinfo=dt_timezone.utc),
+            start=datetime(2025, 2, 1, 10, 0, 0, tzinfo=UTC),
+            end=datetime(2025, 2, 1, 14, 0, 0, tzinfo=UTC),
             status="CONFIRMED",
         )
 
@@ -120,8 +119,8 @@ class TestICalGeneration:
             name="MAINT-002",
             summary="Network upgrade",
             provider=provider,
-            start=datetime(2025, 3, 1, 8, 0, 0, tzinfo=dt_timezone.utc),
-            end=datetime(2025, 3, 1, 12, 0, 0, tzinfo=dt_timezone.utc),
+            start=datetime(2025, 3, 1, 8, 0, 0, tzinfo=UTC),
+            end=datetime(2025, 3, 1, 12, 0, 0, tzinfo=UTC),
             status="TENTATIVE",
             internal_ticket="CHG-12345",
             comments="Planned upgrade",
@@ -165,8 +164,8 @@ class TestICalGeneration:
             name="MAINT-IMPACT",
             summary="Maintenance with impacts",
             provider=provider,
-            start=datetime(2025, 6, 1, 10, 0, 0, tzinfo=dt_timezone.utc),
-            end=datetime(2025, 6, 1, 14, 0, 0, tzinfo=dt_timezone.utc),
+            start=datetime(2025, 6, 1, 10, 0, 0, tzinfo=UTC),
+            end=datetime(2025, 6, 1, 14, 0, 0, tzinfo=UTC),
             status="CONFIRMED",
         )
 

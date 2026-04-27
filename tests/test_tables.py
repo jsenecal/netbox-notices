@@ -19,7 +19,7 @@ class BaseTableTest(unittest.TestCase):
             "notices",
             "tables.py",
         )
-        with open(tables_path, "r") as f:
+        with open(tables_path) as f:
             return ast.parse(f.read())
 
     def _find_class(self, tree, class_name):

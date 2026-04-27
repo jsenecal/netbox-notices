@@ -21,7 +21,7 @@ class TestMaintenanceSerializerStructure(unittest.TestCase):
             "serializers",
             "events.py",
         )
-        with open(serializers_path, "r") as f:
+        with open(serializers_path) as f:
             return ast.parse(f.read())
 
     def _find_class(self, tree, class_name):
@@ -194,7 +194,7 @@ class TestNestedMaintenanceSerializer(unittest.TestCase):
             "serializers",
             "events.py",
         )
-        with open(serializers_path, "r") as f:
+        with open(serializers_path) as f:
             return ast.parse(f.read())
 
     def _find_class(self, tree, class_name):

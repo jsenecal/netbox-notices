@@ -2,8 +2,7 @@
 
 import hashlib
 import json
-from datetime import datetime
-from datetime import timezone as dt_timezone
+from datetime import UTC, datetime
 
 from icalendar import Calendar, Event
 
@@ -88,7 +87,7 @@ def generate_maintenance_ical(maintenances, request):
 
         # Required fields
         event.add("uid", f"maintenance-{maintenance.id}@{domain}")
-        event.add("dtstamp", datetime.now(dt_timezone.utc))
+        event.add("dtstamp", datetime.now(UTC))
         event.add("dtstart", maintenance.start)
         event.add("dtend", maintenance.end)
         event.add("summary", f"{maintenance.name} - {maintenance.summary}")
