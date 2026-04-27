@@ -5,7 +5,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("dcim", "0227_alter_interface_speed_bigint"),
+        # 0225_gfk_indexes is the latest dcim migration shared by NetBox
+        # 4.5.2 / 4.5.5 / 4.5.8. The auto-generated dependency was on
+        # 0227_alter_interface_speed_bigint (4.5.8-only), which broke
+        # migration loading on 4.5.2 even though this migration only
+        # touches Site / Location M2M fields and doesn't need anything
+        # beyond 0225.
+        ("dcim", "0225_gfk_indexes"),
         ("notices", "0008_alter_maintenance_end_alter_maintenance_start_and_more"),
     ]
 
