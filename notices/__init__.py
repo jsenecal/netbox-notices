@@ -32,6 +32,8 @@ class NoticesConfig(PluginConfig):
     def ready(self):
         super().ready()
         from . import (
+            checks,  # noqa: F401
+            resolvers,  # noqa: F401
             signals,  # noqa: F401
             widgets,  # noqa: F401
         )

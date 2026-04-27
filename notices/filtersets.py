@@ -1,4 +1,5 @@
 import django_filters
+from dcim.models import Location, Region, Site, SiteGroup
 from django.db.models import Q
 from netbox.filtersets import NetBoxModelFilterSet
 from utilities.filters import ContentTypeFilter
@@ -36,6 +37,33 @@ class MaintenanceFilterSet(NetBoxModelFilterSet):
     has_replaces = django_filters.BooleanFilter(
         method="filter_has_replaces",
         label="Has replacement",
+    )
+    # Site/location scoping — traverses the Impact.sites / Impact.locations
+    # cache populated by notices.resolvers, so any allowed target type whose
+    # resolver returns sites/locations becomes filterable here.
+    site_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="impacts__sites",
+        queryset=Site.objects.all(),
+        label="Affected site",
+        distinct=True,
+    )
+    region_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="impacts__sites__region",
+        queryset=Region.objects.all(),
+        label="Affected region",
+        distinct=True,
+    )
+    site_group_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="impacts__sites__group",
+        queryset=SiteGroup.objects.all(),
+        label="Affected site group",
+        distinct=True,
+    )
+    location_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="impacts__locations",
+        queryset=Location.objects.all(),
+        label="Affected location",
+        distinct=True,
     )
 
     class Meta:
@@ -82,6 +110,30 @@ class OutageFilterSet(NetBoxModelFilterSet):
         field_name="provider",
         label="Provider",
     )
+    site_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="impacts__sites",
+        queryset=Site.objects.all(),
+        label="Affected site",
+        distinct=True,
+    )
+    region_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="impacts__sites__region",
+        queryset=Region.objects.all(),
+        label="Affected region",
+        distinct=True,
+    )
+    site_group_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="impacts__sites__group",
+        queryset=SiteGroup.objects.all(),
+        label="Affected site group",
+        distinct=True,
+    )
+    location_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="impacts__locations",
+        queryset=Location.objects.all(),
+        label="Affected location",
+        distinct=True,
+    )
 
     class Meta:
         model = Outage
@@ -124,6 +176,29 @@ class ImpactFilterSet(NetBoxModelFilterSet):
 
     # Filter for target content type (Circuit, Device, etc.)
     target_content_type = ContentTypeFilter()
+
+    site_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="sites",
+        queryset=Site.objects.all(),
+        label="Site",
+    )
+    region_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="sites__region",
+        queryset=Region.objects.all(),
+        label="Region",
+        distinct=True,
+    )
+    site_group_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="sites__group",
+        queryset=SiteGroup.objects.all(),
+        label="Site group",
+        distinct=True,
+    )
+    location_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="locations",
+        queryset=Location.objects.all(),
+        label="Location",
+    )
 
     class Meta:
         model = Impact

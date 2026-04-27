@@ -307,6 +307,20 @@ class Impact(NetBoxModel):
     target_object_id = models.PositiveIntegerField(db_index=True)
     target = GenericForeignKey("target_content_type", "target_object_id")
 
+    # Cached Site/Location membership derived from `target` via the resolver
+    # registry in notices.resolvers. Populated by refresh_sites() (called from
+    # signals on Impact.save() and on changes to upstream models).
+    sites = models.ManyToManyField(
+        "dcim.Site",
+        related_name="impacts",
+        blank=True,
+    )
+    locations = models.ManyToManyField(
+        "dcim.Location",
+        related_name="impacts",
+        blank=True,
+    )
+
     # Impact level
     impact = models.CharField(
         max_length=30,
@@ -341,6 +355,23 @@ class Impact(NetBoxModel):
 
     def get_impact_color(self):
         return ImpactTypeChoices.colors.get(self.impact)
+
+    def refresh_sites(self):
+        """
+        Recompute the cached ``sites`` / ``locations`` M2Ms from ``target`` via
+        the resolver registry. Safe to call repeatedly; uses ``.set()`` so
+        existing membership is replaced atomically.
+
+        No-op if the instance hasn't been saved yet (M2Ms require a PK).
+        """
+        if self.pk is None:
+            return
+        from ..resolvers import resolve_locations_for, resolve_sites_for
+
+        site_pks = resolve_sites_for(self.target_content_type, self.target)
+        location_pks = resolve_locations_for(self.target_content_type, self.target)
+        self.sites.set(site_pks)
+        self.locations.set(location_pks)
 
     def to_objectchange(self, action):
         """

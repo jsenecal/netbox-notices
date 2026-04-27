@@ -113,8 +113,11 @@ class MaintenanceView(generic.ObjectView):
     queryset = models.Maintenance.objects.prefetch_related("impacts").all()
 
     def get_extra_context(self, request, instance):
-        # Load the maintenance event impact
-        impact = models.Impact.objects.filter(event_content_type__model="maintenance", event_object_id=instance.pk)
+        # Load the maintenance event impact (prefetch sites/locations to avoid
+        # N+1 when the template renders the Sites column).
+        impact = models.Impact.objects.filter(
+            event_content_type__model="maintenance", event_object_id=instance.pk
+        ).prefetch_related("sites", "locations")
 
         # Load the maintenance event notifications
         notification = models.EventNotification.objects.filter(
@@ -348,8 +351,10 @@ class OutageView(generic.ObjectView):
     queryset = models.Outage.objects.all()
 
     def get_extra_context(self, request, instance):
-        # Load the outage event impact
-        impact = models.Impact.objects.filter(event_content_type__model="outage", event_object_id=instance.pk)
+        # Load the outage event impact (prefetch sites/locations for the table).
+        impact = models.Impact.objects.filter(
+            event_content_type__model="outage", event_object_id=instance.pk
+        ).prefetch_related("sites", "locations")
 
         # Load the outage event notifications
         notification = models.EventNotification.objects.filter(

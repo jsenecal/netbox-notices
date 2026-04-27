@@ -112,6 +112,7 @@
                     <tr>
                         <th>Target Type</th>
                         <th>Target Object</th>
+                        <th>Sites</th>
                         <th>Impact</th>
                         <th></th>
                     </tr>
@@ -125,6 +126,13 @@
                             {% else %}
                                 <span class="text-muted">Unknown</span>
                             {% endif %}
+                        </td>
+                        <td>
+                            {% for site in impact.sites.all %}
+                                {{ site|linkify }}{% if not forloop.last %}, {% endif %}
+                            {% empty %}
+                                <span class="text-muted">—</span>
+                            {% endfor %}
                         </td>
                         <td>{% badge impact.get_impact_display bg_color=impact.get_impact_color %}</td>
                         <td class="text-end noprint">
