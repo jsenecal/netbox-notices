@@ -2,8 +2,11 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/netbox-notices.svg)](https://pypi.org/project/netbox-notices/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/netbox-notices.svg)](https://pypi.org/project/netbox-notices/)
+[![NetBox](https://img.shields.io/badge/NetBox-4.5%2B-success.svg)](https://github.com/netbox-community/netbox)
 [![CI Tests](https://github.com/jsenecal/netbox-notices/actions/workflows/ci.yml/badge.svg)](https://github.com/jsenecal/netbox-notices/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/jsenecal/netbox-notices/graph/badge.svg)](https://codecov.io/gh/jsenecal/netbox-notices)
+[![Documentation](https://img.shields.io/badge/docs-jsenecal.github.io-blue)](https://jsenecal.github.io/netbox-notices/)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](LICENSE)
 
 **Repository:** [github.com/jsenecal/netbox-notices](https://github.com/jsenecal/netbox-notices)
 **Documentation:** [jsenecal.github.io/netbox-notices](https://jsenecal.github.io/netbox-notices)
