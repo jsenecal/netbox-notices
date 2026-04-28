@@ -1,155 +1,144 @@
-name: CI Tests
+name: CI
 
 on:
+  pull_request:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - run: uv sync --extra dev
+      - run: uv run ruff check notices tests
+      - run: uv run ruff format --check notices tests
 
+  test:
+    name: Test (Python ${{ matrix.python }}, NetBox ${{ matrix.netbox }})
+    runs-on: ubuntu-latest
+    needs: lint
+    permissions:
+      contents: read
+      id-token: write  # for Codecov OIDC upload
     strategy:
       fail-fast: false
       matrix:
-        netbox-version:
-          - v4.5.2
-          - v4.5.8
-
-    name: NetBox ${{ matrix.netbox-version }}
-
+        python: ["3.12", "3.13", "3.14"]
+        netbox: ["4.5.2", "4.5.8"]
     services:
       postgres:
         image: postgres:18-alpine
         env:
           POSTGRES_DB: netbox
           POSTGRES_USER: netbox
-          POSTGRES_PASSWORD: J5brHrAXFLQSif0K
+          POSTGRES_PASSWORD: ci-password
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-        ports:
-          - 5432:5432
-
       redis:
         image: redis:8-alpine
+        ports:
+          - 6379:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-        ports:
-          - 6379:6379
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v4
         with:
-          python-version: '3.14'
-          cache: 'pip'
+          enable-cache: true
+          python-version: ${{ matrix.python }}
 
-      - name: Install NetBox
+      - name: Clone NetBox v${{ matrix.netbox }}
         run: |
-          # Clone NetBox
-          git clone --depth 1 --branch ${{ matrix.netbox-version }} https://github.com/netbox-community/netbox.git /tmp/netbox
-
-          # Install NetBox dependencies
-          pip install --upgrade pip
-          pip install -r /tmp/netbox/requirements.txt
+          git clone --depth 1 --branch v${{ matrix.netbox }} \
+            https://github.com/netbox-community/netbox.git /tmp/netbox
 
       - name: Configure NetBox
         run: |
-          # Copy configuration
-          cp .devcontainer/configuration/configuration.py /tmp/netbox/netbox/netbox/
+          cat > /tmp/netbox/netbox/netbox/configuration.py << 'EOF_CFG'
+          ALLOWED_HOSTS = ["*"]
 
-          # Add notices plugin directly (no need to copy plugins.py)
-          cat >> /tmp/netbox/netbox/netbox/configuration.py << 'EOF_PLUGINS'
-
-          # Add notices plugin
-          PLUGINS.append("notices")
-          PLUGINS_CONFIG["notices"] = {}
-          EOF_PLUGINS
-
-          # Update database settings for GitHub Actions
-          cat >> /tmp/netbox/netbox/netbox/configuration.py << EOF
-
-          # GitHub Actions database settings
-          DATABASE = {
-              'NAME': 'netbox',
-              'USER': 'netbox',
-              'PASSWORD': 'J5brHrAXFLQSif0K',
-              'HOST': 'localhost',
-              'PORT': '5432',
+          DATABASES = {
+              "default": {
+                  "ENGINE": "django.db.backends.postgresql",
+                  "NAME": "netbox",
+                  "USER": "netbox",
+                  "PASSWORD": "ci-password",
+                  "HOST": "localhost",
+                  "PORT": "5432",
+                  "CONN_MAX_AGE": 300,
+              }
           }
 
           REDIS = {
-              'tasks': {
-                  'HOST': 'localhost',
-                  'PORT': 6379,
-                  'PASSWORD': '',
-                  'DATABASE': 0,
-                  'SSL': False,
-              },
-              'caching': {
-                  'HOST': 'localhost',
-                  'PORT': 6379,
-                  'PASSWORD': '',
-                  'DATABASE': 1,
-                  'SSL': False,
-              }
+              "tasks":   {"HOST": "localhost", "PORT": 6379, "PASSWORD": "", "DATABASE": 0, "SSL": False},
+              "caching": {"HOST": "localhost", "PORT": 6379, "PASSWORD": "", "DATABASE": 1, "SSL": False},
           }
-          EOF
 
-      - name: Install plugin
+          SECRET_KEY = "ci-only-secret-key-do-not-use-in-production-aaaaaaaaaaaaaaaaaaaa"
+
+          PLUGINS = ["notices"]
+          PLUGINS_CONFIG = {"notices": {}}
+          EOF_CFG
+
+      - name: Install plugin and NetBox dependencies
         run: |
-          pip install -e ".[dev]"
+          uv venv
+          uv pip install -r /tmp/netbox/requirements.txt
+          uv pip install -e ".[dev]"
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+          echo "VIRTUAL_ENV=$GITHUB_WORKSPACE/.venv" >> "$GITHUB_ENV"
 
       - name: Run migrations
         env:
           PYTHONPATH: /tmp/netbox/netbox
           DJANGO_SETTINGS_MODULE: netbox.settings
           NETBOX_CONFIGURATION: netbox.configuration
-          SECRET_KEY: "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)"
         run: |
           cd /tmp/netbox/netbox
           python manage.py migrate --noinput
 
-      - name: Run linting
-        run: |
-          pip install ruff
-          ruff check notices/ tests/ || true
-          ruff format --check notices/ tests/ || true
-
-      - name: Run tests with coverage
+      - name: Run pytest with coverage
         env:
           PYTHONPATH: /tmp/netbox/netbox
           DJANGO_SETTINGS_MODULE: netbox.settings
           NETBOX_CONFIGURATION: netbox.configuration
-          SECRET_KEY: "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)"
         run: |
           pytest tests/ -v --ignore=tests/test_ical_download.py --ignore=tests/test_ical_view.py --tb=short --cov=notices --cov-report=xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v6
+        if: matrix.python == '3.13' && matrix.netbox == '4.5.8'
+        continue-on-error: true
+        uses: codecov/codecov-action@v5
         with:
+          use_oidc: true
           files: ./coverage.xml
           fail_ci_if_error: false
-          verbose: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Check migrations
         env:
           PYTHONPATH: /tmp/netbox/netbox
           DJANGO_SETTINGS_MODULE: netbox.settings
           NETBOX_CONFIGURATION: netbox.configuration
-          SECRET_KEY: "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)"
         run: |
           cd /tmp/netbox/netbox
           python manage.py makemigrations --check --dry-run
@@ -159,7 +148,18 @@ jobs:
           PYTHONPATH: /tmp/netbox/netbox
           DJANGO_SETTINGS_MODULE: netbox.settings
           NETBOX_CONFIGURATION: netbox.configuration
-          SECRET_KEY: "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)"
         run: |
           cd /tmp/netbox/netbox
           python manage.py check
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v4
+      - run: uv build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/

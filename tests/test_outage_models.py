@@ -20,7 +20,7 @@ class TestBaseEvent(unittest.TestCase):
             "models",
             "events.py",
         )
-        with open(models_path, "r") as f:
+        with open(models_path) as f:
             return ast.parse(f.read())
 
     def _find_class(self, tree, class_name):
@@ -104,7 +104,7 @@ class TestOutageModel(unittest.TestCase):
             "models",
             "events.py",
         )
-        with open(models_path, "r") as f:
+        with open(models_path) as f:
             return ast.parse(f.read())
 
     def _find_class(self, tree, class_name):

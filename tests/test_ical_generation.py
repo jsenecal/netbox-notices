@@ -1,6 +1,7 @@
 # tests/test_ical_generation.py
 """Tests for iCal Generation Service."""
 
+from datetime import UTC
 from unittest.mock import Mock
 
 import pytest
@@ -46,15 +47,14 @@ class MockMaintenance:
         internal_ticket="TKT-123",
     ):
         from datetime import datetime
-        from datetime import timezone as dt_tz
 
         self.pk = pk
         self.name = name
         self.summary = summary
         self.status = status
         self.internal_ticket = internal_ticket
-        self.start = datetime(2026, 1, 22, 10, 0, 0, tzinfo=dt_tz.utc)
-        self.end = datetime(2026, 1, 22, 14, 0, 0, tzinfo=dt_tz.utc)
+        self.start = datetime(2026, 1, 22, 10, 0, 0, tzinfo=UTC)
+        self.end = datetime(2026, 1, 22, 14, 0, 0, tzinfo=UTC)
         self.provider = Mock()
         self.provider.name = "Test Provider"
         self.provider.slug = "test-provider"
@@ -65,12 +65,11 @@ class MockOutage:
 
     def __init__(self, pk=1, name="OUT-001"):
         from datetime import datetime
-        from datetime import timezone as dt_tz
 
         self.pk = pk
         self.name = name
         self.status = "REPORTED"
-        self.start = datetime(2026, 1, 22, 10, 0, 0, tzinfo=dt_tz.utc)
+        self.start = datetime(2026, 1, 22, 10, 0, 0, tzinfo=UTC)
         self.provider = Mock()
         self.provider.name = "Test Provider"
 

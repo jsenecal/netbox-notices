@@ -1,4 +1,4 @@
-from datetime import timezone as dt_timezone
+from datetime import UTC
 
 import markdown
 from django.conf import settings
@@ -10,8 +10,6 @@ __all__ = ("TemplateRenderer", "TemplateRenderError")
 
 class TemplateRenderError(Exception):
     """Raised when template rendering fails."""
-
-    pass
 
 
 class StringLoader(BaseLoader):
@@ -33,7 +31,7 @@ def ical_datetime(dt):
         return ""
     # Convert to UTC and format as YYYYMMDDTHHMMSSZ
     if timezone.is_aware(dt):
-        dt = dt.astimezone(dt_timezone.utc)
+        dt = dt.astimezone(UTC)
     return dt.strftime("%Y%m%dT%H%M%SZ")
 
 

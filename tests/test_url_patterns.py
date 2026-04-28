@@ -19,7 +19,7 @@ class TestURLPatterns(unittest.TestCase):
             "notices",
             "urls.py",
         )
-        with open(urls_path, "r") as f:
+        with open(urls_path) as f:
             return f.read()
 
     def test_maintenance_urls_defined(self):

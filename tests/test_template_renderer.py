@@ -1,6 +1,5 @@
 # tests/test_template_renderer.py
-from datetime import datetime
-from datetime import timezone as dt_timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -17,7 +16,7 @@ class TestIcalDatetime:
 
     def test_formats_utc_datetime(self):
         """Test formatting a UTC datetime."""
-        dt = datetime(2026, 1, 22, 14, 30, 0, tzinfo=dt_timezone.utc)
+        dt = datetime(2026, 1, 22, 14, 30, 0, tzinfo=UTC)
         result = ical_datetime(dt)
         assert result == "20260122T143000Z"
 
@@ -77,7 +76,7 @@ class TestTemplateRenderer:
     def test_render_with_filter(self):
         """Test rendering with custom filters."""
         renderer = TemplateRenderer()
-        dt = datetime(2026, 1, 22, 14, 30, 0, tzinfo=dt_timezone.utc)
+        dt = datetime(2026, 1, 22, 14, 30, 0, tzinfo=UTC)
         result = renderer.render("{{ dt|ical_datetime }}", {"dt": dt})
         assert result == "20260122T143000Z"
 

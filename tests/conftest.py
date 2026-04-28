@@ -85,7 +85,6 @@ def pytest_configure(config):
     Hook called after command line options have been parsed.
     Django is already set up at module import time above.
     """
-    pass
 
 
 # Common fixtures for all tests

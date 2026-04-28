@@ -1,7 +1,5 @@
-# pyproject.toml
-
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -12,26 +10,27 @@ notices = ["templates/**/*", "static/**/*"]
 
 [project]
 name = "netbox-notices"
-keywords = ['notices']
+keywords = ["notices"]
 version = "1.1.2"
 description = "Track maintenance and outage events across various NetBox models from vendors and internal sources."
 readme = "README.md"
 authors = [
     { name = "Jonathan Senecal", email = "contact@jonathansenecal.com" },
-    { name = "Jason Yates", email = "me@jasonyates.co.uk" }
+    { name = "Jason Yates", email = "me@jasonyates.co.uk" },
 ]
 license-files = ["LICENSE"]
 
 classifiers = [
-    'Development Status :: 4 - Beta',
-    'Intended Audience :: Developers',
-    'Natural Language :: English',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.12',
-    'Programming Language :: Python :: 3.13',
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 
-requires-python = ">=3.12.0"
+requires-python = ">=3.12"
 
 dependencies = [
     "icalendar>=5.0.0",
@@ -39,32 +38,28 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "black==26.3.1",
     "bumpver",
-    "isort==8.0.1",
-    "pip-tools",
     "pre-commit>=4.0.0",
     "pytest",
     "pytest-django>=4.5.0",
     "pytest-cov>=3.0.0",
-    "flake8>=7.0.0",
-    "pyproject-flake8>=7.0.0",
-    "twine==6.2.0",
-    "Sphinx==9.1.0",
-    "watchdog==6.0.0",
+    "ruff",
+]
+docs = [
+    "zensical",
 ]
 
 [project.urls]
 Homepage = "https://github.com/jsenecal/netbox-notices"
-Documentation = "https://jsenecal.github.io/netbox-notices"
+Documentation = "https://jsenecal.github.io/netbox-notices/"
 Source = "https://github.com/jsenecal/netbox-notices"
 Tracker = "https://github.com/jsenecal/netbox-notices/issues"
-
 
 [tool.bumpver]
 current_version = "1.1.2"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "chore: bump version {old_version} -> {new_version}"
+tag_pattern = "vMAJOR.MINOR.PATCH"
 commit = true
 tag = true
 push = true
@@ -77,36 +72,23 @@ push = true
 "notices/__init__.py" = [
     '__version__ = "{version}"',
 ]
-
-[tool.flake8]
-max-line-length = 120
-max-complexity = 18
-extend-ignore = ["E203", "E266", "W503"]
-per-file-ignores = ["__init__.py:F401"]
-exclude = [
-    ".git",
-    "__pycache__",
-    "setup.py",
-    "build",
-    "dist",
-    "docs",
-    "releases",
-    ".venv",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".vscode",
-    ".github",
+"CHANGELOG.md" = [
+    '## \[Unreleased\]',
+    '## \[{version}\] - {now:%Y-%m-%d}',
 ]
-# By default test codes will be linted.
-# tests
 
 [tool.ruff]
 line-length = 120
+target-version = "py312"
+extend-exclude = ["**/migrations/*.py", "parsers/"]
 
 [tool.ruff.lint]
-select = ["E", "W", "F", "I", "C90"]
-ignore = ["E203", "E266"]
+select = ["E", "W", "F", "I", "N", "UP", "S", "B", "A", "C4", "C90", "DJ", "PIE"]
+# TODO(future): B904 (raise from), S701 (jinja autoescape), S324 (md5),
+# S308 (mark_safe), A004 (Warning shadow) are pre-existing issues that
+# should be addressed in a follow-up code-quality pass; ignored here
+# so the toolkit normalization PR doesn't conflate concerns.
+ignore = ["E203", "E266", "E501", "N806", "S101", "DJ01", "DJ001", "B904", "S701", "S324", "S308", "A004"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 18
@@ -115,7 +97,13 @@ max-complexity = 18
 "__init__.py" = ["F401", "F403"]
 "parsers/*" = ["E711", "E722"]
 "notices/tables.py" = ["E501"]  # Template strings in ActionsColumn can exceed line length
-".devcontainer/load_plugin_demo.py" = ["E402", "E501", "F841", "C901"]  # Django setup requires late imports, demo script complexity OK
+".devcontainer/load_plugin_demo.py" = ["E402", "E501", "F841", "C901"]
+"migrations/*" = ["N806", "N999"]
+"tests/*" = ["S101", "S105", "S106", "E402", "F841", "B011"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -123,16 +111,3 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --cov=notices --cov-report=term-missing --reuse-db"
-
-[tool.tox]
-legacy_tox_ini = """
-[tox:tox]
-isolated_build = true
-envlist = py310, py311, py312, format, lint, build
-
-[gh-actions]
-python =
-    3.12: py312
-    3.11: py311
-    3.10: py310, format, lint, build
-"""

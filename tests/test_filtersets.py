@@ -19,7 +19,7 @@ class FilterSetTestBase(unittest.TestCase):
             "notices",
             "filtersets.py",
         )
-        with open(filtersets_path, "r") as f:
+        with open(filtersets_path) as f:
             return ast.parse(f.read())
 
     def _find_class(self, tree, class_name):
@@ -38,7 +38,7 @@ class FilterSetTestBase(unittest.TestCase):
                         for target in meta_item.targets:
                             if isinstance(target, ast.Name) and target.id == "fields":
                                 # Extract list or tuple values
-                                if isinstance(meta_item.value, (ast.List, ast.Tuple)):
+                                if isinstance(meta_item.value, ast.List | ast.Tuple):
                                     return [elt.value for elt in meta_item.value.elts if isinstance(elt, ast.Constant)]
         return []
 
