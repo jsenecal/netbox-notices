@@ -9,13 +9,36 @@ edit_uri = "edit/main/docs/"
 docs_dir = "."
 nav = [
   { "Home" = "index.md" },
-  { "Outgoing Notifications" = "outgoing-notifications.md" },
+  { "Getting Started" = [
+    { "Installation" = "installation.md" },
+    { "Configuration" = "configuration.md" },
+    { "Permissions" = "permissions.md" },
+  ] },
+  { "Events" = [
+    { "Maintenance" = "events/maintenance.md" },
+    { "Outages" = "events/outage.md" },
+    { "Impact Tracking" = "events/impact.md" },
+    { "Calendar and iCal Feed" = "events/calendar-and-ical.md" },
+    { "Dashboard" = "events/dashboard.md" },
+  ] },
+  { "Outgoing Notifications" = [
+    { "Overview" = "outgoing-notifications.md" },
+    { "Templates" = "messaging/templates.md" },
+    { "Recipient Discovery" = "messaging/recipient-discovery.md" },
+    { "Approval Workflow" = "messaging/workflow.md" },
+  ] },
+  { "REST API" = "api/rest-api.md" },
   { "Automated Parsers" = [
     { "Using a parser" = "parsers.md" },
-    { "AWS SNS & Lambda" = "parsers_sns_lambda.md" },
+    { "AWS SNS and Lambda" = "parsers_sns_lambda.md" },
   ] },
   { "Integrations" = [
     { "AWS SES" = "integrations_aws_ses.md" },
+  ] },
+  { "Developer Guide" = [
+    { "Architecture" = "developer/architecture.md" },
+    { "Site and Location Resolvers" = "developer/resolvers.md" },
+    { "Template Extensions" = "developer/template-extensions.md" },
   ] },
   { "Contributing" = "contributing.md" },
   { "Changelog" = "changelog.md" },
