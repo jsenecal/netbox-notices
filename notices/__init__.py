@@ -1,5 +1,7 @@
 """Top-level package for NetBox Notices Plugin."""
 
+import logging
+
 __author__ = """Jonathan Senecal"""
 __email__ = "contact@jonathansenecal.com"
 __version__ = "1.1.2"
@@ -8,6 +10,8 @@ __version__ = "1.1.2"
 from netbox.plugins import PluginConfig
 
 from .constants import DEFAULT_ALLOWED_CONTENT_TYPES
+
+logger = logging.getLogger(__name__)
 
 
 class NoticesConfig(PluginConfig):
@@ -37,6 +41,8 @@ class NoticesConfig(PluginConfig):
             signals,  # noqa: F401
             widgets,  # noqa: F401
         )
+
+        logger.info("%s plugin loaded", self.name)
 
 
 config = NoticesConfig
