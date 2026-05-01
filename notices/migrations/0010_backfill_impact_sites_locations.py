@@ -11,10 +11,9 @@ from django.db import migrations
 
 def _resolve_for_impact(impact, content_type):
     """
-    Inline copy of the resolver call. We can't import notices.resolvers from a
-    data migration (the historical Impact model doesn't proxy through the live
-    model class — but the resolvers operate on real target instances, which
-    still live in their own apps and are safe to fetch fresh).
+    Run the live resolver registry against a single Impact row. ``content_type``
+    must be a live ContentType (not the historical proxy) so ``.model_class()``
+    is available to fetch a fresh target instance from its own app.
     """
     from notices.resolvers import resolve_locations_for, resolve_sites_for
 
