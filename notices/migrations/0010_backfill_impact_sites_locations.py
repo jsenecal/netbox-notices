@@ -31,11 +31,14 @@ def _resolve_for_impact(impact, content_type):
 
 
 def backfill(apps, schema_editor):
-    Impact = apps.get_model("notices", "Impact")
-    ContentType = apps.get_model("contenttypes", "ContentType")
+    # Use the live ContentType class so .model_class() is available.
+    # The historical proxy from apps.get_model("contenttypes", "ContentType")
+    # does not expose model_class(), which the resolver path needs.
+    from django.contrib.contenttypes.models import ContentType
 
-    # Cache content_type instances so we don't refetch per row.
-    ct_cache: dict[int, "ContentType"] = {}
+    Impact = apps.get_model("notices", "Impact")
+
+    ct_cache: dict[int, ContentType] = {}
 
     for impact in Impact.objects.all().iterator():
         ct = ct_cache.get(impact.target_content_type_id)
