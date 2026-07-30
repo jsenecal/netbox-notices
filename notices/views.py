@@ -483,8 +483,9 @@ class EventNotificationListView(generic.ObjectListView):
 
 
 # Not registered on purpose: there is no `eventnotification_edit` URL, because a received
-# notification records what a provider sent. The class stays so the inbound parser's own flows
-# can instantiate it directly.
+# notification records what a provider sent. The class still serves `eventnotification_add`, which
+# `urls.py` declares by hand -- the add path is singular (`notification/add/`) while the list is
+# plural, so it cannot ride the list bucket that `@register_model_view(..., detail=False)` mounts.
 class EventNotificationEditView(generic.ObjectEditView):
     queryset = models.EventNotification.objects.all()
     form = forms.EventNotificationForm
