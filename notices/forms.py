@@ -5,16 +5,19 @@ from django import forms
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
-from netbox.forms import NetBoxModelFilterSetForm, NetBoxModelForm
-from utilities.forms import get_field_value
+from netbox.forms import NetBoxModelBulkEditForm, NetBoxModelFilterSetForm, NetBoxModelForm, NetBoxModelImportForm
+from tenancy.models import ContactRole
+from utilities.forms import add_blank_choice, get_field_value
 from utilities.forms.fields import (
+    CSVChoiceField,
+    CSVModelChoiceField,
     DynamicModelChoiceField,
     DynamicModelMultipleChoiceField,
     SlugField,
     TagFilterField,
 )
 from utilities.forms.rendering import FieldSet
-from utilities.forms.widgets import DateTimePicker, HTMXSelect
+from utilities.forms.widgets import BulkEditNullBooleanSelect, DateTimePicker, HTMXSelect
 
 from .choices import (
     BodyFormatChoices,
@@ -238,6 +241,95 @@ class MaintenanceFilterForm(NetBoxModelFilterSetForm):
         ),
     )
     tag = TagFilterField(model)
+
+
+class BaseEventBulkEditForm(NetBoxModelBulkEditForm):
+    """Bulk-editable fields shared by Maintenance and Outage; add shared fields here, not to the
+    subclasses. Every field mirrors the abstract `BaseEvent` model.
+
+    Excluded: `status` (reason differs per model -- see each subclass) and the scheduling fields
+    (`MaintenanceRescheduleView` owns Maintenance's; a bulk change across unrelated outages is
+    judged more likely a mistake). Included: `acknowledged` -- `MaintenanceAcknowledgeView` only
+    sets the flag and enforces nothing, unlike the views that write `status`.
+    """
+
+    provider = DynamicModelChoiceField(
+        queryset=Provider.objects.all(),
+        required=False,
+    )
+    acknowledged = forms.NullBooleanField(
+        required=False,
+        widget=BulkEditNullBooleanSelect(),
+        label="Acknowledged?",
+    )
+    original_timezone = forms.ChoiceField(
+        choices=add_blank_choice(TimeZoneChoices),
+        required=False,
+        label="Original Timezone",
+    )
+    internal_ticket = forms.CharField(
+        max_length=100,
+        required=False,
+        label="Internal Ticket #",
+    )
+    impact = forms.CharField(
+        required=False,
+        widget=forms.Textarea,
+    )
+    comments = forms.CharField(
+        required=False,
+        widget=forms.Textarea,
+    )
+
+    nullable_fields = ("internal_ticket", "original_timezone", "impact", "comments")
+
+
+class MaintenanceBulkEditForm(BaseEventBulkEditForm):
+    """Do not add `status`, `start` or `end`.
+
+    `status` belongs to the cancel / mark-in-progress / mark-completed views, which refuse to
+    move a maintenance out of a terminal state; `start` and `end` to `MaintenanceRescheduleView`.
+    A bulk `setattr` bypasses both.
+    """
+
+    model = Maintenance
+
+
+class MaintenanceImportForm(NetBoxModelImportForm):
+    """CSV/JSON/YAML import for Maintenance. Row validation stays on the model -- do not
+    duplicate `BaseEvent.clean()` here.
+    """
+
+    provider = CSVModelChoiceField(
+        queryset=Provider.objects.all(),
+        to_field_name="name",
+        help_text="Provider name",
+    )
+    status = CSVChoiceField(
+        choices=MaintenanceTypeChoices,
+        help_text="Maintenance status",
+    )
+    original_timezone = CSVChoiceField(
+        choices=TimeZoneChoices,
+        required=False,
+        help_text="Original timezone from provider notification",
+    )
+
+    class Meta:
+        model = Maintenance
+        fields = (
+            "name",
+            "summary",
+            "provider",
+            "status",
+            "start",
+            "end",
+            "original_timezone",
+            "internal_ticket",
+            "acknowledged",
+            "impact",
+            "comments",
+        )
 
 
 class ImpactForm(GenericForeignKeyFormMixin, NetBoxModelForm):
@@ -530,11 +622,85 @@ class OutageFilterForm(NetBoxModelFilterSetForm):
     tag = TagFilterField(model)
 
 
+class OutageBulkEditForm(BaseEventBulkEditForm):
+    """Do not add `status`: `Outage.clean()` requires an `end` when RESOLVED, so a bulk status
+    change would succeed on some selected rows and fail on others.
+    """
+
+    model = Outage
+
+
+class OutageImportForm(NetBoxModelImportForm):
+    """CSV/JSON/YAML import for Outage. Row validation stays on the model -- do not duplicate
+    `Outage.clean()` here.
+    """
+
+    provider = CSVModelChoiceField(
+        queryset=Provider.objects.all(),
+        to_field_name="name",
+        help_text="Provider name",
+    )
+    status = CSVChoiceField(
+        choices=OutageStatusChoices,
+        help_text="Outage status",
+    )
+    original_timezone = CSVChoiceField(
+        choices=TimeZoneChoices,
+        required=False,
+        help_text="Original timezone from provider notification",
+    )
+    # Both fields default to timezone.now on the model but are not blank=True, so keep
+    # required=False AND the clean_* methods -- each covers a CSV shape the other misses:
+    #   column absent -> field is required, whole file rejected
+    #   column empty  -> construct_instance writes None (a present-but-empty cell does not count
+    #                    as "omitted"), full_clean() then excludes the field, and the row dies at
+    #                    the database with an IntegrityError BulkImportView does not catch -- a
+    #                    500 that rolls back every valid row in the file too
+    # Maintenance needs neither: its start/end have no default, so requiring them is correct.
+    start = forms.DateTimeField(
+        required=False,
+        help_text="When the outage began (default: import time)",
+    )
+    reported_at = forms.DateTimeField(
+        required=False,
+        help_text="When the outage was reported (default: import time)",
+    )
+
+    def _default_if_empty(self, field_name):
+        """Return the submitted value, or the model field's own default when it is empty."""
+        value = self.cleaned_data.get(field_name)
+        if value:
+            return value
+        return self._meta.model._meta.get_field(field_name).get_default()
+
+    def clean_start(self):
+        return self._default_if_empty("start")
+
+    def clean_reported_at(self):
+        return self._default_if_empty("reported_at")
+
+    class Meta:
+        model = Outage
+        fields = (
+            "name",
+            "summary",
+            "provider",
+            "status",
+            "start",
+            "end",
+            "reported_at",
+            "estimated_time_to_repair",
+            "original_timezone",
+            "internal_ticket",
+            "acknowledged",
+            "impact",
+            "comments",
+        )
+
+
 # NotificationTemplate Forms
 class NotificationTemplateForm(NetBoxModelForm):
     """Form for creating/editing NotificationTemplate records."""
-
-    from tenancy.models import ContactRole
 
     slug = SlugField(
         slug_source="name",
@@ -632,6 +798,44 @@ class NotificationTemplateFilterForm(NetBoxModelFilterSetForm):
     tag = TagFilterField(model)
 
 
+class NotificationTemplateBulkEditForm(NetBoxModelBulkEditForm):
+    """Metadata only. The Jinja bodies, `headers_template`, `contact_priorities`, `extends` and
+    the unique `slug` are per-template and must stay off this form.
+    """
+
+    model = NotificationTemplate
+
+    description = forms.CharField(
+        required=False,
+        widget=forms.Textarea,
+    )
+    event_type = forms.ChoiceField(
+        choices=add_blank_choice(MessageEventTypeChoices),
+        required=False,
+    )
+    granularity = forms.ChoiceField(
+        choices=add_blank_choice(MessageGranularityChoices),
+        required=False,
+    )
+    body_format = forms.ChoiceField(
+        choices=add_blank_choice(BodyFormatChoices),
+        required=False,
+    )
+    include_ical = forms.NullBooleanField(
+        required=False,
+        widget=BulkEditNullBooleanSelect(),
+    )
+    weight = forms.IntegerField(
+        required=False,
+    )
+    contact_roles = DynamicModelMultipleChoiceField(
+        queryset=ContactRole.objects.all(),
+        required=False,
+    )
+
+    nullable_fields = ("description",)
+
+
 # PreparedNotification Forms
 class PreparedNotificationForm(NetBoxModelForm):
     """Form for creating/editing PreparedNotification records."""
@@ -649,7 +853,7 @@ class PreparedNotificationForm(NetBoxModelForm):
     )
 
     fieldsets = (
-        FieldSet("template", "status", name="Notification"),
+        FieldSet("template", name="Notification"),
         FieldSet("contacts", name="Recipients"),
         FieldSet("subject", "body_text", "body_html", name="Content"),
         FieldSet("tags", name="Tags"),
@@ -657,9 +861,11 @@ class PreparedNotificationForm(NetBoxModelForm):
 
     class Meta:
         model = PreparedNotification
+        # No `status`: a ModelForm writes the column directly, skipping the side effects only
+        # PreparedNotificationStateMachine applies (recipient snapshot, approved_by/at, sent_at,
+        # delivered_at). Status is API-only.
         fields = [
             "template",
-            "status",
             "contacts",
             "subject",
             "body_text",
@@ -723,24 +929,10 @@ class SentNotificationFilterForm(NetBoxModelFilterSetForm):
     tag = TagFilterField(PreparedNotification)  # Use parent model for tags
 
 
-class PreparedNotificationBulkEditForm(NetBoxModelForm):
-    """Form for bulk editing PreparedNotification records."""
-
-    pk = forms.ModelMultipleChoiceField(
-        queryset=PreparedNotification.objects.all(),
-        widget=forms.MultipleHiddenInput(),
-    )
-    status = forms.ChoiceField(
-        choices=[("", "---------")] + list(PreparedNotificationStatusChoices),
-        required=False,
-        label="Status",
-        help_text="Set status for all selected notifications (only valid transitions allowed)",
-    )
-
-    class Meta:
-        model = PreparedNotification
-        fields = ["pk", "status"]
-        nullable_fields = []
+# PreparedNotification has no bulk edit form on purpose. `status` was its only bulk-editable
+# field, and `BulkEditView._update_objects` assigns and saves directly -- skipping the state
+# machine's recipient snapshot, "no recipients" guard and timestamps. The view is unmounted;
+# status is changed through the REST API.
 
 
 # TemplateScope Forms

@@ -246,6 +246,7 @@ class PreparedNotification(NetBoxModel):
     )
     recipients = models.JSONField(
         default=list,
+        blank=True,
         help_text="Readonly snapshot of recipients at send time.",
     )
 
@@ -259,6 +260,7 @@ class PreparedNotification(NetBoxModel):
     )
     headers = models.JSONField(
         default=dict,
+        blank=True,
     )
     css = models.TextField(
         blank=True,
