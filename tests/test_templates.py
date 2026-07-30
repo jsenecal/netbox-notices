@@ -115,12 +115,15 @@ class TestTemplateStructure:
             # Check for event field (GenericForeignKey)
             assert "maintenance.event" in content or "maintenances" in content
 
-    def test_eventnotification_template_simple(self):
-        """Verify eventnotification.html is simple email body display"""
+    def test_eventnotification_template_sanitizes_body(self):
+        """Verify eventnotification.html renders the email body through sanitize_html.
+
+        The body is provider-supplied email, so `|safe` here would be an XSS hole.
+        `tests/test_eventnotification_views.py` asserts the same thing end to end.
+        """
         template_path = self.TEMPLATE_DIR / "eventnotification.html"
         content = template_path.read_text()
 
-        # Should just display email body with sanitization
         assert "email_body" in content
         assert "sanitize_html" in content  # Should use sanitize_html filter
         assert "notices_filters" in content  # Should load custom filters
@@ -150,7 +153,7 @@ class TestTemplateStructure:
     def test_templates_extend_correct_base(self):
         """Verify templates extend correct base templates"""
         # Main detail templates should extend generic/object.html
-        for template_name in ["maintenance.html", "outage.html"]:
+        for template_name in ["maintenance.html", "outage.html", "eventnotification.html"]:
             template_path = self.TEMPLATE_DIR / template_name
             content = template_path.read_text()
             assert "extends 'generic/object.html'" in content
