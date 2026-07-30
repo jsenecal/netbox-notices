@@ -667,10 +667,19 @@ class OutageImportForm(NetBoxModelImportForm):
     )
 
     def _default_if_empty(self, field_name):
-        """Return the submitted value, or the model field's own default when it is empty."""
+        """Submitted value; else the row's existing value on update; else the model's default.
+
+        The `self.instance.pk` branch is load-bearing. `BulkImportView` supports updating a row by
+        including its `id`, and it drops only the form fields *absent* from the record -- a
+        present-but-empty cell keeps its field, so without this branch a blank `start` cell on an
+        update row silently overwrites the stored timestamp with import time. That is the shape of
+        every export -> edit one column -> re-import round trip.
+        """
         value = self.cleaned_data.get(field_name)
         if value:
             return value
+        if self.instance.pk:
+            return getattr(self.instance, field_name)
         return self._meta.model._meta.get_field(field_name).get_default()
 
     def clean_start(self):
