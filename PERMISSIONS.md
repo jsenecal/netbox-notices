@@ -34,6 +34,25 @@ Django automatically creates four permissions for each model:
 - `notices.change_eventnotification` - Required to modify existing event notifications
 - `notices.delete_eventnotification` - Required to delete event notifications
 
+### SentNotification Model (proxy)
+
+`SentNotification` is a **proxy model** over `PreparedNotification`, filtered to the
+sent/delivered statuses. Its views require the *parent* model's permission:
+
+- `notices.view_preparednotification` - Required to view the sent notifications list and detail pages
+
+Django does create `view_sentnotification` / `delete_sentnotification` rows, but NetBox never
+checks them: `get_permission_for_model()` (`utilities/permissions.py`) resolves a proxy to
+`_meta.concrete_model` before building the permission string, and that function backs view
+dispatch, `RestrictedQuerySet.restrict()` and action-button visibility alike. Granting them has
+no effect, and sent notifications cannot be granted independently of prepared ones.
+
+The list is read-only -- no add, no edit, no bulk delete. That is not a permission problem:
+`obj.delete()` sends `pre_delete` with `sender=SentNotification`, while NetBox keys
+`PROTECTION_RULES` off the sender's own `app_label.model_name` (`core/signals.py`), so a rule
+registered against `notices.preparednotification` would be enforced everywhere except that one
+button. Delete those rows from the Prepared Notifications list, which uses the concrete model.
+
 ## Permission Enforcement
 
 ### UI Views (Web Interface)
@@ -44,6 +63,9 @@ All UI views inherit from NetBox's generic view classes which automatically enfo
 - **`ObjectListView`** (list pages) - Requires `view_<model>` permission
 - **`ObjectEditView`** (create/edit forms) - Requires `add_<model>` or `change_<model>` permission
 - **`ObjectDeleteView`** (delete confirmation) - Requires `delete_<model>` permission
+- **`BulkEditView`** ("Edit Selected") - Requires `change_<model>` permission
+- **`BulkDeleteView`** ("Delete Selected") - Requires `delete_<model>` permission
+- **`BulkImportView`** ("Import") - Requires `add_<model>` permission
 
 Examples from `notices/views.py`:
 ```python
@@ -184,6 +206,58 @@ The plugin menu in NetBox's navigation also enforces permissions. Menu items and
 - **Calendar** - Requires `notices.view_maintenance`
 
 This is configured in `notices/navigation.py` using the `permissions` parameter on `PluginMenuItem` and `PluginMenuButton` objects.
+
+## List View Action Buttons
+
+Each list view declares an explicit `actions` tuple (see `notices/views.py`). NetBox hides a
+button from any user lacking the permission the action requires:
+
+| List view | Add | Import | Export | Edit Selected | Delete Selected |
+| --- | --- | --- | --- | --- | --- |
+| Planned Maintenances | `add_maintenance` | `add_maintenance` | `view_maintenance` | `change_maintenance` | `delete_maintenance` |
+| Outages | `add_outage` | `add_outage` | `view_outage` | `change_outage` | `delete_outage` |
+| Received (EventNotifications) | `add_eventnotification` | -- | `view_eventnotification` | -- | -- |
+| Notification Templates | `add_notificationtemplate` | -- | `view_notificationtemplate` | `change_notificationtemplate` | `delete_notificationtemplate` |
+| Prepared Notifications | `add_preparednotification` | -- | `view_preparednotification` | -- | `delete_preparednotification` |
+| Sent Notifications | -- | -- | `view_preparednotification` | -- | -- |
+
+Actions marked `--` are deliberately not offered:
+
+- **Received notifications** -- no bulk edit or import: the record is a snapshot of what a
+  provider sent, the same reason there is no single-object edit view. No bulk delete either:
+  `BulkDeleteView` never calls `table.configure()`, so its confirmation table is unpaginated and
+  every selected row loads the full `email` BinaryField (the raw MIME message) plus two extra
+  GenericForeignKey queries. Rows stay deletable one at a time. See
+  `.scratch/bulk-delete-performance/`.
+- **Notification templates** and **prepared notifications** -- no import: Jinja bodies, JSON
+  headers and self-referencing FKs make them authored, not batch-imported.
+- **Sent notifications** -- a read-only delivery log, produced by sending a prepared
+  notification, never created directly. No bulk delete: see the proxy note above.
+- **Prepared notifications** -- no bulk edit: `status` was the only field worth it (see below),
+  and everything else is per-object rendered content.
+
+**Maintenance and Outage bulk edit exclude `status` and the scheduling fields.** Maintenance
+transitions belong to the cancel / mark-in-progress / mark-completed views, which refuse to move
+a maintenance out of a terminal state, and rescheduling to the reschedule view -- rules a bulk
+`setattr` bypasses. (`acknowledged` *is* bulk-editable: the acknowledge view writes that flag,
+not `status`, and enforces nothing.) Outage has no transition views, but `Outage.clean()`
+requires an `end` when RESOLVED, so a bulk status change would succeed on some selected rows and
+fail on others.
+
+**Prepared Notification `status` is not editable through the UI at all** -- neither bulk edit
+(the view is unmounted) nor the edit form (absent from `Meta.fields`). Change it with:
+
+```
+PATCH /api/plugins/notices/prepared-notifications/<id>/
+{"status": "ready"}
+```
+
+Only `PreparedNotificationStateMachine.transition_to()`, whose sole caller is the REST API
+serializer, applies a transition's side effects: the recipient snapshot, the "Cannot approve
+notification with no recipients" guard, and the `approved_at` / `sent_at` / `delivered_at`
+stamps. A ModelForm or `BulkEditView` writes the column directly and skips all of it, which is
+not cosmetic -- the outbound SES Lambda polls on `status=ready`, so a `ready` notification with
+no recipients snapshot fails to send and is left in `ready` on every poll.
 
 ## Summary
 

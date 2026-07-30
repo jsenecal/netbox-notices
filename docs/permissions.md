@@ -27,10 +27,51 @@ The plugin defines standard Django permissions for each model: `add`, `change`, 
 | `notices.delete_notificationtemplate` | Delete NotificationTemplates |
 | `notices.view_preparednotification` | View PreparedNotifications and the Sent Notifications proxy list |
 | `notices.add_preparednotification` | Create PreparedNotifications |
-| `notices.change_preparednotification` | Edit PreparedNotifications and transition status (e.g. mark as ready, sent, delivered, failed) |
-| `notices.delete_preparednotification` | Delete PreparedNotifications |
+| `notices.change_preparednotification` | Edit PreparedNotification content; transition status (REST API only -- see below) |
+| `notices.delete_preparednotification` | Delete PreparedNotifications, individually or with "Delete Selected" |
 
-The `SentNotification` proxy model uses the same `view_preparednotification` permission rather than introducing its own.
+The `SentNotification` proxy model has no permissions of its own: NetBox resolves proxy
+permissions to the concrete model, so viewing the sent list needs `view_preparednotification`.
+Granting `notices.view_sentnotification` or `notices.delete_sentnotification` has no effect.
+
+### Which lists offer bulk actions
+
+| List | Import | Edit Selected | Delete Selected |
+|------|--------|---------------|-----------------|
+| Planned Maintenances | yes | yes | yes |
+| Outages | yes | yes | yes |
+| Notification Templates | -- | yes | yes |
+| Prepared Notifications | -- | -- | yes |
+| Received Notifications | -- | -- | -- |
+| Sent Notifications | -- | -- | -- |
+
+Bulk *edit* is offered where every editable field is a plain value. Prepared notifications are
+excluded -- their only field worth bulk-editing is `status`, which belongs to a state machine
+(see below); the other two notification lists have nothing bulk-editable at all.
+
+Bulk *delete* is offered everywhere except the two archives:
+
+- **Sent notifications** are a proxy over `PreparedNotification`, and deleting through it would
+  bypass any `PROTECTION_RULES` registered against the concrete model. Delete those rows from the
+  Prepared Notifications list, which keeps the action for that reason. The proxy is read-only
+  throughout: no per-object delete route either, only a Changelog action.
+- **Received notifications** carry the raw MIME message in a binary field, which the bulk delete
+  confirmation page would load in full for every selected row. Still deletable one row at a time.
+
+### Status is not editable through the web UI
+
+Change a prepared notification's status with the REST API:
+
+```
+PATCH /api/plugins/notices/prepared-notifications/<id>/
+{"status": "ready"}
+```
+
+This requires `notices.change_preparednotification`, which otherwise covers a notification's
+*content* only. Status is absent from the edit form and the bulk edit view is unmounted, because
+a transition carries side effects -- snapshotting recipients, stamping `approved_at` / `sent_at`
+/ `delivered_at`, and refusing to approve a notification with no recipients -- that only the
+state machine applies. A form writing the column directly would skip all of them.
 
 ## Recommended role bindings
 
@@ -38,7 +79,7 @@ The `SentNotification` proxy model uses the same `view_preparednotification` per
 |------|------------------------|
 | **NOC operator** (handles live events) | `view_*`, `change_maintenance`, `change_outage`, `add_impact`, `change_impact` |
 | **NOC supervisor** (full event lifecycle) | All of the above plus `add_maintenance`, `add_outage`, `delete_*` for events |
-| **Notification approver** | `view_preparednotification`, `change_preparednotification` (so they can transition `draft` -> `ready`) |
+| **Notification approver** | `view_preparednotification`, `change_preparednotification` (to transition `draft` -> `ready`; this is a REST API call, not a web UI action -- see above) |
 | **External delivery service** (API token) | `view_preparednotification`, `change_preparednotification` (to mark `ready` -> `sent` -> `delivered/failed`); `add_eventnotification` if it also stores received emails |
 | **Provider parser** (API token) | `add_maintenance`, `add_outage`, `add_impact`, `add_eventnotification`, `change_maintenance`, `change_outage` |
 | **Read-only auditor** | All `view_*` permissions |
