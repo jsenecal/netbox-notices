@@ -474,11 +474,12 @@ class EventNotificationListView(generic.ObjectListView):
     table = tables.EventNotificationTable
     filterset = filtersets.EventNotificationFilterSet
     filterset_form = forms.EventNotificationFilterForm
-    # No BulkDelete without the queryset work in `.scratch/bulk-delete-performance/`:
-    # `BulkDeleteView` never calls `table.configure()`, so its confirmation table is unpaginated
-    # and every selected row loads the full `email` BinaryField (the raw MIME message, nothing
-    # defers it) plus two GenericForeignKey queries -- for a column it does not even display.
-    # Rows stay deletable one at a time via `eventnotification_delete`.
+    # No BulkDelete: `BulkDeleteView` never calls `table.configure()`, so its confirmation table
+    # is unpaginated and every selected row loads the full `email` BinaryField (the raw MIME
+    # message, nothing defers it) plus two GenericForeignKey queries -- for a column it does not
+    # even display. Restoring the action means deferring `email` and prefetching the event
+    # relation on this queryset first. Rows stay deletable one at a time via
+    # `eventnotification_delete`.
     actions = (AddObject, BulkExport)
 
 

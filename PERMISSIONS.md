@@ -227,8 +227,8 @@ Actions marked `--` are deliberately not offered:
   provider sent, the same reason there is no single-object edit view. No bulk delete either:
   `BulkDeleteView` never calls `table.configure()`, so its confirmation table is unpaginated and
   every selected row loads the full `email` BinaryField (the raw MIME message) plus two extra
-  GenericForeignKey queries. Rows stay deletable one at a time. See
-  `.scratch/bulk-delete-performance/`.
+  GenericForeignKey queries. Restoring the action means deferring `email` and prefetching the
+  event relation on the list view's queryset first. Rows stay deletable one at a time.
 - **Notification templates** and **prepared notifications** -- no import: Jinja bodies, JSON
   headers and self-referencing FKs make them authored, not batch-imported.
 - **Sent notifications** -- a read-only delivery log, produced by sending a prepared
