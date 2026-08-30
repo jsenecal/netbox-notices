@@ -18,6 +18,7 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 - `Impact.get_absolute_url()` raised `NoReverseMatch` for an impact whose event row was deleted out of band, 500ing any list rendering it. It now falls back to the parent type's list.
 - `PreparedNotification.headers` and `.recipients` had `JSONField` defaults that failed `full_clean()`. Migration `0011` adds `blank=True` -- validation only, no data change.
 - A `POST` to the prepared notifications API could create a record directly in `ready`, skipping the state machine's recipient snapshot and its "no recipients" guard. Since `ready` has no transition back to `draft`, the outbound poller then retried the record forever. A create must now use `draft`; later states are reached with a `PATCH`.
+- Sanitized email HTML kept its `class` attributes, which on a full NetBox page are live Tabler utilities -- a provider could float its email over the surrounding UI as a clickable overlay. `sanitize_html` now drops `class`.
 
 ### Added
 

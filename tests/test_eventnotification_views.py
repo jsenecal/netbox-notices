@@ -17,6 +17,12 @@ from notices.models import EventNotification
 # Distinctive markers so an assertion cannot pass on incidental page text.
 SAFE_BODY = "<p>Scheduled work on link ABC-123</p>"
 XSS_PAYLOAD = '<script>alert("notices-xss")</script>'
+# Tabler utility classes are live on this page, so a `class` the sanitizer lets through is a
+# layout primitive in the attacker's hands. `notices-overlay-probe` is a sentinel: it matches
+# nothing in the NetBox chrome, so finding it proves the attribute itself survived.
+OVERLAY_PAYLOAD = (
+    '<div class="position-fixed top-0 start-0 w-100 h-100 bg-body notices-overlay-probe">overlay content</div>'
+)
 
 
 @pytest.fixture
@@ -26,7 +32,7 @@ def notification(maintenance):
         event_content_type=ContentType.objects.get_for_model(maintenance),
         event_object_id=maintenance.pk,
         email=b"raw rfc822 message",
-        email_body=f"{SAFE_BODY}{XSS_PAYLOAD}",
+        email_body=f"{SAFE_BODY}{XSS_PAYLOAD}{OVERLAY_PAYLOAD}",
         subject="Planned maintenance ABC-123",
         email_from="noc@provider.example",
         email_received=timezone.now(),
@@ -85,6 +91,18 @@ def test_detail_page_sanitizes_the_email_body(detail_body):
     """
     assert 'alert("notices-xss")' not in detail_body
     assert SAFE_BODY in detail_body
+
+
+@pytest.mark.django_db
+def test_detail_page_strips_layout_classes_from_the_email_body(detail_body):
+    """A provider email shares the DOM with the NetBox chrome, so it must not be able to lay itself out.
+
+    NetBox's own allow-list keeps `class` on `div`, which on a page loading Tabler is enough to
+    float the email over the surrounding UI as a full-viewport overlay. The text still has to
+    render -- the element is kept, only its styling hook is dropped.
+    """
+    assert "notices-overlay-probe" not in detail_body
+    assert "overlay content" in detail_body
 
 
 @pytest.mark.django_db
