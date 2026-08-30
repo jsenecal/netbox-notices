@@ -6,6 +6,7 @@ from rest_framework import serializers
 from tenancy.api.serializers import ContactRoleSerializer, ContactSerializer
 from tenancy.models import Contact
 
+from notices.choices import PreparedNotificationStatusChoices
 from notices.models import NotificationTemplate, PreparedNotification, SentNotification, TemplateScope
 from notices.validators import PreparedNotificationStateMachine
 
@@ -221,9 +222,23 @@ class PreparedNotificationSerializer(NetBoxModelSerializer):
 
     def validate(self, data):
         """Validate status transitions using state machine."""
-        if self.instance and "status" in data:
+        if "status" in data:
             new_status = data["status"]
-            if new_status != self.instance.status:
+            if self.instance is None:
+                # A create has no prior state to transition from, so the state machine never
+                # runs: a notification stored straight into `ready` would carry no recipient
+                # snapshot and no approval stamps, and nothing downstream can repair it
+                # because `ready` has no transition back to `draft`. Every state past the
+                # first has to be reached with a follow-up PATCH.
+                if new_status != PreparedNotificationStatusChoices.DRAFT:
+                    raise serializers.ValidationError(
+                        {
+                            "status": f"A notification is always created as "
+                            f"'{PreparedNotificationStatusChoices.DRAFT}'. "
+                            f"Create it first, then PATCH it to '{new_status}'."
+                        }
+                    )
+            elif new_status != self.instance.status:
                 sm = PreparedNotificationStateMachine(self.instance)
                 if not sm.can_transition_to(new_status):
                     valid = sm.get_valid_transitions()

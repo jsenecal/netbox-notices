@@ -148,6 +148,33 @@ class TestPreparedNotificationAPI:
         assert response.data["subject"] == "New Notification Subject"
         assert response.data["status"] == "draft"
 
+    def test_create_cannot_start_outside_draft(self, api_client, notification_template, contact):
+        """A create must not place a notification straight into a non-draft state.
+
+        Regression test for the create path having no status guard: POSTing
+        `status: "ready"` skipped the state machine, so the record was stored
+        with no recipients snapshot and no approval stamps, and the outbound
+        poller retried it forever because `ready -> failed` is not a valid
+        transition.
+        """
+        data = {
+            "template_id": notification_template.pk,
+            "subject": "Bypass attempt",
+            "body_text": "New notification body",
+            "contact_ids": [contact.pk],
+            "status": PreparedNotificationStatusChoices.READY,
+        }
+        response = api_client.post("/api/plugins/notices/prepared-notifications/", data, format="json")
+        assert response.status_code == 400
+        assert "status" in response.data
+        assert not PreparedNotification.objects.filter(subject="Bypass attempt").exists()
+
+        # Asking for the default explicitly stays allowed.
+        data["status"] = PreparedNotificationStatusChoices.DRAFT
+        response = api_client.post("/api/plugins/notices/prepared-notifications/", data, format="json")
+        assert response.status_code == 201
+        assert response.data["status"] == PreparedNotificationStatusChoices.DRAFT
+
     def test_update_notification_status_to_ready(self, api_client, prepared_notification, superuser):
         """Test transitioning notification status from draft to ready."""
         response = api_client.patch(

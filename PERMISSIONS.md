@@ -259,6 +259,10 @@ stamps. A ModelForm or `BulkEditView` writes the column directly and skips all o
 not cosmetic -- the outbound SES Lambda polls on `status=ready`, so a `ready` notification with
 no recipients snapshot fails to send and is left in `ready` on every poll.
 
+A `POST` is held to the same rule and must leave `status` unset or set it to `draft`: a create has
+no prior state to transition from, so the serializer rejects any other value rather than store a
+record the state machine never touched.
+
 ## Summary
 
 **All views and API endpoints in netbox-notices properly enforce Django permissions.** There is no way to view, create, modify, or delete any data without the appropriate permission. This is enforced at multiple levels:

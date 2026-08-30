@@ -73,6 +73,10 @@ a transition carries side effects -- snapshotting recipients, stamping `approved
 / `delivered_at`, and refusing to approve a notification with no recipients -- that only the
 state machine applies. A form writing the column directly would skip all of them.
 
+The same rule covers creates: a `POST` has to leave `status` unset or set it to `draft`. There is
+no prior state to transition from, so the side effects never run, and `ready` has no transition
+back to `draft` to repair the record afterwards. Create the notification, then `PATCH` it.
+
 ## Recommended role bindings
 
 | Role | Suggested permissions |
