@@ -456,6 +456,28 @@ def test_outage_bulk_import_defaults_the_timestamps(header, row, case, admin_use
 
 
 @pytest.mark.django_db
+def test_outage_bulk_import_keeps_timestamps_on_update(admin_user_client, outage):
+    """A blank cell on an update row must leave the stored timestamp alone.
+
+    This is the export -> edit one column -> re-import round trip.
+    `_process_import_records` drops only the form fields whose column is *absent*, so a present
+    but empty `start` keeps its field and `clean_start` runs against a row already in the
+    database. Without the `self.instance.pk` branch the blank cell falls through to the model
+    default and stamps import time over the real outage start.
+    """
+    original_start = timezone.now() - timedelta(days=30)
+    Outage.objects.filter(pk=outage.pk).update(start=original_start)
+    csv_text = f"id,summary,start\n{outage.pk},Updated summary,\n"
+
+    response = _import_post(admin_user_client, "outage_bulk_import", csv_text)
+
+    assert response.status_code in (200, 302), response.content[:500]
+    outage.refresh_from_db()
+    assert outage.summary == "Updated summary", "the import did not apply, so the timestamp proves nothing"
+    assert outage.start == original_start
+
+
+@pytest.mark.django_db
 def test_outage_bulk_import_rejects_resolved_without_end(admin_user_client, provider):
     """`Outage.clean()` requires an `end` when RESOLVED, on import as anywhere else."""
     now = timezone.now()
