@@ -8,6 +8,8 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-31
+
 ### Fixed
 
 - Bulk edit, bulk delete, import and add buttons navigated to `.../None` ([#56](https://github.com/jsenecal/netbox-notices/issues/56)). Every list view -- and the two detail views that inherited actions with no URL -- now declares an explicit `actions` tuple; 18 buttons across 8 views.
