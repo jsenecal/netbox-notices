@@ -6,8 +6,8 @@ This page covers installing and enabling the `netbox-notices` plugin in an exist
 
 | Component | Required version |
 |-----------|------------------|
-| NetBox | 4.5.0 or later |
-| Python | 3.10, 3.11, 3.12, 3.13, or 3.14 |
+| NetBox | 4.5.0 or later (CI covers 4.5.x and 4.6.x) |
+| Python | 3.12, 3.13, or 3.14 |
 | PostgreSQL | Whatever your NetBox version requires |
 
 The plugin module name on disk is `notices` (note: not `netbox_notices`). The PyPI distribution name is `netbox-notices`.
