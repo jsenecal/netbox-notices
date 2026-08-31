@@ -36,11 +36,14 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 - `notices/urls.py` rewritten to NetBox 4.x's `@register_model_view` / `get_model_urls()` pattern. Every URL name and path is unchanged except the deliberately unmounted ones (see Fixed); `tests/test_url_patterns.py` pins the rest.
 - The sent notifications changelog now resolves against `SentNotification`, so it 404s for a draft's pk instead of rendering it -- matching the detail view.
-- CI: switched dependency installation to `uv` for faster caching; activates the workspace `.venv` via `GITHUB_PATH` so plain `python` works from `/tmp/netbox/netbox`. Codecov upload uses OIDC (tokenless), gated to the 3.13 + 4.5.8 leg.
+- CI: switched dependency installation to `uv` for faster caching; activates the workspace `.venv` via `GITHUB_PATH` so plain `python` works from `/tmp/netbox/netbox`. Codecov upload uses OIDC (tokenless), gated to a single matrix leg.
 - `publish.yml`: switched build/publish jobs to `uv build` (was `python -m build`); pinned `actions/upload-artifact` and `actions/download-artifact` to v4 (matches canonical).
 - `pyproject.toml`: dropped `black`, `isort`, `flake8`, `pyproject-flake8`, `pip-tools`, `twine`, `Sphinx`, `watchdog`, `tox` from dev deps -- all superseded by ruff or moved to per-step CI installs. Removed legacy `[tool.flake8]` and `[tool.tox]` sections. Added `[docs]` extra (`zensical`). Expanded ruff selectors with `N`, `UP`, `S`, `B`, `A`, `DJ`, `PIE`. Several pre-existing issues (`B904`, `S701`, `S324`, `S308`, `A004`, `DJ001`) are temporarily globally ignored -- see TODO comment in `[tool.ruff.lint]`. Test per-file ignores added for `E402`, `F841`, `B011`. Added `extend-exclude` for `migrations/` and `parsers/`. Added bumpver `CHANGELOG.md` file pattern so the Unreleased section is promoted on every version bump.
 - `mkdocs.yml` (root) and `.github/workflows/mkdocs.yml` removed -- replaced by `docs/zensical.toml` + `.github/workflows/docs.yml`.
 - README trimmed from 542 lines to ~95 -- substantive content now lives in the published docs site.
+- CI test matrix now covers the newest release of each supported NetBox series -- 4.5.10 and 4.6.9 -- against Python 3.12, 3.13 and 3.14. NetBox 4.5.8 is dropped; 4.6.x is covered for the first time. Renovate keeps each matrix entry pinned inside its own minor series, and the test job gained a 30-minute timeout.
+- `tests/test_ical_download.py` and `tests/test_ical_view.py` run in CI again. They were excluded when the workflow was first written against NetBox 4.4; the rewritten suites finish in about 18 seconds. The workflow's NetBox configuration now also defines `API_TOKEN_PEPPERS` -- NetBox refuses to save a v2 API token without one, and its own `configuration_testing.py` supplies it, so the v2 token test passed locally but failed in CI.
+- Documented requirements corrected: `docs/installation.md` listed Python 3.10 and 3.11, which NetBox 4.5+ has never supported (the package already requires 3.12+). README's install section said NetBox 4.5.2+ where the rest of the page says 4.5.0+.
 
 ## 1.0.0 (2026-02-09)
 
