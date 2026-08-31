@@ -4,7 +4,7 @@ import logging
 
 __author__ = """Jonathan Senecal"""
 __email__ = "contact@jonathansenecal.com"
-__version__ = "1.1.2"
+__version__ = "1.2.0"
 
 
 from netbox.plugins import PluginConfig
