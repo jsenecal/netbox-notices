@@ -8,8 +8,24 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ## [Unreleased]
 
+### Fixed
+
+- Bulk edit, bulk delete, import and add buttons navigated to `.../None` ([#56](https://github.com/jsenecal/netbox-notices/issues/56)). Every list view -- and the two detail views that inherited actions with no URL -- now declares an explicit `actions` tuple; 18 buttons across 8 views.
+- The Sent Notifications list 500'd as soon as it had one row: its table kept `ActionsColumn`'s default edit/delete set, which the proxy has no URLs for.
+- Prepared Notification `status` was settable from the UI, skipping the transition's side effects. It is now REST-API-only (`PATCH /api/plugins/notices/prepared-notifications/<id>/`) and the bulk edit view is unmounted.
+- `/plugins/notices/impact/<pk>/changelog/` 500'd: `Impact` has no list or detail view, so the breadcrumb could not resolve. Its changelog and journal tabs are unmounted -- impact changes still appear in the parent event's changelog.
+- The received-notification detail page and its tabs rendered as a bare unstyled fragment; `eventnotification.html` now extends `generic/object.html`.
+- `Impact.get_absolute_url()` raised `NoReverseMatch` for an impact whose event row was deleted out of band, 500ing any list rendering it. It now falls back to the parent type's list.
+- `PreparedNotification.headers` and `.recipients` had `JSONField` defaults that failed `full_clean()`. Migration `0011` adds `blank=True` -- validation only, no data change.
+- A `POST` to the prepared notifications API could create a record directly in `ready`, skipping the state machine's recipient snapshot and its "no recipients" guard. Since `ready` has no transition back to `draft`, the outbound poller then retried the record forever. A create must now use `draft`; later states are reached with a `PATCH`.
+- Sanitized email HTML kept its `class` attributes, which on a full NetBox page are live Tabler utilities -- a provider could float its email over the surrounding UI as a clickable overlay. `sanitize_html` now drops `class`.
+
 ### Added
 
+- Bulk edit for Maintenance, Outage and Notification Templates. `status` and the scheduling fields are excluded -- the transition and reschedule views own them, and `Outage.clean()` requires an `end` when RESOLVED.
+- Bulk delete for Maintenance, Outage and Notification Templates. Received notifications (raw MIME in a `BinaryField`) and sent notifications (a proxy, so deletes would bypass `PROTECTION_RULES`) are excluded; both stay deletable elsewhere -- see `PERMISSIONS.md`.
+- Journal tab on every detail page, plus a Changelog tab for received notifications, from NetBox's automatic feature-view registration. `Impact` is excluded -- it has no detail page (see Fixed).
+- Bulk import (CSV/JSON/YAML) for Maintenance and Outage. Impacts are a child relation and are not imported.
 - Canonical normalize-toolkit CI/CD shape: 5 GHA workflows (`ci.yml`, `publish.yml`, `docs.yml`, `release-drafter.yml`, `pr-title.yml`) + `.github/release-drafter.yml`. Replaces the previous `mkdocs.yml` workflow.
 - Local `commit-msg` pre-commit stage that rejects AI/Claude attribution lines.
 - `.git-template/hooks/commit-msg` -- canonical hook tracked in-tree, referenced by pre-commit.
@@ -18,6 +34,8 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ### Changed
 
+- `notices/urls.py` rewritten to NetBox 4.x's `@register_model_view` / `get_model_urls()` pattern. Every URL name and path is unchanged except the deliberately unmounted ones (see Fixed); `tests/test_url_patterns.py` pins the rest.
+- The sent notifications changelog now resolves against `SentNotification`, so it 404s for a draft's pk instead of rendering it -- matching the detail view.
 - CI: switched dependency installation to `uv` for faster caching; activates the workspace `.venv` via `GITHUB_PATH` so plain `python` works from `/tmp/netbox/netbox`. Codecov upload uses OIDC (tokenless), gated to the 3.13 + 4.5.8 leg.
 - `publish.yml`: switched build/publish jobs to `uv build` (was `python -m build`); pinned `actions/upload-artifact` and `actions/download-artifact` to v4 (matches canonical).
 - `pyproject.toml`: dropped `black`, `isort`, `flake8`, `pyproject-flake8`, `pip-tools`, `twine`, `Sphinx`, `watchdog`, `tox` from dev deps -- all superseded by ruff or moved to per-step CI installs. Removed legacy `[tool.flake8]` and `[tool.tox]` sections. Added `[docs]` extra (`zensical`). Expanded ruff selectors with `N`, `UP`, `S`, `B`, `A`, `DJ`, `PIE`. Several pre-existing issues (`B904`, `S701`, `S324`, `S308`, `A004`, `DJ001`) are temporarily globally ignored -- see TODO comment in `[tool.ruff.lint]`. Test per-file ignores added for `E402`, `F841`, `B011`. Added `extend-exclude` for `migrations/` and `parsers/`. Added bumpver `CHANGELOG.md` file pattern so the Unreleased section is promoted on every version bump.

@@ -197,89 +197,6 @@ class TestOutageTable(BaseTableTest):
             self.assertIn(field, field_names, f"Missing field in Meta.fields: {field}")
 
 
-class TestImpactTable(BaseTableTest):
-    """Test the ImpactTable class structure"""
-
-    def test_impact_table_exists(self):
-        """Test that ImpactTable is defined"""
-        tree = self._get_tables_file_ast()
-        class_node = self._find_class(tree, "ImpactTable")
-        self.assertIsNotNone(class_node, "ImpactTable class not found")
-
-    def test_impact_table_has_column_definitions(self):
-        """Test that table defines expected column attributes including GenericForeignKey columns"""
-        tree = self._get_tables_file_ast()
-        class_node = self._find_class(tree, "ImpactTable")
-
-        if class_node is None:
-            self.fail("ImpactTable class not found")
-
-        # Check for column definitions in class body
-        attributes = self._get_class_attributes(class_node)
-
-        expected_columns = [
-            "event",  # GenericForeignKey to Maintenance/Outage
-            "event_type",  # ContentType display
-            "target",  # GenericForeignKey to impacted object
-            "target_type",  # ContentType display
-            "impact",  # Impact level
-        ]
-
-        for col in expected_columns:
-            self.assertIn(col, attributes, f"Missing column definition: {col}")
-
-    def test_impact_table_has_meta_class(self):
-        """Test that ImpactTable has a Meta class"""
-        tree = self._get_tables_file_ast()
-        class_node = self._find_class(tree, "ImpactTable")
-        meta_node = self._find_meta_class(class_node)
-        self.assertIsNotNone(meta_node, "ImpactTable.Meta class not found")
-
-    def test_impact_table_meta_fields(self):
-        """Test that Meta.fields includes all expected fields"""
-        tree = self._get_tables_file_ast()
-        class_node = self._find_class(tree, "ImpactTable")
-        meta_node = self._find_meta_class(class_node)
-
-        field_names = self._get_meta_field_names(meta_node)
-
-        expected_fields = [
-            "pk",
-            "id",
-            "event",
-            "event_type",
-            "target",
-            "target_type",
-            "impact",
-            "created",
-            "last_updated",
-            "actions",
-        ]
-
-        for field in expected_fields:
-            self.assertIn(field, field_names, f"Missing field in Meta.fields: {field}")
-
-    def test_impact_table_default_columns(self):
-        """Test that ImpactTable has reasonable default columns"""
-        tree = self._get_tables_file_ast()
-        class_node = self._find_class(tree, "ImpactTable")
-        meta_node = self._find_meta_class(class_node)
-
-        default_columns = self._get_meta_default_columns(meta_node)
-
-        # Should include the key columns for GenericForeignKey display
-        expected_defaults = [
-            "event",
-            "event_type",
-            "target",
-            "target_type",
-            "impact",
-        ]
-
-        for col in expected_defaults:
-            self.assertIn(col, default_columns, f"Missing default column: {col}")
-
-
 class TestEventNotificationTable(BaseTableTest):
     """Test the EventNotificationTable class structure"""
 
@@ -378,7 +295,6 @@ class TestTableImports(BaseTableTest):
             "columns": False,
             "Maintenance": False,
             "Outage": False,
-            "Impact": False,
             "EventNotification": False,
         }
 
@@ -403,8 +319,6 @@ class TestTableImports(BaseTableTest):
                             imports_found["Maintenance"] = True
                         if alias.name == "Outage":
                             imports_found["Outage"] = True
-                        if alias.name == "Impact":
-                            imports_found["Impact"] = True
                         if alias.name == "EventNotification":
                             imports_found["EventNotification"] = True
 

@@ -1,1 +1,56 @@
-{% load notices_filters %}{{ object.email_body|sanitize_html }}
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load notices_filters %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col col-md-6">
+        <div class="card">
+            <h5 class="card-header">Notification Details</h5>
+            <div class="card-body">
+                <table class="table table-hover attr-table">
+                    <tr>
+                        <th scope="row">Subject</th>
+                        <td>{{ object.subject }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">From</th>
+                        <td>{{ object.email_from }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Received</th>
+                        <td>{{ object.email_received }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Event</th>
+                        <td>
+                            {% if object.event %}
+                                <span class="badge bg-secondary">{{ object.event_content_type.name|title }}</span>
+                                {{ object.event|linkify }}
+                            {% else %}
+                                {{ ''|placeholder }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        {% include 'inc/panels/custom_fields.html' %}
+    </div>
+    <div class="col col-md-6">
+        {% include 'inc/panels/tags.html' %}
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col col-md-12">
+        <div class="card">
+            <h5 class="card-header">Email Body</h5>
+            <div class="card-body">
+                <div id="email-body" class="border p-3 bg-body-tertiary" style="white-space: pre-wrap;">{{ object.email_body|sanitize_html }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

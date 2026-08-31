@@ -5,6 +5,7 @@ from datetime import timedelta
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 from django.utils import timezone
 
 from notices.models import (
@@ -303,6 +304,56 @@ class TestImpactMethods:
         )
         url = impact.get_absolute_url()
         assert "maintenance" in url
+
+    @staticmethod
+    def _orphaned_impact(event_content_type, circuit):
+        """Store an impact whose event does not exist, and return it reloaded.
+
+        A generic FK has no database-level cascade, so an event deleted out of band orphans its
+        impacts. Deleting the event here would not reproduce that -- Django's collector follows
+        the GenericRelation -- so point the FK at a pk that was never used.
+        """
+        impact = Impact.objects.create(
+            event_content_type=event_content_type,
+            event_object_id=999999,
+            target_content_type=ContentType.objects.get_for_model(circuit),
+            target_object_id=circuit.pk,
+        )
+        return Impact.objects.get(pk=impact.pk)
+
+    def test_get_absolute_url_with_orphaned_maintenance(self, circuit):
+        """Should fall back to the maintenance list: Impact has no detail route to reverse."""
+        ct = ContentType.objects.get(app_label="notices", model="maintenance")
+        impact = self._orphaned_impact(ct, circuit)
+
+        assert impact.get_absolute_url() == reverse("plugins:notices:maintenance_list")
+
+    def test_get_absolute_url_with_orphaned_outage(self, circuit):
+        """Should fall back to the outage list when the outage row is gone."""
+        ct = ContentType.objects.get(app_label="notices", model="outage")
+        impact = self._orphaned_impact(ct, circuit)
+
+        assert impact.get_absolute_url() == reverse("plugins:notices:outage_list")
+
+    def test_get_absolute_url_with_unexpected_event_type(self, circuit):
+        """Should fall back to the dashboard for an event type with no list view.
+
+        `limit_choices_to` narrows form and serializer querysets only -- it is not a database
+        constraint -- so a row written out of band can carry any content type at all.
+        """
+        impact = self._orphaned_impact(ContentType.objects.get_for_model(circuit), circuit)
+
+        assert impact.get_absolute_url() == reverse("plugins:notices:dashboard")
+
+    def test_get_absolute_url_on_an_unsaved_impact(self):
+        """Should fall back to the dashboard rather than raising, with no content type set.
+
+        The column is non-nullable, so only an unsaved `Impact()` gets here -- and dereferencing
+        the descriptor raises `RelatedObjectDoesNotExist`, an `AttributeError` subclass that
+        Django's template engine swallows while resolving `{{ impact.get_absolute_url }}`,
+        rendering an empty href. Hence the guard on the id. No database access on purpose.
+        """
+        assert Impact().get_absolute_url() == reverse("plugins:notices:dashboard")
 
     def test_get_impact_color(self, circuit, provider):
         """Should return color for impact level."""

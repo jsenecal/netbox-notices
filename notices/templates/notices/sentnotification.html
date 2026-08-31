@@ -1,0 +1,3 @@
+{% extends 'notices/preparednotification.html' %}
+{# SentNotification is a proxy, so NetBox resolves its template by model name. Without this file,
+   the changelog and journal tabs fall back to generic/object.html and lose the detail chrome. #}

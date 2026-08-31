@@ -3,7 +3,6 @@ from netbox.tables import NetBoxTable, columns
 
 from .models import (
     EventNotification,
-    Impact,
     Maintenance,
     NotificationTemplate,
     Outage,
@@ -109,97 +108,6 @@ class OutageTable(NetBoxTable):
             "start",
             "end",
             "estimated_time_to_repair",
-        )
-
-
-class ImpactTable(NetBoxTable):
-    """
-    Table for displaying Impact records with GenericForeignKey support.
-    Shows both the event (Maintenance/Outage) and target (Circuit/Device/etc).
-    """
-
-    # Event column - display the event name and link to it
-    event = tables.TemplateColumn(
-        template_code="""
-        {% if record.event %}
-            <a href="{{ record.event.get_absolute_url }}">{{ record.event }}</a>
-            <span class="badge bg-{{ record.event.get_status_color }}">
-                {{ record.event.status }}
-            </span>
-        {% else %}
-            <span class="text-muted">Unknown</span>
-        {% endif %}
-        """,
-        verbose_name="Event",
-        orderable=False,
-    )
-
-    # Event type column - show if it's Maintenance or Outage
-    event_type = tables.TemplateColumn(
-        template_code="""
-        {% if record.event_content_type %}
-            {{ record.event_content_type.model|title }}
-        {% else %}
-            <span class="text-muted">Unknown</span>
-        {% endif %}
-        """,
-        verbose_name="Event Type",
-        orderable=False,
-    )
-
-    # Target column - display the affected object
-    target = tables.TemplateColumn(
-        template_code="""
-        {% if record.target %}
-            {% if record.target.get_absolute_url %}
-                <a href="{{ record.target.get_absolute_url }}">{{ record.target }}</a>
-            {% else %}
-                {{ record.target }}
-            {% endif %}
-        {% else %}
-            <span class="text-muted">Unknown</span>
-        {% endif %}
-        """,
-        verbose_name="Impacted Object",
-        orderable=False,
-    )
-
-    # Target type column - show the object type
-    target_type = tables.TemplateColumn(
-        template_code="""
-        {% if record.target_content_type %}
-            {{ record.target_content_type.model|title }}
-        {% else %}
-            <span class="text-muted">Unknown</span>
-        {% endif %}
-        """,
-        verbose_name="Object Type",
-        orderable=False,
-    )
-
-    # Impact level
-    impact = columns.ChoiceFieldColumn()
-
-    class Meta(NetBoxTable.Meta):
-        model = Impact
-        fields = (
-            "pk",
-            "id",
-            "event",
-            "event_type",
-            "target",
-            "target_type",
-            "impact",
-            "created",
-            "last_updated",
-            "actions",
-        )
-        default_columns = (
-            "event",
-            "event_type",
-            "target",
-            "target_type",
-            "impact",
         )
 
 
@@ -355,7 +263,11 @@ class SentNotificationTable(NetBoxTable):
     approved_by = tables.Column(linkify=True)
     sent_at = columns.DateTimeColumn()
     delivered_at = columns.DateTimeColumn()
-    actions = columns.ActionsColumn()
+    # Keep this explicit. ActionsColumn defaults to edit/delete/changelog and reverses eagerly,
+    # but the proxy has no per-object edit or delete URL -- so the default raises NoReverseMatch
+    # and 500s the list as soon as it has one row (an empty list renders fine, which is how that
+    # survived unnoticed).
+    actions = columns.ActionsColumn(actions=("changelog",))
 
     class Meta(NetBoxTable.Meta):
         model = SentNotification

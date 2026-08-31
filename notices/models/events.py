@@ -351,7 +351,17 @@ class Impact(NetBoxModel):
         # Link to the event detail page
         if self.event and hasattr(self.event, "get_absolute_url"):
             return self.event.get_absolute_url()
-        return reverse("plugins:notices:impact", args=[self.pk])
+        # This method must never raise: NetBox calls it from table linkify columns, ObjectAction
+        # buttons and serializers, so one bad row 500s a whole list page.
+        #
+        # Keep the `event_content_type_id` guard -- an unsaved Impact() raises
+        # RelatedObjectDoesNotExist there. Past it, the impact is orphaned: the event row is gone
+        # (a generic FK has no database-level cascade) but its content type survives. Impact has
+        # no detail route, so fall back to the parent type's list, or to the dashboard for a
+        # content type written out of band (limit_choices_to only narrows form querysets).
+        if self.event_content_type_id and self.event_content_type.model in ("maintenance", "outage"):
+            return reverse(f"plugins:notices:{self.event_content_type.model}_list")
+        return reverse("plugins:notices:dashboard")
 
     def get_impact_color(self):
         return ImpactTypeChoices.colors.get(self.impact)

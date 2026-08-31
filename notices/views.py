@@ -16,8 +16,17 @@ from django.utils import timezone
 from django.views.generic import View
 from netbox.api.authentication import TokenAuthentication
 from netbox.config import get_config
+from netbox.object_actions import (
+    AddObject,
+    BulkDelete,
+    BulkEdit,
+    BulkExport,
+    BulkImport,
+    DeleteObject,
+)
 from netbox.views import generic
 from rest_framework import exceptions
+from utilities.views import register_model_view
 
 from . import filtersets, forms, models, tables
 from .ical_utils import calculate_etag, generate_maintenance_ical
@@ -109,6 +118,7 @@ class DashboardView(PermissionRequiredMixin, View):
 
 
 # Maintenance Views
+@register_model_view(models.Maintenance)
 class MaintenanceView(generic.ObjectView):
     queryset = models.Maintenance.objects.prefetch_related("impacts").all()
 
@@ -135,22 +145,54 @@ class MaintenanceView(generic.ObjectView):
         }
 
 
+@register_model_view(models.Maintenance, "list", path="", detail=False)
 class MaintenanceListView(generic.ObjectListView):
     queryset = models.Maintenance.objects.annotate(impact_count=Count("impacts"))
     table = tables.MaintenanceTable
     filterset = filtersets.MaintenanceFilterSet
     filterset_form = forms.MaintenanceFilterForm
+    # Explicit tuple: NetBox's default includes actions with no URL here, which render "None".
+    actions = (AddObject, BulkImport, BulkExport, BulkEdit, BulkDelete)
 
 
+@register_model_view(models.Maintenance, "add", detail=False)
+@register_model_view(models.Maintenance, "edit")
 class MaintenanceEditView(generic.ObjectEditView):
     queryset = models.Maintenance.objects.all()
     form = forms.MaintenanceForm
 
 
+@register_model_view(models.Maintenance, "delete")
 class MaintenanceDeleteView(generic.ObjectDeleteView):
     queryset = models.Maintenance.objects.all()
 
 
+@register_model_view(models.Maintenance, "bulk_edit", path="edit", detail=False)
+class MaintenanceBulkEditView(generic.BulkEditView):
+    # Keep the annotation, as on MaintenanceListView: `impact_count` is a non-model column in the
+    # table's default_columns, so without it the preview claims every selected row impacts nothing.
+    queryset = models.Maintenance.objects.annotate(impact_count=Count("impacts"))
+    filterset = filtersets.MaintenanceFilterSet
+    table = tables.MaintenanceTable
+    form = forms.MaintenanceBulkEditForm
+
+
+@register_model_view(models.Maintenance, "bulk_delete", path="delete", detail=False)
+class MaintenanceBulkDeleteView(generic.BulkDeleteView):
+    # Keep the annotation -- it matters most here: "Impacted Objects" is what an operator reads to
+    # judge whether a deletion is safe, and unannotated it renders an em dash on every row.
+    queryset = models.Maintenance.objects.annotate(impact_count=Count("impacts"))
+    filterset = filtersets.MaintenanceFilterSet
+    table = tables.MaintenanceTable
+
+
+@register_model_view(models.Maintenance, "bulk_import", path="import", detail=False)
+class MaintenanceBulkImportView(generic.BulkImportView):
+    queryset = models.Maintenance.objects.all()
+    model_form = forms.MaintenanceImportForm
+
+
+@register_model_view(models.Maintenance, "reschedule")
 class MaintenanceRescheduleView(generic.ObjectEditView):
     """
     Clone a maintenance and mark original as rescheduled.
@@ -217,6 +259,7 @@ class MaintenanceRescheduleView(generic.ObjectEditView):
         return context
 
 
+@register_model_view(models.Maintenance, "acknowledge")
 class MaintenanceAcknowledgeView(PermissionRequiredMixin, View):
     """Quick action to acknowledge a maintenance."""
 
@@ -238,6 +281,7 @@ class MaintenanceAcknowledgeView(PermissionRequiredMixin, View):
         return redirect(return_url)
 
 
+@register_model_view(models.Maintenance, "cancel")
 class MaintenanceCancelView(PermissionRequiredMixin, View):
     """Quick action to cancel a maintenance."""
 
@@ -280,6 +324,7 @@ class MaintenanceCancelView(PermissionRequiredMixin, View):
         return redirect(return_url)
 
 
+@register_model_view(models.Maintenance, "mark_in_progress", path="mark-in-progress")
 class MaintenanceMarkInProgressView(PermissionRequiredMixin, View):
     """Quick action to mark a maintenance as in-progress."""
 
@@ -309,6 +354,7 @@ class MaintenanceMarkInProgressView(PermissionRequiredMixin, View):
         return redirect(return_url)
 
 
+@register_model_view(models.Maintenance, "mark_completed", path="mark-completed")
 class MaintenanceMarkCompletedView(PermissionRequiredMixin, View):
     """Quick action to mark a maintenance as completed."""
 
@@ -340,13 +386,16 @@ class MaintenanceMarkCompletedView(PermissionRequiredMixin, View):
 
 
 # Outage Views
+@register_model_view(models.Outage, "list", path="", detail=False)
 class OutageListView(generic.ObjectListView):
     queryset = models.Outage.objects.all()
     table = tables.OutageTable
     filterset = filtersets.OutageFilterSet
     filterset_form = forms.OutageFilterForm
+    actions = (AddObject, BulkImport, BulkExport, BulkEdit, BulkDelete)
 
 
+@register_model_view(models.Outage)
 class OutageView(generic.ObjectView):
     queryset = models.Outage.objects.all()
 
@@ -372,47 +421,92 @@ class OutageView(generic.ObjectView):
         }
 
 
+@register_model_view(models.Outage, "add", detail=False)
+@register_model_view(models.Outage, "edit")
 class OutageEditView(generic.ObjectEditView):
     queryset = models.Outage.objects.all()
     form = forms.OutageForm
 
 
+@register_model_view(models.Outage, "delete")
 class OutageDeleteView(generic.ObjectDeleteView):
     queryset = models.Outage.objects.all()
 
 
+@register_model_view(models.Outage, "bulk_edit", path="edit", detail=False)
+class OutageBulkEditView(generic.BulkEditView):
+    queryset = models.Outage.objects.all()
+    filterset = filtersets.OutageFilterSet
+    table = tables.OutageTable
+    form = forms.OutageBulkEditForm
+
+
+@register_model_view(models.Outage, "bulk_delete", path="delete", detail=False)
+class OutageBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.Outage.objects.all()
+    filterset = filtersets.OutageFilterSet
+    table = tables.OutageTable
+
+
+@register_model_view(models.Outage, "bulk_import", path="import", detail=False)
+class OutageBulkImportView(generic.BulkImportView):
+    queryset = models.Outage.objects.all()
+    model_form = forms.OutageImportForm
+
+
 # Impact views
+@register_model_view(models.Impact, "add", detail=False)
+@register_model_view(models.Impact, "edit")
 class ImpactEditView(generic.ObjectEditView):
     queryset = models.Impact.objects.all()
     form = forms.ImpactForm
 
 
+@register_model_view(models.Impact, "delete")
 class ImpactDeleteView(generic.ObjectDeleteView):
     queryset = models.Impact.objects.all()
 
 
 # Event Notification views
+@register_model_view(models.EventNotification, "list", path="", detail=False)
 class EventNotificationListView(generic.ObjectListView):
     queryset = models.EventNotification.objects.all()
     table = tables.EventNotificationTable
     filterset = filtersets.EventNotificationFilterSet
     filterset_form = forms.EventNotificationFilterForm
+    # No BulkDelete: `BulkDeleteView` never calls `table.configure()`, so its confirmation table
+    # is unpaginated and every selected row loads the full `email` BinaryField (the raw MIME
+    # message, nothing defers it) plus two GenericForeignKey queries -- for a column it does not
+    # even display. Restoring the action means deferring `email` and prefetching the event
+    # relation on this queryset first. Rows stay deletable one at a time via
+    # `eventnotification_delete`.
+    actions = (AddObject, BulkExport)
 
 
+# Not registered on purpose: there is no `eventnotification_edit` URL, because a received
+# notification records what a provider sent. The class still serves `eventnotification_add`, which
+# `urls.py` declares by hand -- the add path is singular (`notification/add/`) while the list is
+# plural, so it cannot ride the list bucket that `@register_model_view(..., detail=False)` mounts.
 class EventNotificationEditView(generic.ObjectEditView):
     queryset = models.EventNotification.objects.all()
     form = forms.EventNotificationForm
 
 
+@register_model_view(models.EventNotification, "delete")
 class EventNotificationDeleteView(generic.ObjectDeleteView):
     queryset = models.EventNotification.objects.all()
 
 
+@register_model_view(models.EventNotification)
 class EventNotificationView(generic.ObjectView):
     queryset = models.EventNotification.objects.all()
+    # Delete only. Editing would rewrite what a provider actually sent (hence no edit URL), and
+    # cloning a captured email is meaningless.
+    actions = (DeleteObject,)
 
 
 # MaintenanceCalendar
+@register_model_view(models.Maintenance, "calendar", detail=False)
 class MaintenanceCalendarView(PermissionRequiredMixin, View):
     """
     Display maintenance events in an interactive FullCalendar view.
@@ -669,13 +763,17 @@ class MaintenanceICalView(View):
 
 
 # NotificationTemplate Views
+@register_model_view(NotificationTemplate, "list", path="", detail=False)
 class NotificationTemplateListView(generic.ObjectListView):
     queryset = NotificationTemplate.objects.prefetch_related("scopes", "contact_roles")
     table = tables.NotificationTemplateTable
     filterset = filtersets.NotificationTemplateFilterSet
     filterset_form = forms.NotificationTemplateFilterForm
+    # No import: templates are authored, not batch-imported.
+    actions = (AddObject, BulkExport, BulkEdit, BulkDelete)
 
 
+@register_model_view(NotificationTemplate)
 class NotificationTemplateView(generic.ObjectView):
     queryset = NotificationTemplate.objects.prefetch_related("scopes", "contact_roles", "children")
 
@@ -696,23 +794,46 @@ class NotificationTemplateView(generic.ObjectView):
         }
 
 
+@register_model_view(NotificationTemplate, "add", detail=False)
+@register_model_view(NotificationTemplate, "edit")
 class NotificationTemplateEditView(generic.ObjectEditView):
     queryset = NotificationTemplate.objects.all()
     form = forms.NotificationTemplateForm
 
 
+@register_model_view(NotificationTemplate, "delete")
 class NotificationTemplateDeleteView(generic.ObjectDeleteView):
     queryset = NotificationTemplate.objects.all()
 
 
+@register_model_view(NotificationTemplate, "bulk_edit", path="edit", detail=False)
+class NotificationTemplateBulkEditView(generic.BulkEditView):
+    queryset = NotificationTemplate.objects.all()
+    filterset = filtersets.NotificationTemplateFilterSet
+    table = tables.NotificationTemplateTable
+    form = forms.NotificationTemplateBulkEditForm
+
+
+@register_model_view(NotificationTemplate, "bulk_delete", path="delete", detail=False)
+class NotificationTemplateBulkDeleteView(generic.BulkDeleteView):
+    queryset = NotificationTemplate.objects.all()
+    filterset = filtersets.NotificationTemplateFilterSet
+    table = tables.NotificationTemplateTable
+
+
 # PreparedNotification Views
+@register_model_view(PreparedNotification, "list", path="", detail=False)
 class PreparedNotificationListView(generic.ObjectListView):
     queryset = PreparedNotification.objects.select_related("template", "approved_by")
     table = tables.PreparedNotificationTable
     filterset = filtersets.PreparedNotificationFilterSet
     filterset_form = forms.PreparedNotificationFilterForm
+    # No BulkImport (these are generated from templates and events) and no BulkEdit (`status` was
+    # its only field, now owned by the state machine through the API -- see PreparedNotificationForm).
+    actions = (AddObject, BulkExport, BulkDelete)
 
 
+@register_model_view(SentNotification, "list", path="", detail=False)
 class SentNotificationListView(generic.ObjectListView):
     """List view for sent/delivered notifications."""
 
@@ -721,13 +842,22 @@ class SentNotificationListView(generic.ObjectListView):
     filterset = filtersets.PreparedNotificationFilterSet
     filterset_form = forms.SentNotificationFilterForm
     template_name = "notices/sent_list.html"
+    # No BulkDelete: deleting through the proxy sends pre_delete with sender=SentNotification, and
+    # NetBox keys PROTECTION_RULES off the sender's own app_label.model_name, so a rule registered
+    # against `notices.preparednotification` is skipped on this path alone. Delete these rows from
+    # the Prepared Notifications list instead. Read-only otherwise: a sent notification comes from
+    # sending a prepared one, never from being created here.
+    actions = (BulkExport,)
 
 
+@register_model_view(SentNotification)
 class SentNotificationView(generic.ObjectView):
     """Detail view for a sent notification."""
 
     queryset = SentNotification.objects.select_related("template", "approved_by").prefetch_related("contacts")
     template_name = "notices/preparednotification.html"
+    # Read-only, and the proxy has no edit or delete URL.
+    actions = ()
 
     def get_extra_context(self, request, instance):
         contacts = instance.contacts.all()
@@ -736,6 +866,7 @@ class SentNotificationView(generic.ObjectView):
         }
 
 
+@register_model_view(PreparedNotification)
 class PreparedNotificationView(generic.ObjectView):
     queryset = PreparedNotification.objects.select_related("template", "approved_by").prefetch_related("contacts")
 
@@ -748,22 +879,19 @@ class PreparedNotificationView(generic.ObjectView):
         }
 
 
+@register_model_view(PreparedNotification, "add", detail=False)
+@register_model_view(PreparedNotification, "edit")
 class PreparedNotificationEditView(generic.ObjectEditView):
     queryset = PreparedNotification.objects.all()
     form = forms.PreparedNotificationForm
 
 
+@register_model_view(PreparedNotification, "delete")
 class PreparedNotificationDeleteView(generic.ObjectDeleteView):
     queryset = PreparedNotification.objects.all()
 
 
-class PreparedNotificationBulkEditView(generic.BulkEditView):
-    queryset = PreparedNotification.objects.all()
-    filterset = filtersets.PreparedNotificationFilterSet
-    table = tables.PreparedNotificationTable
-    form = forms.PreparedNotificationBulkEditForm
-
-
+@register_model_view(PreparedNotification, "bulk_delete", path="delete", detail=False)
 class PreparedNotificationBulkDeleteView(generic.BulkDeleteView):
     queryset = PreparedNotification.objects.all()
     filterset = filtersets.PreparedNotificationFilterSet
@@ -771,6 +899,8 @@ class PreparedNotificationBulkDeleteView(generic.BulkDeleteView):
 
 
 # TemplateScope Views
+@register_model_view(TemplateScope, "add", detail=False)
+@register_model_view(TemplateScope, "edit")
 class TemplateScopeEditView(generic.ObjectEditView):
     """Add or edit a TemplateScope."""
 
@@ -792,6 +922,7 @@ class TemplateScopeEditView(generic.ObjectEditView):
         return super().get_return_url(request, obj)
 
 
+@register_model_view(TemplateScope, "delete")
 class TemplateScopeDeleteView(generic.ObjectDeleteView):
     """Delete a TemplateScope."""
 

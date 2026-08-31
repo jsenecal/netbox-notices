@@ -33,6 +33,11 @@ The plugin does not directly provide an automated approach to ingesting provider
   - Reschedule maintenance (only before start time)
   - Mark maintenance as in-progress or completed
   - Cancel maintenance with confirmation
+- Bulk actions on list views:
+  - Bulk edit for maintenances, outages and notification templates (status and scheduling fields excluded -- use the quick actions and the reschedule view)
+  - Bulk delete for maintenances, outages, notification templates and prepared notifications
+  - Bulk import (CSV/JSON/YAML) for maintenances and outages; impacts are added afterwards
+  - Received and sent notifications have none: received ones are deletable one row at a time, sent ones are a read-only log deleted from the prepared notifications list. Prepared notification `status` is changed through the REST API -- see [permissions](docs/permissions.md).
 - Event timeline with status-specific icons and colors
 - Maintenance rescheduling with automatic status updates
 - Interactive calendar view with FullCalendar
