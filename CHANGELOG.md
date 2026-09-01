@@ -14,6 +14,8 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
   literal text on the home page, changelog, contributing and AWS SES pages.
   That macro comes from `mkdocs-include-markdown-plugin`, which Zensical does
   not load; those four pages now use `pymdownx.snippets` instead.
+- README screenshots and its permissions link used repo-relative paths, so they
+  404'd on the documentation site and on PyPI. They are absolute URLs now.
 
 ## [1.2.0] - 2026-08-31
 
