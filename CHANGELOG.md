@@ -21,6 +21,11 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
   Written: the REST API reference, the developer guide (architecture, resolvers,
   template extensions), the messaging guide (templates, recipient discovery,
   approval workflow) and the dashboard page.
+- `outgoing-notifications.md` documented models under names they have never had
+  (`MessageTemplate`, `PreparedMessage`) and its integration examples used a
+  `prepared-messages/` endpoint that does not exist and a `ready` to `delivered`
+  transition the state machine rejects. It is now an overview over the three
+  messaging pages, with corrected examples.
 
 ## [1.2.0] - 2026-08-31
 
