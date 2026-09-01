@@ -6,6 +6,11 @@ on:
     paths:
       - "docs/**"
       - ".github/workflows/docs.yml"
+      # Pages pulled into the site with pymdownx.snippets
+      - "README.md"
+      - "CHANGELOG.md"
+      - "CONTRIBUTING.md"
+      - "integrations/aws-ses/README.md"
   workflow_dispatch:
 
 permissions:

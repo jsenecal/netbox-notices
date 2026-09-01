@@ -1,5 +1,1 @@
-# AWS SES Integration
-
-{%
-  include-markdown "../integrations/aws-ses/README.md"
-%}
+--8<-- "integrations/aws-ses/README.md"

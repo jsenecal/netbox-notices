@@ -37,7 +37,7 @@ The plugin does not directly provide an automated approach to ingesting provider
   - Bulk edit for maintenances, outages and notification templates (status and scheduling fields excluded -- use the quick actions and the reschedule view)
   - Bulk delete for maintenances, outages, notification templates and prepared notifications
   - Bulk import (CSV/JSON/YAML) for maintenances and outages; impacts are added afterwards
-  - Received and sent notifications have none: received ones are deletable one row at a time, sent ones are a read-only log deleted from the prepared notifications list. Prepared notification `status` is changed through the REST API -- see [permissions](docs/permissions.md).
+  - Received and sent notifications have none: received ones are deletable one row at a time, sent ones are a read-only log deleted from the prepared notifications list. Prepared notification `status` is changed through the REST API -- see [permissions](https://jsenecal.github.io/netbox-notices/permissions/).
 - Event timeline with status-specific icons and colors
 - Maintenance rescheduling with automatic status updates
 - Interactive calendar view with FullCalendar
@@ -478,7 +478,7 @@ A read-only view of PreparedNotifications that have been sent or delivered. This
 
 The maintenance detail view shows comprehensive information about a maintenance event including the event timeline, impacted objects, and received notifications.
 
-![Maintenance Event View](docs/img/maintenance_detail.png)
+![Maintenance Event View](https://raw.githubusercontent.com/jsenecal/netbox-notices/main/docs/img/maintenance_detail.png)
 
 **Key Features Shown:**
 - Operations dropdown with quick actions (Acknowledge, Reschedule, Mark In-Progress, Mark Completed, Cancel)
@@ -491,7 +491,7 @@ The maintenance detail view shows comprehensive information about a maintenance 
 
 The outage detail view tracks unplanned incidents with ETR (Estimated Time to Repair) and flexible status workflow.
 
-![Outage Event View](docs/img/outage_detail.png)
+![Outage Event View](https://raw.githubusercontent.com/jsenecal/netbox-notices/main/docs/img/outage_detail.png)
 
 **Key Features Shown:**
 - Outage-specific status workflow (Reported -> Investigating -> Identified -> Monitoring -> Resolved)
@@ -503,11 +503,11 @@ The outage detail view tracks unplanned incidents with ETR (Estimated Time to Re
 
 Interactive calendar view for visualizing maintenance and outage events with iCal subscription support.
 
-![Calendar View](docs/img/calendar_view.png)
+![Calendar View](https://raw.githubusercontent.com/jsenecal/netbox-notices/main/docs/img/calendar_view.png)
 
 Click any event to see a quick summary modal with key details:
 
-![Calendar Event Detail](docs/img/calendar_view_event_detail.png)
+![Calendar Event Detail](https://raw.githubusercontent.com/jsenecal/netbox-notices/main/docs/img/calendar_view_event_detail.png)
 
 **Key Features Shown:**
 - FullCalendar integration with month/week/day views
@@ -519,7 +519,7 @@ Click any event to see a quick summary modal with key details:
 
 A "Maintenance & Outage Events" widget appears on Provider detail pages, showing all events from that provider.
 
-![Provider Events](docs/img/provider_events.png)
+![Provider Events](https://raw.githubusercontent.com/jsenecal/netbox-notices/main/docs/img/provider_events.png)
 
 **Key Features Shown:**
 - All maintenance and outage events for the provider
@@ -531,7 +531,7 @@ A "Maintenance & Outage Events" widget appears on Provider detail pages, showing
 
 A "Maintenance & Outage History" widget automatically appears on the detail pages of any impacted NetBox objects (circuits, devices, sites, etc.). This provides quick visibility into events affecting specific infrastructure.
 
-![Object Event History](docs/img/object_event_history.png)
+![Object Event History](https://raw.githubusercontent.com/jsenecal/netbox-notices/main/docs/img/object_event_history.png)
 
 **Key Features Shown:**
 - Tabbed view separating maintenances and outages
