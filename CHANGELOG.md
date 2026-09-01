@@ -8,6 +8,13 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ## [Unreleased]
 
+### Fixed
+
+- The documentation site rendered `{% include-markdown "../README.md" %}` as
+  literal text on the home page, changelog, contributing and AWS SES pages.
+  That macro comes from `mkdocs-include-markdown-plugin`, which Zensical does
+  not load; those four pages now use `pymdownx.snippets` instead.
+
 ## [1.2.0] - 2026-08-31
 
 ### Fixed

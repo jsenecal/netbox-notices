@@ -44,6 +44,41 @@ nav = [
   { "Changelog" = "changelog.md" },
 ]
 
+# Zensical replaces its built-in extension defaults wholesale when this table
+# is present, so the stock set is restated here alongside pymdownx.snippets.
+# Dropping an entry below removes that extension from the build.
+[project.markdown_extensions]
+abbr = {}
+admonition = {}
+attr_list = {}
+def_list = {}
+footnotes = {}
+md_in_html = {}
+toc = { permalink = true }
+
+[project.markdown_extensions.pymdownx]
+arithmatex = { generic = true }
+betterem = {}
+caret = {}
+details = {}
+emoji = { emoji_generator = "zensical.extensions.emoji.to_svg", emoji_index = "zensical.extensions.emoji.twemoji" }
+highlight = { anchor_linenums = true, line_spans = "__span", pygments_lang_class = true }
+inlinehilite = {}
+keys = {}
+magiclink = {}
+mark = {}
+smartsymbols = {}
+superfences = { custom_fences = [ { name = "mermaid", class = "mermaid" } ] }
+tabbed = { alternate_style = true, combine_header_slug = true }
+tasklist = { custom_checkbox = true }
+tilde = {}
+
+# Pulls README.md, CHANGELOG.md, CONTRIBUTING.md and the AWS SES README into
+# the site; base_path is the repo root, one level above docs_dir.
+[project.markdown_extensions.pymdownx.snippets]
+base_path = [".."]
+check_paths = true
+
 [project.theme]
 features = [
   "content.action.edit",
