@@ -16,6 +16,11 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
   not load; those four pages now use `pymdownx.snippets` instead.
 - README screenshots and its permissions link used repo-relative paths, so they
   404'd on the documentation site and on PyPI. They are absolute URLs now.
+- Eight pages referenced by the documentation nav were never written, so the
+  sidebar linked to `.md` URLs that 404'd, along with six cross-page links.
+  Written: the REST API reference, the developer guide (architecture, resolvers,
+  template extensions), the messaging guide (templates, recipient discovery,
+  approval workflow) and the dashboard page.
 
 ## [1.2.0] - 2026-08-31
 
