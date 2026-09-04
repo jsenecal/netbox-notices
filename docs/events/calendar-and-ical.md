@@ -93,7 +93,13 @@ The view computes a deterministic ETag from `(query parameters, latest last_upda
 - `Last-Modified: <RFC 1123 date>` -- the most recent `last_updated` of any matching maintenance.
 - `Cache-Control: public, max-age=<ical_cache_max_age>` -- only on subscription mode (not when `download=true`).
 
-If the client sends `If-None-Match: <etag>`, the view returns `304 Not Modified` with no body. Same for `If-Modified-Since`.
+A conditional request is answered as follows, and every `304 Not Modified` repeats the `ETag` and `Last-Modified` validators with no body:
+
+- `If-None-Match: <etag>` -- `304` when the tag equals the current ETag, otherwise the full feed.
+- `If-Modified-Since: <RFC 1123 date>` -- `304` only when the queryset's latest `last_updated` is at or before that date. An unparseable date is ignored and the full feed is sent.
+- Both headers together -- the ETag decides and `If-Modified-Since` is ignored, per RFC 9110 section 13.1.3.
+
+Because HTTP dates have one-second resolution, `last_updated` is truncated to whole seconds before comparison, so a client that echoes back the `Last-Modified` it was given revalidates as unchanged.
 
 ### Format details
 

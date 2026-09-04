@@ -13,6 +13,7 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.http import http_date, parse_http_date_safe
 from django.views.generic import View
 from netbox.api.authentication import TokenAuthentication
 from netbox.config import get_config
@@ -578,20 +579,18 @@ class MaintenanceICalView(View):
         # Calculate ETag
         etag = calculate_etag(count=count, latest_modified=latest_modified, params=params)
 
-        # Check If-None-Match (ETag)
-        if request.META.get("HTTP_IF_NONE_MATCH") == etag:
-            response = HttpResponseNotModified()
-            response["ETag"] = etag
-            return response
-
-        # Check If-Modified-Since
-        if latest_modified and "HTTP_IF_MODIFIED_SINCE" in request.META:
-            # Parse If-Modified-Since header (simplified)
-            # In production, use proper HTTP date parsing
-            response = HttpResponseNotModified()
-            response["ETag"] = etag
-            response["Last-Modified"] = latest_modified.strftime("%a, %d %b %Y %H:%M:%S GMT")
-            return response
+        # Evaluate conditional request headers. Per RFC 9110 section 13.1.3 a
+        # recipient must ignore If-Modified-Since when If-None-Match is present,
+        # so the two are checked as alternatives rather than in sequence.
+        if "HTTP_IF_NONE_MATCH" in request.META:
+            if request.META["HTTP_IF_NONE_MATCH"] == etag:
+                return self._not_modified(etag, latest_modified)
+        elif latest_modified and "HTTP_IF_MODIFIED_SINCE" in request.META:
+            if_modified_since = parse_http_date_safe(request.META["HTTP_IF_MODIFIED_SINCE"])
+            # A malformed date is ignored and the full feed sent, per RFC 9110.
+            # HTTP dates carry whole seconds only, so truncate before comparing.
+            if if_modified_since is not None and int(latest_modified.timestamp()) <= if_modified_since:
+                return self._not_modified(etag, latest_modified)
 
         # Generate iCal
         ical = generate_maintenance_ical(queryset, request)
@@ -613,8 +612,17 @@ class MaintenanceICalView(View):
             response["ETag"] = etag
 
             if latest_modified:
-                response["Last-Modified"] = latest_modified.strftime("%a, %d %b %Y %H:%M:%S GMT")
+                response["Last-Modified"] = http_date(latest_modified.timestamp())
 
+        return response
+
+    @staticmethod
+    def _not_modified(etag, latest_modified):
+        """Build a 304 response carrying the validators a 200 would have sent."""
+        response = HttpResponseNotModified()
+        response["ETag"] = etag
+        if latest_modified:
+            response["Last-Modified"] = http_date(latest_modified.timestamp())
         return response
 
     def _authenticate_request(self, request):

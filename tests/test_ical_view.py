@@ -234,6 +234,104 @@ class TestMaintenanceICalViewCaching:
 
         assert response2.status_code == 304
 
+    def _create_maintenance(self):
+        provider = Provider.objects.create(name="Test", slug="test")
+        now = datetime.now(UTC)
+        return Maintenance.objects.create(
+            name="M1",
+            summary="Test",
+            provider=provider,
+            start=now,
+            end=now + timedelta(hours=2),
+            status="CONFIRMED",
+        )
+
+    def test_stale_if_modified_since_returns_200(self):
+        """An old If-Modified-Since date must not be treated as proof of freshness."""
+        self._create_maintenance()
+
+        response = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
+            HTTP_IF_MODIFIED_SINCE="Thu, 01 Jan 1970 00:00:00 GMT",
+        )
+
+        assert response.status_code == 200
+        assert "BEGIN:VCALENDAR" in response.content.decode("utf-8")
+
+    def test_current_if_modified_since_returns_304(self):
+        """Echoing back the Last-Modified we sent revalidates as unchanged."""
+        self._create_maintenance()
+
+        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+        last_modified = response1["Last-Modified"]
+
+        response2 = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
+            HTTP_IF_MODIFIED_SINCE=last_modified,
+        )
+
+        assert response2.status_code == 304
+        assert response2["Last-Modified"] == last_modified
+
+    def test_if_modified_since_returns_200_after_change(self):
+        """A feed modified after the client's copy must be resent in full."""
+        maintenance = self._create_maintenance()
+
+        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+        last_modified = response1["Last-Modified"]
+
+        # last_updated is auto_now, so saving advances it past the header above.
+        maintenance.last_updated = datetime.now(UTC) + timedelta(minutes=5)
+        Maintenance.objects.filter(pk=maintenance.pk).update(last_updated=maintenance.last_updated)
+
+        response2 = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
+            HTTP_IF_MODIFIED_SINCE=last_modified,
+        )
+
+        assert response2.status_code == 200
+
+    def test_malformed_if_modified_since_returns_200(self):
+        """An unparseable date is ignored rather than honoured as a validator."""
+        self._create_maintenance()
+
+        response = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
+            HTTP_IF_MODIFIED_SINCE="not a date",
+        )
+
+        assert response.status_code == 200
+
+    def test_if_none_match_takes_precedence_over_if_modified_since(self):
+        """RFC 9110: If-Modified-Since is ignored when If-None-Match is present."""
+        self._create_maintenance()
+
+        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+        last_modified = response1["Last-Modified"]
+
+        # Fresh by date, stale by ETag -> the ETag decides, so send the full feed.
+        response2 = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
+            HTTP_IF_NONE_MATCH="stale-etag",
+            HTTP_IF_MODIFIED_SINCE=last_modified,
+        )
+
+        assert response2.status_code == 200
+
+    def test_304_includes_etag_and_last_modified(self):
+        self._create_maintenance()
+
+        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+
+        response2 = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
+            HTTP_IF_NONE_MATCH=response1["ETag"],
+        )
+
+        assert response2.status_code == 304
+        assert response2["ETag"] == response1["ETag"]
+        assert response2["Last-Modified"] == response1["Last-Modified"]
+
     def test_empty_queryset_returns_valid_calendar(self):
         response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
 

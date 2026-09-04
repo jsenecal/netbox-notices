@@ -10,6 +10,14 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ### Fixed
 
+- The iCal feed returned `304 Not Modified` for any request carrying an
+  `If-Modified-Since` header, without comparing the date, so calendar clients
+  that revalidate by date -- Apple Calendar among them -- imported the feed
+  once and never saw another change. The date is now parsed and compared
+  against the queryset's latest `last_updated`; an unparseable date is ignored,
+  and `If-None-Match` takes precedence when both headers are sent, per RFC 9110
+  section 13.1.3.
+
 - The documentation site rendered `{% include-markdown "../README.md" %}` as
   literal text on the home page, changelog, contributing and AWS SES pages.
   That macro comes from `mkdocs-include-markdown-plugin`, which Zensical does
