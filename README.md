@@ -52,6 +52,7 @@ This plugin requires NetBox 4.5.0 or higher.
 | -------------- | -------------- |
 | 4.5.x          | 1.x            |
 | 4.6.x          | 1.x            |
+| 4.7.x          | 1.x            |
 
 ## Installing
 
