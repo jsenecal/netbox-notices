@@ -254,9 +254,11 @@ class TestMaintenanceICalViewCaching:
         last_modified = response1["Last-Modified"]
 
         # Fresh by date, stale by ETag -> the ETag decides, so send the full feed.
+        # The stale tag must be quoted: parse_etags() discards an unquoted one,
+        # which would leave no ETag to take precedence and fall through to the date.
         response2 = self.client.get(
             f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
-            HTTP_IF_NONE_MATCH="stale-etag",
+            HTTP_IF_NONE_MATCH='"stale-etag"',
             HTTP_IF_MODIFIED_SINCE=last_modified,
         )
 
@@ -273,6 +275,46 @@ class TestMaintenanceICalViewCaching:
         assert response2.status_code == 304
         assert response2["ETag"] == response1["ETag"]
         assert response2["Last-Modified"] == response1["Last-Modified"]
+        # A 304 has to keep telling the client how long the copy stays fresh.
+        assert response2["Cache-Control"] == response1["Cache-Control"]
+
+    def test_etag_is_quoted(self, maintenance):
+        """An unquoted tag is unparseable to every client, so it could never match."""
+        response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+
+        assert response["ETag"].startswith('"')
+        assert response["ETag"].endswith('"')
+
+    def test_weak_if_none_match_returns_304(self, maintenance):
+        """A proxy that weakens the tag (gzip) must still revalidate as unchanged."""
+        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+
+        response2 = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
+            HTTP_IF_NONE_MATCH=f"W/{response1['ETag']}",
+        )
+
+        assert response2.status_code == 304
+
+    def test_if_none_match_list_returns_304(self, maintenance):
+        """A client replaying several cached tags matches on any one of them."""
+        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+
+        response2 = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
+            HTTP_IF_NONE_MATCH=f'"an-older-tag", {response1["ETag"]}',
+        )
+
+        assert response2.status_code == 304
+
+    def test_if_none_match_star_returns_304(self, maintenance):
+        """A "*" tag matches any current representation, so the feed is unchanged."""
+        response = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
+            HTTP_IF_NONE_MATCH="*",
+        )
+
+        assert response.status_code == 304
 
     def test_empty_queryset_returns_valid_calendar(self):
         response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
