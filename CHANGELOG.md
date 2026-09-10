@@ -8,6 +8,11 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ## [Unreleased]
 
+### Added
+
+- NetBox 4.7 support: CI now tests against NetBox 4.7.0 alongside 4.5.x and
+  4.6.x, and the README compatibility matrix lists the new series.
+
 ### Fixed
 
 - The iCal feed returned `304 Not Modified` for any request carrying an

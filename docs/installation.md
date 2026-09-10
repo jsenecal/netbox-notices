@@ -6,7 +6,7 @@ This page covers installing and enabling the `netbox-notices` plugin in an exist
 
 | Component | Required version |
 |-----------|------------------|
-| NetBox | 4.5.0 or later (CI covers 4.5.x and 4.6.x) |
+| NetBox | 4.5.0 or later (CI covers 4.5.x, 4.6.x, and 4.7.x) |
 | Python | 3.12, 3.13, or 3.14 |
 | PostgreSQL | Whatever your NetBox version requires |
 
