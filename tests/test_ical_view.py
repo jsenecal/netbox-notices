@@ -191,18 +191,7 @@ class TestMaintenanceICalViewCaching:
         self.token = Token.objects.create(user=self.user, version=1)
         self.client = Client()
 
-    def test_response_includes_cache_headers(self):
-        provider = Provider.objects.create(name="Test", slug="test")
-        now = datetime.now(UTC)
-        Maintenance.objects.create(
-            name="M1",
-            summary="Test",
-            provider=provider,
-            start=now,
-            end=now + timedelta(hours=2),
-            status="CONFIRMED",
-        )
-
+    def test_response_includes_cache_headers(self, maintenance):
         response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
 
         assert "Cache-Control" in response
@@ -210,29 +199,93 @@ class TestMaintenanceICalViewCaching:
         assert "max-age" in response["Cache-Control"]
         assert "ETag" in response
 
-    def test_etag_matches_returns_304(self):
-        provider = Provider.objects.create(name="Test", slug="test")
-        now = datetime.now(UTC)
-        Maintenance.objects.create(
-            name="M1",
-            summary="Test",
-            provider=provider,
-            start=now,
-            end=now + timedelta(hours=2),
-            status="CONFIRMED",
+    def test_stale_if_modified_since_returns_200(self, maintenance):
+        """An old If-Modified-Since date must not be treated as proof of freshness."""
+        response = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
+            # Not the epoch: timestamp 0 is falsy, and Django would treat the
+            # header as absent instead of exercising the date comparison.
+            HTTP_IF_MODIFIED_SINCE="Sat, 01 Jan 2000 00:00:00 GMT",
         )
 
-        # First request
-        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
-        etag = response1["ETag"]
+        assert response.status_code == 200
+        assert "BEGIN:VCALENDAR" in response.content.decode("utf-8")
 
-        # Second request with If-None-Match
+    def test_current_if_modified_since_returns_304(self, maintenance):
+        """Echoing back the Last-Modified we sent revalidates as unchanged."""
+        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+        last_modified = response1["Last-Modified"]
+
         response2 = self.client.get(
             f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
-            HTTP_IF_NONE_MATCH=etag,
+            HTTP_IF_MODIFIED_SINCE=last_modified,
         )
 
         assert response2.status_code == 304
+        assert response2["Last-Modified"] == last_modified
+
+    def test_if_modified_since_returns_200_after_change(self, maintenance):
+        """A feed modified after the client's copy must be resent in full."""
+        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+        last_modified = response1["Last-Modified"]
+
+        # last_updated is auto_now. update() bypasses auto_now, which is how we
+        # place last_updated past the Last-Modified header above.
+        maintenance.last_updated = datetime.now(UTC) + timedelta(minutes=5)
+        Maintenance.objects.filter(pk=maintenance.pk).update(last_updated=maintenance.last_updated)
+
+        response2 = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
+            HTTP_IF_MODIFIED_SINCE=last_modified,
+        )
+
+        assert response2.status_code == 200
+
+    def test_malformed_if_modified_since_returns_200(self, maintenance):
+        """An unparseable date is ignored rather than honoured as a validator."""
+        response = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
+            HTTP_IF_MODIFIED_SINCE="not a date",
+        )
+
+        assert response.status_code == 200
+
+    def test_if_none_match_takes_precedence_over_if_modified_since(self, maintenance):
+        """RFC 9110: If-Modified-Since is ignored when If-None-Match is present."""
+        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+        last_modified = response1["Last-Modified"]
+
+        # Fresh by date, stale by ETag -> the ETag decides, so send the full feed.
+        # The stale tag must be quoted: parse_etags() discards an unquoted one,
+        # which would leave no ETag to take precedence and fall through to the date.
+        response2 = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
+            HTTP_IF_NONE_MATCH='"stale-etag"',
+            HTTP_IF_MODIFIED_SINCE=last_modified,
+        )
+
+        assert response2.status_code == 200
+
+    def test_304_includes_etag_and_last_modified(self, maintenance):
+        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+
+        response2 = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
+            HTTP_IF_NONE_MATCH=response1["ETag"],
+        )
+
+        assert response2.status_code == 304
+        assert response2["ETag"] == response1["ETag"]
+        assert response2["Last-Modified"] == response1["Last-Modified"]
+        # A 304 has to keep telling the client how long the copy stays fresh.
+        assert response2["Cache-Control"] == response1["Cache-Control"]
+
+    def test_etag_is_quoted(self, maintenance):
+        """An unquoted tag is unparseable to every client, so it could never match."""
+        response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+
+        assert response["ETag"].startswith('"')
+        assert response["ETag"].endswith('"')
 
     def test_empty_queryset_returns_valid_calendar(self):
         response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")

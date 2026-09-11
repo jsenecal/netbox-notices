@@ -15,6 +15,20 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ### Fixed
 
+- The iCal feed returned `304 Not Modified` for any request carrying an
+  `If-Modified-Since` header, without comparing the date, so calendar clients
+  that revalidate by date -- Apple Calendar among them -- imported the feed
+  once and never saw another change. Conditional requests now go through
+  Django's `get_conditional_response`, which parses and compares the date,
+  ignores an unparseable one, and gives `If-None-Match` precedence when both
+  headers are sent, per RFC 9110 section 13.1.3.
+- The iCal feed's `ETag` was an unquoted hex string, which RFC 9110 parsers
+  discard, so clients and proxies that parse the tag (rather than echo it
+  byte-for-byte) could never revalidate. The tag is now a quoted entity-tag,
+  and weak (`W/"..."`), comma-listed and `*` forms match. Tags cached before
+  the upgrade no longer match, so each ETag-only client re-downloads the feed
+  once and then revalidates normally.
+
 - The documentation site rendered `{% include-markdown "../README.md" %}` as
   literal text on the home page, changelog, contributing and AWS SES pages.
   That macro comes from `mkdocs-include-markdown-plugin`, which Zensical does

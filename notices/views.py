@@ -9,10 +9,11 @@ from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseForbidden,
-    HttpResponseNotModified,
 )
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.cache import get_conditional_response
+from django.utils.http import http_date, quote_etag
 from django.views.generic import View
 from netbox.api.authentication import TokenAuthentication
 from netbox.config import get_config
@@ -575,29 +576,21 @@ class MaintenanceICalView(View):
         count = queryset.count()
         latest_modified = queryset.order_by("-last_updated").values_list("last_updated", flat=True).first()
 
-        # Calculate ETag
         etag = calculate_etag(count=count, latest_modified=latest_modified, params=params)
 
-        # Check If-None-Match (ETag)
-        if request.META.get("HTTP_IF_NONE_MATCH") == etag:
-            response = HttpResponseNotModified()
-            response["ETag"] = etag
-            return response
+        # Build the response's headers before its body: the conditional check below
+        # needs the validators, and a 304 has to echo them back.
+        response = HttpResponse(content_type="text/calendar; charset=utf-8")
 
-        # Check If-Modified-Since
-        if latest_modified and "HTTP_IF_MODIFIED_SINCE" in request.META:
-            # Parse If-Modified-Since header (simplified)
-            # In production, use proper HTTP date parsing
-            response = HttpResponseNotModified()
-            response["ETag"] = etag
-            response["Last-Modified"] = latest_modified.strftime("%a, %d %b %Y %H:%M:%S GMT")
-            return response
+        # quote_etag() is required rather than cosmetic. calculate_etag() returns bare
+        # hex, and parse_etags() discards any tag that is not quoted, so an unquoted
+        # tag can never match an incoming If-None-Match.
+        response["ETag"] = quote_etag(etag)
 
-        # Generate iCal
-        ical = generate_maintenance_ical(queryset, request)
-
-        # Create response
-        response = HttpResponse(ical.to_ical(), content_type="text/calendar; charset=utf-8")
+        # HTTP dates carry whole seconds only, so truncate before comparing.
+        last_modified_ts = int(latest_modified.timestamp()) if latest_modified else None
+        if last_modified_ts is not None:
+            response["Last-Modified"] = http_date(last_modified_ts)
 
         # Handle download vs subscription mode
         if request.GET.get("download", "").lower() in ("true", "1", "yes"):
@@ -610,11 +603,21 @@ class MaintenanceICalView(View):
             cache_max_age = config.PLUGINS_CONFIG.get("notices", {}).get("ical_cache_max_age", 900)
 
             response["Cache-Control"] = f"public, max-age={cache_max_age}"
-            response["ETag"] = etag
 
-            if latest_modified:
-                response["Last-Modified"] = latest_modified.strftime("%a, %d %b %Y %H:%M:%S GMT")
+        # Django owns the conditional-request rules: the RFC 9110 precedence of
+        # If-None-Match over If-Modified-Since, weak/quoted/comma-listed/"*" tag
+        # forms, ignoring malformed dates, and copying the validators plus
+        # Cache-Control onto the 304.
+        conditional_response = get_conditional_response(
+            request,
+            etag=response["ETag"],
+            last_modified=last_modified_ts,
+            response=response,
+        )
+        if conditional_response is not response:
+            return conditional_response
 
+        response.content = generate_maintenance_ical(queryset, request).to_ical()
         return response
 
     def _authenticate_request(self, request):

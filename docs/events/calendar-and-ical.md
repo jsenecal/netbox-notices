@@ -89,11 +89,18 @@ Most clients refresh on their own schedule (Google: every few hours; Apple: conf
 
 The view computes a deterministic ETag from `(query parameters, latest last_updated, count)` of the matching queryset. The response always includes:
 
-- `ETag: <md5 hex>` -- conditional request validator.
+- `ETag: "<md5 hex>"` -- conditional request validator, quoted per RFC 9110.
 - `Last-Modified: <RFC 1123 date>` -- the most recent `last_updated` of any matching maintenance.
 - `Cache-Control: public, max-age=<ical_cache_max_age>` -- only on subscription mode (not when `download=true`).
 
-If the client sends `If-None-Match: <etag>`, the view returns `304 Not Modified` with no body. Same for `If-Modified-Since`.
+Conditional requests are evaluated with Django's `get_conditional_response`, which follows RFC 9110. Every `304 Not Modified` repeats the headers above with no body:
+
+- `If-None-Match: <etag>` -- `304` when any listed tag matches the current ETag (weak `W/"..."` forms and `*` included), otherwise the full feed. An unparseable value is ignored and the date check below applies.
+- `If-Modified-Since: <RFC 1123 date>` -- `304` only when the queryset's latest `last_updated` is at or before that date. An unparseable date is ignored and the full feed is sent.
+- Both headers together -- a well-formed `If-None-Match` decides and `If-Modified-Since` is ignored, per RFC 9110 section 13.1.3.
+- `If-Match` / `If-Unmodified-Since` -- evaluated too; a failed precondition answers `412 Precondition Failed` with no body.
+
+Because HTTP dates have one-second resolution, `last_updated` is truncated to whole seconds before comparison, so a client that echoes back the `Last-Modified` it was given revalidates as unchanged.
 
 ### Format details
 
