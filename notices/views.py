@@ -30,7 +30,7 @@ from rest_framework import exceptions
 from utilities.views import register_model_view
 
 from . import filtersets, forms, models, tables
-from .ical_utils import calculate_etag, generate_maintenance_ical
+from .ical_utils import calculate_etag, feed_last_modified, generate_maintenance_ical, maintenance_window_cutoff
 from .models import Maintenance, NotificationTemplate, Outage, PreparedNotification, SentNotification, TemplateScope
 from .timeline_utils import build_timeline_item, get_timeline_changes
 
@@ -574,9 +574,10 @@ class MaintenanceICalView(View):
 
         # Get cache-related info
         count = queryset.count()
-        latest_modified = queryset.order_by("-last_updated").values_list("last_updated", flat=True).first()
+        impact_count = queryset.aggregate(impacts=Count("impacts"))["impacts"] or 0
+        latest_modified = feed_last_modified(queryset, params["past_days"])
 
-        etag = calculate_etag(count=count, latest_modified=latest_modified, params=params)
+        etag = calculate_etag(count=count, latest_modified=latest_modified, params=params, impact_count=impact_count)
 
         # Build the response's headers before its body: the conditional check below
         # needs the validators, and a 304 has to echo them back.
@@ -729,8 +730,7 @@ class MaintenanceICalView(View):
     def _build_queryset(self, params):
         """Build filtered Maintenance queryset."""
         # Base queryset with time filter
-        cutoff_date = timezone.now() - timedelta(days=params["past_days"])
-        queryset = models.Maintenance.objects.filter(start__gte=cutoff_date)
+        queryset = models.Maintenance.objects.filter(start__gte=maintenance_window_cutoff(params["past_days"]))
 
         # Optimize queries
         queryset = queryset.select_related("provider").prefetch_related("impacts")
