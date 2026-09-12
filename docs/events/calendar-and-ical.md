@@ -87,10 +87,10 @@ Most clients refresh on their own schedule (Google: every few hours; Apple: conf
 
 ### Caching and conditional requests
 
-The view computes a deterministic ETag from `(query parameters, latest last_updated, count)` of the matching queryset. The response always includes:
+The view computes a deterministic ETag from the query parameters, the feed's last-modified instant (below), and the maintenance and impact counts of the matching queryset. The response always includes:
 
 - `ETag: "<md5 hex>"` -- conditional request validator, quoted per RFC 9110.
-- `Last-Modified: <RFC 1123 date>` -- the most recent `last_updated` of any matching maintenance.
+- `Last-Modified: <RFC 1123 date>` -- the latest instant the feed body could have changed: the most recent `last_updated` across the matching maintenances, their impacts and their providers, the most recent logged deletion of a maintenance or impact, or the most recent moment an event aged out of the `past_days` window.
 - `Cache-Control: public, max-age=<ical_cache_max_age>` -- only on subscription mode (not when `download=true`).
 
 Conditional requests are evaluated with Django's `get_conditional_response`, which follows RFC 9110. Every `304 Not Modified` repeats the headers above with no body:

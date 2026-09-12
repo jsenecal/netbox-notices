@@ -28,6 +28,21 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
   and weak (`W/"..."`), comma-listed and `*` forms match. Tags cached before
   the upgrade no longer match, so each ETag-only client re-downloads the feed
   once and then revalidates normally.
+- The iCal feed's `Last-Modified` could move backwards when a maintenance was
+  deleted or aged out of the `past_days` window, pinning date-revalidating
+  clients on `304` while the deleted event stayed on their calendars. The
+  validator now also considers the latest logged deletion of a maintenance or
+  impact and the latest window exit, so it never regresses when the feed body
+  changed ([#70](https://github.com/jsenecal/netbox-notices/issues/70)).
+- One maintenance row with a NULL `last_updated` (fixture loads, restores,
+  raw SQL) blanked the feed's `Last-Modified` and froze the `ETag`'s modified
+  component. The validator now aggregates with `Max`, which ignores NULLs
+  ([#71](https://github.com/jsenecal/netbox-notices/issues/71)).
+- Impact and provider changes are rendered into the feed body (`DESCRIPTION`,
+  `LOCATION`) but moved neither validator, so revalidating clients received
+  `304` for a changed feed. Both validators now cover the matching
+  maintenances' impacts and providers, and the `ETag` additionally hashes the
+  impact count ([#73](https://github.com/jsenecal/netbox-notices/issues/73)).
 
 - The documentation site rendered `{% include-markdown "../README.md" %}` as
   literal text on the home page, changelog, contributing and AWS SES pages.

@@ -287,6 +287,21 @@ class TestMaintenanceICalViewCaching:
         assert response["ETag"].startswith('"')
         assert response["ETag"].endswith('"')
 
+    def test_added_impact_invalidates_revalidation(self, maintenance):
+        """An impact is rendered into the feed, so adding one must break the 304 (issue #73)."""
+        from notices.models import Impact
+
+        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+
+        Impact.objects.create(event=maintenance, target=maintenance.provider, impact="OUTAGE")
+
+        response2 = self.client.get(
+            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
+            HTTP_IF_NONE_MATCH=response1["ETag"],
+        )
+
+        assert response2.status_code == 200
+
     def test_empty_queryset_returns_valid_calendar(self):
         response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
 
