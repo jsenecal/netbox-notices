@@ -11,7 +11,7 @@ notices = ["templates/**/*", "static/**/*"]
 [project]
 name = "netbox-notices"
 keywords = ["notices"]
-version = "1.2.0"
+version = "1.3.0"
 description = "Track maintenance and outage events across various NetBox models from vendors and internal sources."
 readme = "README.md"
 authors = [
@@ -56,7 +56,7 @@ Source = "https://github.com/jsenecal/netbox-notices"
 Tracker = "https://github.com/jsenecal/netbox-notices/issues"
 
 [tool.bumpversion]
-current_version = "1.2.0"
+current_version = "1.3.0"
 commit = true
 tag = true
 tag_name = "v{new_version}"

@@ -8,6 +8,8 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-09-12
+
 ### Added
 
 - NetBox 4.7 support: CI now tests against NetBox 4.7.0 alongside 4.5.x and
