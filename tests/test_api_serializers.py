@@ -5,6 +5,8 @@ from datetime import timedelta
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -258,6 +260,69 @@ class TestEventNotificationSerializerGetEvent:
         response = api_client.get(f"/api/plugins/notices/eventnotification/{notif.pk}/")
         assert response.status_code == 200
         assert response.data["event"]["id"] == outage.pk
+
+
+@pytest.mark.django_db
+class TestEventSerializerNestedRelations:
+    """Event serializers expose their impacts and notifications (regression for issue 61).
+
+    Both fields used to point at reverse accessors that do not exist on these
+    models, so DRF silently dropped them from every response.
+    """
+
+    @pytest.fixture(params=["maintenance", "outage"])
+    def event(self, request, provider):
+        if request.param == "maintenance":
+            return request.getfixturevalue("maintenance")
+        return Outage.objects.create(name="EV", summary="s", provider=provider, status="REPORTED")
+
+    @staticmethod
+    def _add_impact_and_notification(event, target):
+        event_ct = ContentType.objects.get_for_model(event)
+        impact = Impact.objects.create(
+            event_content_type=event_ct,
+            event_object_id=event.pk,
+            target_content_type=ContentType.objects.get_for_model(target),
+            target_object_id=target.pk,
+            impact="OUTAGE",
+        )
+        notif = EventNotification.objects.create(
+            event_content_type=event_ct,
+            event_object_id=event.pk,
+            email=b"raw",
+            email_body="body",
+            subject="Subj",
+            email_from="noc@example.com",
+            email_received=timezone.now(),
+        )
+        return impact, notif
+
+    def test_impacts_and_notifications_are_listed(self, api_client, event, circuit):
+        impact, notif = self._add_impact_and_notification(event, circuit)
+
+        response = api_client.get(f"/api/plugins/notices/{event._meta.model_name}/{event.pk}/")
+
+        assert response.status_code == 200
+        assert [i["id"] for i in response.data["impacts"]] == [impact.pk]
+        assert [n["id"] for n in response.data["notifications"]] == [notif.pk]
+
+    def test_list_query_count_does_not_grow_per_event(self, api_client, event, circuit):
+        url = f"/api/plugins/notices/{event._meta.model_name}/"
+        self._add_impact_and_notification(event, circuit)
+        with CaptureQueriesContext(connection) as single:
+            api_client.get(url)
+
+        for i in range(3):
+            other = type(event).objects.get(pk=event.pk)
+            other.pk = None
+            other.name = f"EV{i}"
+            other.save()
+            self._add_impact_and_notification(other, circuit)
+        with CaptureQueriesContext(connection) as many:
+            response = api_client.get(url)
+
+        assert response.data["count"] == 4
+        assert len(many.captured_queries) == len(single.captured_queries)
 
 
 @pytest.mark.django_db

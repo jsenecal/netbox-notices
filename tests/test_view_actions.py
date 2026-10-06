@@ -322,6 +322,29 @@ class TestOutageDetailView:
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize("event_fixture", ["maintenance", "outage"])
+def test_delete_confirmation_lists_event_notifications(request, admin_client, event_fixture):
+    """Deleting an event cascades to its notifications, and the confirmation page says so (issue 61)."""
+    event = request.getfixturevalue(event_fixture)
+    notification = EventNotification.objects.create(
+        event_content_type=ContentType.objects.get_for_model(event),
+        event_object_id=event.pk,
+        email=b"data",
+        email_body="Test body",
+        subject="Test Subject",
+        email_from="noc@example.com",
+        email_received=timezone.now(),
+    )
+    url = reverse(f"plugins:notices:{event_fixture}_delete", args=[event.pk])
+
+    response = admin_client.get(url)
+    assert list(response.context["dependent_objects"][EventNotification]) == [notification]
+
+    admin_client.post(url, {"confirm": True})
+    assert not EventNotification.objects.filter(pk=notification.pk).exists()
+
+
+@pytest.mark.django_db
 class TestMaintenanceCalendarView:
     """Tests for MaintenanceCalendarView."""
 
