@@ -4,7 +4,8 @@ import markdown
 from django.conf import settings
 from django.utils import timezone
 from django.utils.html import strip_tags
-from jinja2 import BaseLoader, Environment, TemplateSyntaxError
+from jinja2 import BaseLoader, TemplateSyntaxError
+from jinja2.sandbox import SandboxedEnvironment
 
 __all__ = ("TemplateRenderer", "TemplateRenderError", "split_body")
 
@@ -46,8 +47,8 @@ def render_markdown(text):
     )
 
 
-class ChainEnvironment(Environment):
-    """Jinja environment where `{% extends "base" %}` means "my own parent template"."""
+class ChainEnvironment(SandboxedEnvironment):
+    """Sandboxed Jinja environment where `{% extends "base" %}` means "my own parent template"."""
 
     def __init__(self, parents, **kwargs):
         super().__init__(**kwargs)
@@ -83,18 +84,13 @@ class TemplateRenderer:
             templates: Optional dict of template_name -> template_string for inheritance
             parents: Optional dict of slug -> parent_slug for chain inheritance
         """
-        loader = StringLoader(templates) if templates else None
-        if parents:
-            self.env = ChainEnvironment(
-                parents=parents,
-                loader=loader,
-                autoescape=False,
-            )
-        else:
-            self.env = Environment(
-                loader=loader,
-                autoescape=False,
-            )
+        # Template bodies are user-authored, so they always render in a sandbox.
+        # Without parents, ChainEnvironment resolves paths exactly like a plain sandbox.
+        self.env = ChainEnvironment(
+            parents=parents or {},
+            loader=StringLoader(templates) if templates else None,
+            autoescape=False,
+        )
         # Register custom filters
         self.env.filters["ical_datetime"] = ical_datetime
         self.env.filters["markdown"] = render_markdown

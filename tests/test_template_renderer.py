@@ -186,6 +186,22 @@ class TestChainRendering:
         assert TemplateRenderer.for_chain(chain).render_body(chain, {"x": 1}) == "P 1"
 
 
+class TestSandbox:
+    ESCAPE = "{{ cycler.__init__.__globals__.os.getpid() }}"
+
+    def test_plain_render_blocks_attribute_escape(self):
+        with pytest.raises(TemplateRenderError):
+            TemplateRenderer().render(self.ESCAPE, {})
+
+    def test_chain_render_blocks_attribute_escape(self):
+        chain = _chain(
+            ("child", '{% extends "base" %}{% block a %}' + self.ESCAPE + "{% endblock %}"),
+            ("parent", "{% block a %}{% endblock %}"),
+        )
+        with pytest.raises(TemplateRenderError):
+            TemplateRenderer.for_chain(chain).render_body(chain, {})
+
+
 class TestSplitBody:
     def test_markdown_keeps_source_as_text_and_renders_html(self):
         text, html = split_body("markdown", "**hi**")
