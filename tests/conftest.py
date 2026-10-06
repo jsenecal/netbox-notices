@@ -207,3 +207,23 @@ def maintenance(provider):
         start=now,
         end=now + timedelta(hours=4),
     )
+
+
+@pytest.fixture
+def maintenance_with_two_tenants(maintenance, provider, circuit_type):
+    """A maintenance impacting one circuit of each of two tenants, each with a primary NOC contact."""
+    from circuits.models import Circuit
+    from tenancy.models import Contact, ContactAssignment, ContactRole, Tenant
+
+    from notices.models import Impact
+
+    role = ContactRole.objects.create(name="NOC", slug="noc")
+    tenants = []
+    for idx in (1, 2):
+        tenant = Tenant.objects.create(name=f"Tenant {idx}", slug=f"tenant-{idx}")
+        contact = Contact.objects.create(name=f"Contact {idx}", email=f"c{idx}@example.com")
+        ContactAssignment.objects.create(object=tenant, contact=contact, role=role, priority="primary")
+        circuit = Circuit.objects.create(cid=f"CID-{idx}", provider=provider, type=circuit_type, tenant=tenant)
+        Impact.objects.create(event=maintenance, target=circuit, impact="OUTAGE")
+        tenants.append(tenant)
+    return maintenance, tenants[0], tenants[1]
