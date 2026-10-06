@@ -16,6 +16,8 @@ __all__ = (
     "TemplateScopeSerializer",
     "PreparedNotificationSerializer",
     "SentNotificationSerializer",
+    "GenerateNotificationsSerializer",
+    "PlannedNotificationSerializer",
 )
 
 
@@ -169,6 +171,9 @@ class PreparedNotificationSerializer(NetBoxModelSerializer):
         required=False,
     )
     recipients = serializers.JSONField(read_only=True)
+    tenant = serializers.PrimaryKeyRelatedField(read_only=True)
+    impact = serializers.PrimaryKeyRelatedField(read_only=True)
+    modified = serializers.BooleanField(source="is_modified", read_only=True)
 
     # Status change message (for journal entry)
     message = serializers.CharField(write_only=True, required=False, allow_blank=True)
@@ -188,6 +193,9 @@ class PreparedNotificationSerializer(NetBoxModelSerializer):
             "template_id",
             "event_content_type",
             "event_id",
+            "tenant",
+            "impact",
+            "modified",
             "status",
             "message",
             "timestamp",
@@ -314,3 +322,51 @@ class SentNotificationSerializer(NetBoxModelSerializer):
         ]
         read_only_fields = fields  # Entirely read-only
         brief_fields = ("id", "url", "display", "subject", "status", "sent_at")
+
+
+class GenerateNotificationsSerializer(serializers.Serializer):
+    """Request body for the generate-notifications action."""
+
+    templates = serializers.PrimaryKeyRelatedField(
+        queryset=NotificationTemplate.objects.all(), many=True, required=False
+    )
+    dry_run = serializers.BooleanField(default=False)
+
+    def validate_templates(self, value):
+        kinds = set(self.context["kinds"])
+        invalid = [t.pk for t in value if t not in kinds]
+        if invalid:
+            raise serializers.ValidationError(f"Not a notification kind for this event: {invalid}")
+        return list(dict.fromkeys(value))
+
+
+class PlannedNotificationSerializer(serializers.Serializer):
+    """One planned or applied notification in a generation result."""
+
+    action = serializers.CharField()
+    template = serializers.SerializerMethodField()
+    root_template = serializers.IntegerField(source="root_template.pk")
+    tenant = serializers.SerializerMethodField()
+    impact = serializers.SerializerMethodField()
+    contacts = serializers.SerializerMethodField()
+    subject = serializers.SerializerMethodField()
+    error = serializers.CharField(allow_null=True)
+    notification = serializers.SerializerMethodField()
+
+    def get_template(self, obj):
+        return getattr(obj.template, "pk", None)
+
+    def get_tenant(self, obj):
+        return getattr(obj.tenant, "pk", None)
+
+    def get_impact(self, obj):
+        return getattr(obj.impact, "pk", None)
+
+    def get_contacts(self, obj):
+        return [c.pk for c in obj.contacts]
+
+    def get_subject(self, obj):
+        return obj.content.get("subject") or getattr(obj.existing, "subject", None)
+
+    def get_notification(self, obj):
+        return getattr(obj.notification or obj.existing, "pk", None)
