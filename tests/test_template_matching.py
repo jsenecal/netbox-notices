@@ -261,6 +261,15 @@ class TestResolveChain:
         matcher = TemplateMatchingService(event=maintenance, tenant=tenant_secondary)
         assert resolve_chain(root, matcher) == [root]
 
+    def test_override_for_other_event_type_is_ignored(self, maintenance, tenant):
+        root = _tpl("root", event_type="both")
+        outage_only = _tpl("outage-only", extends=root, event_type="outage")
+        both = _tpl("both", extends=root, event_type="both", weight=1)
+        _scope(outage_only, tenant)
+        _scope(both, tenant)
+        matcher = TemplateMatchingService(event=maintenance, tenant=tenant)
+        assert resolve_chain(root, matcher) == [both, root]
+
     def test_highest_scoring_override_wins(self, maintenance, tenant):
         root = _tpl("root")
         low = _tpl("low", extends=root, weight=1)

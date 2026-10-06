@@ -115,7 +115,7 @@ def kinds_for_event(event):
             is_base_template=False,
         )
         .filter(Q(extends__isnull=True) | Q(extends__is_base_template=True))
-        .prefetch_related("scopes__content_type", "contact_roles", "children")
+        .prefetch_related("scopes__content_type", "contact_roles")
     )
 
 
@@ -124,15 +124,18 @@ def resolve_chain(root, matcher):
     Return the inheritance chain to render for one recipient group, most specific first.
 
     Starting at the root kind, descend into the highest-scoring override that applies to the
-    matcher's context, repeatedly; then append the root's base-template ancestors, which only
-    contribute layout and fallback fields.
+    matcher's context and event type, repeatedly; then append the root's base-template
+    ancestors, which only contribute layout and fallback fields.
     """
     chain = [root]
     current = root
     while True:
         scored = [
             (score, child)
-            for child in current.children.filter(is_base_template=False).prefetch_related("scopes__content_type")
+            for child in current.children.filter(
+                Q(event_type=matcher.event_type) | Q(event_type=MessageEventTypeChoices.BOTH),
+                is_base_template=False,
+            ).prefetch_related("scopes__content_type")
             if (score := matcher.score(child)) is not None
         ]
         if not scored:
