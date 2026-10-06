@@ -172,7 +172,10 @@ class TemplateRenderer:
         source = next((t for t in chain if t.body_template), None)
         if source is None:
             return ""
-        template = self.env.get_template(source.slug)
+        try:
+            template = self.env.get_template(source.slug)
+        except Exception as e:
+            raise TemplateRenderError(f"Template rendering failed: {e}")
         return self._safe_render(template, context)
 
     @classmethod
