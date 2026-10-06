@@ -216,3 +216,35 @@ class TestNotificationTemplateClean:
         assert leaf.root_kind == root
         assert root.root_kind == root
         assert leaf.is_override and not root.is_override
+
+
+@pytest.mark.django_db
+class TestPreparedNotificationModified:
+    def _make(self, notification_template, **kw):
+        defaults = {"template": notification_template, "subject": "S", "body_text": "B", **kw}
+        return PreparedNotification.objects.create(**defaults)
+
+    def test_hand_created_is_never_modified(self, notification_template):
+        n = self._make(notification_template)
+        assert not n.is_modified
+        assert not PreparedNotification.objects.modified().filter(pk=n.pk).exists()
+
+    def test_edit_after_render_is_modified(self, notification_template):
+        n = self._make(notification_template)
+        n.mark_rendered()
+        assert not n.is_modified
+        n.body_text = "edited"
+        n.save()
+        assert n.is_modified
+        assert PreparedNotification.objects.modified().filter(pk=n.pk).exists()
+
+    def test_header_key_order_is_not_a_modification(self, notification_template):
+        n = self._make(notification_template, headers={"a": "1", "b": "2"})
+        n.mark_rendered()
+        n.headers = {"b": "2", "a": "1"}
+        n.save()
+        assert not n.is_modified
+
+    def test_objectchange_relates_to_event(self, notification_template, maintenance):
+        n = self._make(notification_template, event=maintenance)
+        assert n.to_objectchange("update").related_object == maintenance

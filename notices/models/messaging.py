@@ -4,6 +4,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import F, Q, Value
+from django.db.models.functions import MD5, Cast, Coalesce, Concat
 from django.urls import reverse
 from netbox.models import NetBoxModel
 from tenancy.models import Contact, ContactRole
@@ -25,6 +27,27 @@ __all__ = (
     "PreparedNotification",
     "SentNotification",
 )
+
+# Separator between hashed fields so moving text across a boundary still changes the hash.
+_HASH_SEPARATOR = Value("\x1f")
+_HASHED_TEXT_FIELDS = ("subject", "body_text", "body_html", "css", "ical_content")
+
+
+def _content_hash_expression():
+    parts = [Coalesce(Cast("headers", models.TextField()), Value(""), output_field=models.TextField())]
+    for name in _HASHED_TEXT_FIELDS:
+        parts += [_HASH_SEPARATOR, Coalesce(name, Value(""), output_field=models.TextField())]
+    return MD5(Concat(*parts, output_field=models.TextField()))
+
+
+# A notification is modified when it was generated (rendered_hash set) and its content has
+# since diverged from what was rendered.
+MODIFIED_Q = ~Q(rendered_hash="") & ~Q(rendered_hash=F("content_hash"))
+
+
+class PreparedNotificationQuerySet(RestrictedQuerySet):
+    def modified(self):
+        return self.filter(MODIFIED_Q)
 
 
 class NotificationTemplate(NetBoxModel):
@@ -301,6 +324,33 @@ class PreparedNotification(NetBoxModel):
         blank=True,
     )
 
+    # Recipient group this notification was generated for (see NotificationGenerator).
+    tenant = models.ForeignKey(
+        to="tenancy.Tenant",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    impact = models.ForeignKey(
+        to="notices.Impact",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    # Postgres recomputes content_hash on every write; rendered_hash is the value it had right
+    # after generation. Comparing them in SQL detects hand edits without hashing in Python.
+    content_hash = models.GeneratedField(
+        expression=_content_hash_expression(),
+        output_field=models.CharField(max_length=32),
+        db_persist=True,
+    )
+    rendered_hash = models.CharField(max_length=32, blank=True, default="", editable=False)
+
+    objects = PreparedNotificationQuerySet.as_manager()
+
     # Approval tracking
     approved_by = models.ForeignKey(
         to=User,
@@ -346,8 +396,24 @@ class PreparedNotification(NetBoxModel):
             return self.event_content_type.model
         return None
 
+    @property
+    def is_modified(self):
+        return bool(self.rendered_hash) and self.rendered_hash != self.content_hash
 
-class SentNotificationManager(models.Manager.from_queryset(RestrictedQuerySet)):
+    def mark_rendered(self):
+        """Record the current content as the generated baseline (copied inside Postgres)."""
+        PreparedNotification.objects.filter(pk=self.pk).update(rendered_hash=F("content_hash"))
+        self.refresh_from_db(fields=["rendered_hash", "content_hash"])
+
+    def to_objectchange(self, action):
+        """File changes against the linked event so they appear on its timeline."""
+        objectchange = super().to_objectchange(action)
+        if self.event is not None:
+            objectchange.related_object = self.event
+        return objectchange
+
+
+class SentNotificationManager(models.Manager.from_queryset(PreparedNotificationQuerySet)):
     """Manager that filters to only sent/delivered notifications."""
 
     def get_queryset(self):

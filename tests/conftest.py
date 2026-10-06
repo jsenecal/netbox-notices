@@ -227,3 +227,20 @@ def maintenance_with_two_tenants(maintenance, provider, circuit_type):
         Impact.objects.create(event=maintenance, target=circuit, impact="OUTAGE")
         tenants.append(tenant)
     return maintenance, tenants[0], tenants[1]
+
+
+@pytest.fixture
+def notification_template(db):
+    """Create a test notification template."""
+    from notices.models import NotificationTemplate
+
+    return NotificationTemplate.objects.create(
+        name="Test Template",
+        slug="test-template",
+        event_type="maintenance",
+        granularity="per_event",
+        subject_template="Test Subject: {{ maintenance.name }}",
+        body_template="Test body for {{ maintenance.name }}",
+        body_format="text",
+        weight=1000,
+    )
