@@ -102,6 +102,8 @@ A run is queued when an event changes meaningfully:
 
 Other edits, such as a summary or comment change, do not trigger anything.
 
+Change detection relies on the snapshot NetBox's change logging takes before an edit. A save made without one, such as a plain `save()` in a script or `nbshell` that does not call `snapshot()` first, cannot be compared and always counts as meaningful.
+
 ### How it runs
 
 - It runs after the surrounding database transaction commits, so it sees the saved event and impacts.
@@ -109,7 +111,7 @@ Other edits, such as a summary or comment change, do not trigger anything.
 - It runs as the system, not as a user, so NetBox object-level permission constraints are not applied. Manual UI and API runs are checked against the requesting user.
 - Regeneration rules apply as usual: untouched drafts are refreshed, edited drafts and anything approved or sent are kept. See [Outgoing Notifications](outgoing-notifications.md).
 - A failure never breaks the save that triggered it. Render errors and unexpected exceptions are logged and recorded as a warning journal entry on the event.
-- Runs happen outside a request, so NetBox does not attribute them to a user; the drafts they create do not appear on the event timeline the way UI and API runs do.
+- A run triggered from the UI or the API happens when that request's transaction commits, while NetBox's change logging is still active, so the drafts it creates are recorded under the user who made the edit and appear on the event timeline. Runs triggered outside a request, from a script or `nbshell`, are not recorded in the change log and do not appear on the timeline.
 
 In a script or `nbshell` there is no surrounding transaction (autocommit), so every save commits on its own. Creating an event and then N impacts therefore runs generation N+1 times. Generation is idempotent on drafts, so the result is the same, only slower; wrap the work in `transaction.atomic()` to get a single run.
 

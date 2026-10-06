@@ -115,7 +115,7 @@ Running generation again is safe. Each recipient group ends up with one of these
 | Action | Meaning |
 |---|---|
 | `create` | No draft exists for the group; a new one is written. |
-| `update` | An untouched draft exists; it is re-rendered in place. |
+| `update` | An untouched draft exists; it is re-rendered in place. Any further untouched drafts for the same group are surplus duplicates and are deleted. |
 | `keep` | A hand-edited draft exists; it is left alone. |
 | `delete` | The group no longer exists or has no recipients; its untouched draft is removed. |
 | `skip` | The group has no contacts to notify, so nothing is created. |

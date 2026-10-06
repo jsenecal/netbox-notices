@@ -56,7 +56,7 @@ def categorize_change(changed_object_model, action, prechange_data, postchange_d
         postchange_data: Dict of field values after change (or None)
 
     Returns:
-        Category string: 'status', 'impact', 'notification', 'acknowledgment', 'time', or 'standard'
+        Category string: 'status', 'impact', 'notification', 'outgoing', 'acknowledgment', 'time', or 'standard'
     """
     # Handle related object changes
     if changed_object_model == "impact":
