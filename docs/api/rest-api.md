@@ -313,12 +313,15 @@ The response has a `summary` string, `counts` per action and one entry per recip
   "items": [
     {"action": "create", "template": 3, "root_template": 3, "tenant": 7, "impact": null,
      "contacts": [12, 15], "subject": "[CONFIRMED] Acme Maintenance: MAINT-1001",
-     "error": null, "notification": 91}
+     "error": null, "notification": 91},
+    {"action": "create", "template": 3, "root_template": 3, "tenant": 8, "impact": null,
+     "contacts": [20], "subject": "[CONFIRMED] Globex Maintenance: MAINT-1001",
+     "error": null, "notification": 92}
   ]
 }
 ```
 
-A dry run words the summary as a plan (`"2 to create, 1 failing"`) and returns `notification: null` for new drafts. An applied run is atomic: every write is checked against the caller's object permissions, and a violation returns `403` with nothing written. The caller needs add, change and delete on prepared notifications and view on the event. The actions are described in [Outgoing Notifications](../outgoing-notifications.md).
+A dry run words the summary as a plan (`"2 to create, 1 failing"`) and returns `notification: null` for new drafts. An applied run is atomic: every write is checked against the caller's object permissions, and a violation returns `403` with nothing written. The caller needs add, change and delete on prepared notifications (otherwise `403`) and view on the event (an event the caller cannot view returns `404`). The actions are described in [Outgoing Notifications](../outgoing-notifications.md).
 
 ### Reset a draft
 

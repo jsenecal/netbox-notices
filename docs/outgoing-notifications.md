@@ -82,8 +82,8 @@ curl -X POST \
 
 ```json
 {
-  "summary": "2 to create, 1 failing",
-  "counts": {"create": 2, "error": 1},
+  "summary": "1 to create",
+  "counts": {"create": 1},
   "items": [
     {
       "action": "create",
@@ -102,7 +102,7 @@ curl -X POST \
 
 A dry run words the summary as a plan ("2 to create"). An applied run uses the past tense ("2 created") and fills `notification` with the ID of the draft written. `template` is the template that actually rendered the group (an override, when one applies) and `root_template` is the kind it belongs to.
 
-The caller needs add, change and delete on prepared notifications plus view on the event. Missing rights return `403`. See [Permissions](permissions.md).
+The caller needs add, change and delete on prepared notifications plus view on the event. Missing add, change or delete on prepared notifications returns `403`; an event the caller cannot view returns `404`. See [Permissions](permissions.md).
 
 ### Automatic generation
 
@@ -127,7 +127,7 @@ Rules that follow from this:
 - Anything past `draft` (`ready`, `sent`, `delivered`, `failed`) is never changed. The iCal `SEQUENCE` of a re-render counts those earlier notifications, so a calendar client sees an update.
 - Notifications created by hand are never touched at all: not updated, kept, deleted, and they do not stop a generated draft being created for the same group.
 - Generating with a subset of kinds only affects those kinds; drafts of unselected kinds are left alone.
-- A template error, syntax or runtime, is reported as `error` on the affected kind only. Other kinds still generate.
+- A template error, syntax or runtime, is reported per recipient group: the affected group's item is reported as `error`, and every other group and kind still generates.
 
 ## iCal attachments
 
