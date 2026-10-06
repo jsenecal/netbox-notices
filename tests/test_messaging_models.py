@@ -1,6 +1,7 @@
 # tests/test_messaging_models.py
 import pytest
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 
 from notices.choices import (
     BodyFormatChoices,
@@ -158,3 +159,60 @@ class TestPreparedNotification:
             body_text="Body",
         )
         assert str(notification) == "A" * 50 + "..."
+
+
+@pytest.mark.django_db
+class TestNotificationTemplateClean:
+    def _tpl(self, slug, **kw):
+        return NotificationTemplate.objects.create(
+            name=slug, slug=slug, event_type="maintenance", subject_template="s", body_template="b", **kw
+        )
+
+    def test_self_extends_rejected(self):
+        t = self._tpl("a")
+        t.extends = t
+        with pytest.raises(ValidationError, match="cycle"):
+            t.clean()
+
+    def test_two_template_cycle_rejected(self):
+        a = self._tpl("a")
+        b = self._tpl("b", extends=a)
+        a.extends = b
+        with pytest.raises(ValidationError, match="cycle"):
+            a.clean()
+
+    def test_override_granularity_must_match_parent(self):
+        parent = self._tpl("p", granularity="per_tenant")
+        child = NotificationTemplate(
+            name="c",
+            slug="c",
+            event_type="maintenance",
+            subject_template="s",
+            body_template="b",
+            extends=parent,
+            granularity="per_event",
+        )
+        with pytest.raises(ValidationError, match="granularity"):
+            child.clean()
+
+    def test_child_of_base_template_may_use_any_granularity(self):
+        base = self._tpl("base", is_base_template=True, granularity="per_tenant")
+        child = NotificationTemplate(
+            name="c",
+            slug="c",
+            event_type="maintenance",
+            subject_template="s",
+            body_template="b",
+            extends=base,
+            granularity="per_event",
+        )
+        child.clean()
+
+    def test_root_kind_walks_overrides_only(self):
+        base = self._tpl("base", is_base_template=True)
+        root = self._tpl("root", extends=base)
+        mid = self._tpl("mid", extends=root)
+        leaf = self._tpl("leaf", extends=mid)
+        assert leaf.root_kind == root
+        assert root.root_kind == root
+        assert leaf.is_override and not root.is_override

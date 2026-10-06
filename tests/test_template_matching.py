@@ -12,8 +12,9 @@ from notices.choices import (
 from notices.models import NotificationTemplate, TemplateScope
 from notices.services.template_matching import (
     TemplateMatchingService,
-    find_matching_templates,
+    kinds_for_event,
     merge_templates,
+    resolve_chain,
 )
 
 
@@ -120,20 +121,6 @@ def both_template():
 
 
 @pytest.fixture
-def standalone_template():
-    """Create a standalone template (no event type)."""
-    return NotificationTemplate.objects.create(
-        name="Standalone Template",
-        slug="standalone-template",
-        event_type=MessageEventTypeChoices.NONE,
-        granularity=MessageGranularityChoices.PER_TENANT,
-        subject_template="Notification",
-        body_template="General notification",
-        weight=1000,
-    )
-
-
-@pytest.fixture
 def high_weight_template():
     """Create a high-weight template for testing priority."""
     return NotificationTemplate.objects.create(
@@ -193,327 +180,154 @@ def template_with_headers():
     )
 
 
-# ============================================================================
-# Event Type Filtering Tests
-# ============================================================================
+def _tpl(slug, **kw):
+    defaults = {
+        "name": slug,
+        "slug": slug,
+        "event_type": "maintenance",
+        "granularity": "per_tenant",
+        "subject_template": "",
+        "body_template": "",
+        "weight": 1000,
+    }
+    defaults.update(kw)
+    return NotificationTemplate.objects.create(**defaults)
+
+
+def _scope(template, obj, weight=1000, **kw):
+    return TemplateScope.objects.create(
+        template=template,
+        content_type=ContentType.objects.get_for_model(obj),
+        object_id=obj.pk,
+        weight=weight,
+        **kw,
+    )
+
+
+def _score(template, **ctx):
+    return TemplateMatchingService(**ctx).score(template)
 
 
 @pytest.mark.django_db
-class TestEventTypeFiltering:
-    """Tests for event type filtering."""
+class TestKinds:
+    def test_base_templates_and_overrides_are_not_kinds(self, maintenance):
+        base = _tpl("layout", is_base_template=True)
+        kind = _tpl("customer", extends=base)
+        _tpl("customer-acme", extends=kind)
+        _tpl("outage-only", event_type="outage")
+        both = _tpl("both", event_type="both")
+        assert set(kinds_for_event(maintenance)) == {kind, both}
 
-    def test_maintenance_event_finds_maintenance_templates(self, maintenance, maintenance_template):
-        """Test that maintenance events match maintenance templates."""
-        service = TemplateMatchingService(event=maintenance)
-        templates = service.find_templates()
-
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" in template_names
-
-    def test_maintenance_event_finds_both_templates(self, maintenance, maintenance_template, both_template):
-        """Test that maintenance events also match 'both' templates."""
-        service = TemplateMatchingService(event=maintenance)
-        templates = service.find_templates()
-
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" in template_names
-        assert "Both Template" in template_names
-
-    def test_maintenance_event_excludes_outage_templates(self, maintenance, outage_template):
-        """Test that maintenance events don't match outage-only templates."""
-        service = TemplateMatchingService(event=maintenance)
-        templates = service.find_templates()
-
-        template_names = [t.name for t, _ in templates]
-        assert "Outage Template" not in template_names
-
-    def test_outage_event_finds_outage_templates(self, outage, outage_template):
-        """Test that outage events match outage templates."""
-        service = TemplateMatchingService(event=outage)
-        templates = service.find_templates()
-
-        template_names = [t.name for t, _ in templates]
-        assert "Outage Template" in template_names
-
-    def test_outage_event_finds_both_templates(self, outage, outage_template, both_template):
-        """Test that outage events also match 'both' templates."""
-        service = TemplateMatchingService(event=outage)
-        templates = service.find_templates()
-
-        template_names = [t.name for t, _ in templates]
-        assert "Outage Template" in template_names
-        assert "Both Template" in template_names
-
-    def test_outage_event_excludes_maintenance_templates(self, outage, maintenance_template):
-        """Test that outage events don't match maintenance-only templates."""
-        service = TemplateMatchingService(event=outage)
-        templates = service.find_templates()
-
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" not in template_names
-
-    def test_standalone_no_event(self, standalone_template):
-        """Test that no event finds standalone templates."""
-        service = TemplateMatchingService(event=None)
-        templates = service.find_templates()
-
-        template_names = [t.name for t, _ in templates]
-        assert "Standalone Template" in template_names
-
-    def test_standalone_excludes_event_templates(self, maintenance_template, outage_template, standalone_template):
-        """Test that no event excludes event-specific templates."""
-        service = TemplateMatchingService(event=None)
-        templates = service.find_templates()
-
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" not in template_names
-        assert "Outage Template" not in template_names
-
-
-# ============================================================================
-# Scope Matching Tests
-# ============================================================================
+    def test_outage_event_gets_outage_and_both_kinds(self, outage):
+        _tpl("m")
+        o = _tpl("o", event_type="outage")
+        both = _tpl("both", event_type="both")
+        assert set(kinds_for_event(outage)) == {o, both}
 
 
 @pytest.mark.django_db
-class TestScopeMatching:
-    """Tests for scope matching logic."""
+class TestScore:
+    def test_unscoped_template_applies_with_base_weight(self, maintenance):
+        t = _tpl("t", weight=10)
+        assert _score(t, event=maintenance) == 10
 
-    def test_scope_specific_object_matches(self, maintenance, maintenance_template, tenant):
-        """Test that scope with specific object matches."""
-        tenant_ct = ContentType.objects.get_for_model(tenant)
+    def test_tenant_scope_applies_only_to_that_tenant(self, maintenance, tenant, tenant_secondary):
+        t = _tpl("t", weight=10)
+        _scope(t, tenant, weight=5)
+        assert _score(t, event=maintenance, tenant=tenant) == 15
+        assert _score(t, event=maintenance, tenant=tenant_secondary) is None
+        assert _score(t, event=maintenance) is None
+
+    def test_wildcard_scope_matches_any_tenant(self, maintenance, tenant, tenant_secondary):
+        t = _tpl("t")
         TemplateScope.objects.create(
-            template=maintenance_template,
-            content_type=tenant_ct,
-            object_id=tenant.pk,
-            weight=500,
+            template=t, content_type=ContentType.objects.get_for_model(tenant), object_id=None, weight=500
         )
+        assert _score(t, event=maintenance, tenant=tenant) == 1500
+        assert _score(t, event=maintenance, tenant=tenant_secondary) == 1500
 
-        service = TemplateMatchingService(event=maintenance, tenant=tenant)
-        templates = service.find_templates()
+    def test_event_status_filter(self, maintenance, tenant):
+        match = _tpl("match")
+        _scope(match, tenant, event_status="CONFIRMED")
+        miss = _tpl("miss")
+        _scope(miss, tenant, event_status="CANCELLED")
+        assert _score(match, event=maintenance, tenant=tenant) == 2000
+        assert _score(miss, event=maintenance, tenant=tenant) is None
 
-        assert len(templates) > 0
-        # Check the template was found
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" in template_names
+    def test_multiple_matching_scopes_add_weights(self, maintenance, tenant, provider):
+        t = _tpl("t")
+        _scope(t, tenant, weight=500)
+        _scope(t, provider, weight=300)
+        assert _score(t, event=maintenance, tenant=tenant, provider=provider) == 1800
 
-    def test_scope_specific_object_no_match_different_object(
-        self, maintenance, maintenance_template, tenant, tenant_secondary
-    ):
-        """Test that scope with specific object doesn't match different object."""
-        tenant_ct = ContentType.objects.get_for_model(tenant)
-        TemplateScope.objects.create(
-            template=maintenance_template,
-            content_type=tenant_ct,
-            object_id=tenant.pk,  # Scope for original tenant
-            weight=500,
-        )
+    def test_provider_scope_resolved_from_event(self, maintenance, provider, provider_secondary):
+        t = _tpl("t")
+        _scope(t, provider)
+        assert _score(t, event=maintenance) == 2000
+        assert _score(t, event=maintenance, provider=provider_secondary) is None
 
-        # Use secondary tenant
-        service = TemplateMatchingService(event=maintenance, tenant=tenant_secondary)
-        templates = service.find_templates()
-
-        # Template should NOT match because scope is for different tenant
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" not in template_names
-
-    def test_scope_wildcard_matches_any_object(self, maintenance, maintenance_template, tenant, tenant_secondary):
-        """Test that wildcard scope (object_id=None) matches any object."""
-        tenant_ct = ContentType.objects.get_for_model(tenant)
-        TemplateScope.objects.create(
-            template=maintenance_template,
-            content_type=tenant_ct,
-            object_id=None,  # Wildcard - all tenants
-            weight=500,
-        )
-
-        # Should match with any tenant
-        service = TemplateMatchingService(event=maintenance, tenant=tenant)
-        templates = service.find_templates()
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" in template_names
-
-        service2 = TemplateMatchingService(event=maintenance, tenant=tenant_secondary)
-        templates2 = service2.find_templates()
-        template_names2 = [t.name for t, _ in templates2]
-        assert "Maintenance Template" in template_names2
-
-    def test_scope_provider_matches(self, maintenance, maintenance_template, provider):
-        """Test that provider scope matches."""
-        provider_ct = ContentType.objects.get_for_model(provider)
-        TemplateScope.objects.create(
-            template=maintenance_template,
-            content_type=provider_ct,
-            object_id=provider.pk,
-            weight=500,
-        )
-
-        service = TemplateMatchingService(event=maintenance, provider=provider)
-        templates = service.find_templates()
-
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" in template_names
-
-    def test_scope_provider_no_match_different_provider(
-        self, maintenance, maintenance_template, provider, provider_secondary
-    ):
-        """Test that provider scope doesn't match different provider."""
-        provider_ct = ContentType.objects.get_for_model(provider)
-        TemplateScope.objects.create(
-            template=maintenance_template,
-            content_type=provider_ct,
-            object_id=provider.pk,
-            weight=500,
-        )
-
-        # Use secondary provider
-        service = TemplateMatchingService(event=maintenance, provider=provider_secondary)
-        templates = service.find_templates()
-
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" not in template_names
-
-    def test_global_template_no_scopes_always_matches(self, maintenance, maintenance_template):
-        """Test that template with no scopes (global) always matches."""
-        # No scopes added
-        service = TemplateMatchingService(event=maintenance)
-        templates = service.find_templates()
-
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" in template_names
-
-
-# ============================================================================
-# Event Status Filtering Tests
-# ============================================================================
+    def test_explicit_provider_overrides_event_provider(self, maintenance, provider_secondary):
+        t = _tpl("t")
+        _scope(t, provider_secondary)
+        assert _score(t, event=maintenance) is None
+        assert _score(t, event=maintenance, provider=provider_secondary) == 2000
 
 
 @pytest.mark.django_db
-class TestEventStatusFiltering:
-    """Tests for event status filtering."""
+class TestResolveChain:
+    def test_matching_override_wins_over_root(self, maintenance, tenant):
+        root = _tpl("root")
+        acme = _tpl("acme", extends=root)
+        _scope(acme, tenant)
+        matcher = TemplateMatchingService(event=maintenance, tenant=tenant)
+        assert resolve_chain(root, matcher) == [acme, root]
 
-    def test_scope_event_status_matches(self, maintenance, maintenance_template, tenant):
-        """Test that scope with matching event status matches."""
-        tenant_ct = ContentType.objects.get_for_model(tenant)
-        TemplateScope.objects.create(
-            template=maintenance_template,
-            content_type=tenant_ct,
-            object_id=tenant.pk,
-            event_status="CONFIRMED",  # Matches maintenance.status
-            weight=500,
-        )
+    def test_non_matching_override_is_ignored(self, maintenance, tenant, tenant_secondary):
+        root = _tpl("root")
+        acme = _tpl("acme", extends=root)
+        _scope(acme, tenant)
+        matcher = TemplateMatchingService(event=maintenance, tenant=tenant_secondary)
+        assert resolve_chain(root, matcher) == [root]
 
-        service = TemplateMatchingService(event=maintenance, tenant=tenant)
-        templates = service.find_templates()
+    def test_highest_scoring_override_wins(self, maintenance, tenant):
+        root = _tpl("root")
+        low = _tpl("low", extends=root, weight=1)
+        high = _tpl("high", extends=root, weight=2000)
+        _scope(low, tenant)
+        _scope(high, tenant)
+        matcher = TemplateMatchingService(event=maintenance, tenant=tenant)
+        assert resolve_chain(root, matcher)[0] == high
 
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" in template_names
+    def test_base_ancestors_are_appended(self, maintenance):
+        layout = _tpl("layout", is_base_template=True)
+        root = _tpl("root", extends=layout)
+        assert resolve_chain(root, TemplateMatchingService(event=maintenance)) == [root, layout]
 
-    def test_scope_event_status_no_match(self, maintenance, maintenance_template, tenant):
-        """Test that scope with different event status doesn't match."""
-        tenant_ct = ContentType.objects.get_for_model(tenant)
-        TemplateScope.objects.create(
-            template=maintenance_template,
-            content_type=tenant_ct,
-            object_id=tenant.pk,
-            event_status="CANCELLED",  # Different from CONFIRMED
-            weight=500,
-        )
-
-        service = TemplateMatchingService(event=maintenance, tenant=tenant)
-        templates = service.find_templates()
-
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" not in template_names
-
-    def test_scope_no_event_status_filter_matches_any(self, maintenance, maintenance_template, tenant):
-        """Test that scope without event_status matches any status."""
-        tenant_ct = ContentType.objects.get_for_model(tenant)
-        TemplateScope.objects.create(
-            template=maintenance_template,
-            content_type=tenant_ct,
-            object_id=tenant.pk,
-            event_status="",  # No filter
-            weight=500,
-        )
-
-        service = TemplateMatchingService(event=maintenance, tenant=tenant)
-        templates = service.find_templates()
-
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" in template_names
-
-
-# ============================================================================
-# Score Calculation Tests
-# ============================================================================
+    def test_nested_overrides(self, maintenance, tenant):
+        root = _tpl("root")
+        mid = _tpl("mid", extends=root)
+        leaf = _tpl("leaf", extends=mid)
+        _scope(leaf, tenant)
+        matcher = TemplateMatchingService(event=maintenance, tenant=tenant)
+        assert resolve_chain(root, matcher) == [leaf, mid, root]
 
 
 @pytest.mark.django_db
-class TestScoreCalculation:
-    """Tests for score calculation."""
+class TestChainMerge:
+    def test_empty_fields_fall_back_to_parent(self):
+        root = _tpl("root", subject_template="S-root", body_template="B-root", css_template="c")
+        acme = _tpl("acme", extends=root, subject_template="S-acme")
+        merged = merge_templates([acme, root])
+        assert merged["subject_template"] == "S-acme"
+        assert merged["body_template"] == "B-root"
+        assert merged["css_template"] == "c"
+        assert merged["granularity"] == "per_tenant"
+        assert "extends" not in merged
 
-    def test_base_weight_used_for_global_template(self, maintenance, maintenance_template):
-        """Test that base weight is used for templates without scopes."""
-        service = TemplateMatchingService(event=maintenance)
-        templates = service.find_templates()
-
-        for template, score in templates:
-            if template.name == "Maintenance Template":
-                assert score == 1000  # Base weight
-
-    def test_scope_weight_added_to_score(self, maintenance, maintenance_template, tenant):
-        """Test that scope weight is added to base weight."""
-        tenant_ct = ContentType.objects.get_for_model(tenant)
-        TemplateScope.objects.create(
-            template=maintenance_template,
-            content_type=tenant_ct,
-            object_id=tenant.pk,
-            weight=500,
-        )
-
-        service = TemplateMatchingService(event=maintenance, tenant=tenant)
-        templates = service.find_templates()
-
-        for template, score in templates:
-            if template.name == "Maintenance Template":
-                assert score == 1500  # 1000 base + 500 scope
-
-    def test_multiple_matching_scopes_add_weights(self, maintenance, maintenance_template, tenant, provider):
-        """Test that multiple matching scopes add their weights."""
-        tenant_ct = ContentType.objects.get_for_model(tenant)
-        provider_ct = ContentType.objects.get_for_model(provider)
-
-        TemplateScope.objects.create(
-            template=maintenance_template,
-            content_type=tenant_ct,
-            object_id=tenant.pk,
-            weight=500,
-        )
-        TemplateScope.objects.create(
-            template=maintenance_template,
-            content_type=provider_ct,
-            object_id=provider.pk,
-            weight=300,
-        )
-
-        service = TemplateMatchingService(event=maintenance, tenant=tenant, provider=provider)
-        templates = service.find_templates()
-
-        for template, score in templates:
-            if template.name == "Maintenance Template":
-                assert score == 1800  # 1000 base + 500 + 300
-
-    def test_higher_weight_template_sorted_first(self, maintenance, maintenance_template, high_weight_template):
-        """Test that templates are sorted by score descending."""
-        service = TemplateMatchingService(event=maintenance)
-        templates = service.find_templates()
-
-        # High weight should be first
-        assert templates[0][0].name == "High Weight Template"
-        assert templates[0][1] == 2000
-        assert templates[1][0].name == "Maintenance Template"
-        assert templates[1][1] == 1000
+    def test_granularity_comes_from_root_kind_not_base_layout(self):
+        layout = _tpl("layout", is_base_template=True, granularity="per_tenant")
+        root = _tpl("root", extends=layout, granularity="per_event")
+        assert merge_templates([root, layout])["granularity"] == "per_event"
 
 
 # ============================================================================
@@ -638,127 +452,6 @@ class TestContactRolesUnion:
         assert "tertiary" in config["contact_priorities"]
 
 
-# ============================================================================
-# Template Inheritance Tests
-# ============================================================================
-
-
-@pytest.mark.django_db
-class TestTemplateInheritance:
-    """Tests for template inheritance (extends)."""
-
-    def test_merge_extends_first_nonempty_wins(self):
-        """Test that first non-null extends wins."""
-        base = NotificationTemplate.objects.create(
-            name="Base Template",
-            slug="base-template-inherit",
-            event_type=MessageEventTypeChoices.MAINTENANCE,
-            subject_template="Base Subject",
-            body_template="{% block content %}{% endblock %}",
-            is_base_template=True,
-        )
-
-        child = NotificationTemplate.objects.create(
-            name="Child Template",
-            slug="child-template-inherit",
-            event_type=MessageEventTypeChoices.MAINTENANCE,
-            subject_template="Child Subject",
-            body_template="{% block content %}Child{% endblock %}",
-            extends=base,
-            weight=1500,
-        )
-
-        template_no_extends = NotificationTemplate.objects.create(
-            name="No Extends",
-            slug="no-extends-template",
-            event_type=MessageEventTypeChoices.MAINTENANCE,
-            subject_template="No Extends Subject",
-            body_template="Body",
-            weight=2000,
-        )
-
-        # Order: no_extends (2000), child (1500)
-        config = merge_templates([template_no_extends, child])
-
-        # Child has extends, but no_extends is first with no extends
-        # First non-null wins, so child's extends should be picked
-        # Actually, no_extends has None, so child's extends wins
-        assert config["extends"] == base
-
-
-# ============================================================================
-# Global Templates Tests
-# ============================================================================
-
-
-@pytest.mark.django_db
-class TestGlobalTemplates:
-    """Tests for global templates (no scopes)."""
-
-    def test_global_template_matches_without_context(self, maintenance, maintenance_template):
-        """Test that global template matches without any context objects."""
-        service = TemplateMatchingService(event=maintenance)
-        templates = service.find_templates()
-
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" in template_names
-
-    def test_global_template_matches_with_any_context(self, maintenance, maintenance_template, tenant, provider):
-        """Test that global template still matches with any context."""
-        service = TemplateMatchingService(event=maintenance, tenant=tenant, provider=provider)
-        templates = service.find_templates()
-
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" in template_names
-
-
-# ============================================================================
-# Helper Function Tests
-# ============================================================================
-
-
-@pytest.mark.django_db
-class TestFindMatchingTemplates:
-    """Tests for find_matching_templates convenience function."""
-
-    def test_find_matching_templates_with_event(self, maintenance, maintenance_template):
-        """Test convenience function with event."""
-        templates = find_matching_templates(event=maintenance)
-
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" in template_names
-
-    def test_find_matching_templates_with_tenant(self, maintenance, maintenance_template, tenant):
-        """Test convenience function with tenant."""
-        tenant_ct = ContentType.objects.get_for_model(tenant)
-        TemplateScope.objects.create(
-            template=maintenance_template,
-            content_type=tenant_ct,
-            object_id=tenant.pk,
-            weight=500,
-        )
-
-        templates = find_matching_templates(event=maintenance, tenant=tenant)
-
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" in template_names
-
-    def test_find_matching_templates_with_provider(self, maintenance, maintenance_template, provider):
-        """Test convenience function with provider."""
-        templates = find_matching_templates(event=maintenance, provider=provider)
-
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" in template_names
-
-    def test_find_matching_templates_no_matches(self, maintenance, outage_template):
-        """Test convenience function with no matching templates."""
-        templates = find_matching_templates(event=maintenance)
-
-        # outage_template shouldn't match maintenance event
-        template_names = [t.name for t, _ in templates]
-        assert "Outage Template" not in template_names
-
-
 @pytest.mark.django_db
 class TestMergeTemplatesEdgeCases:
     """Tests for merge_templates edge cases."""
@@ -780,96 +473,3 @@ class TestMergeTemplatesEdgeCases:
         assert config["subject_template"] == "Maintenance: {{ maintenance.name }}"
         assert config["body_template"] == "Maintenance scheduled: {{ maintenance.summary }}"
         assert config["include_ical"] is False
-
-
-@pytest.mark.django_db
-class TestGetBestTemplate:
-    """Tests for get_best_template method."""
-
-    def test_get_best_template_returns_highest_score(self, maintenance, maintenance_template, high_weight_template):
-        """Test that get_best_template returns highest scoring template."""
-        service = TemplateMatchingService(event=maintenance)
-        best = service.get_best_template()
-
-        assert best.name == "High Weight Template"
-
-    def test_get_best_template_no_matches(self, maintenance, outage_template):
-        """Test that get_best_template returns None when no matches."""
-        service = TemplateMatchingService(event=maintenance)
-        best = service.get_best_template()
-
-        # Only outage template exists, won't match maintenance
-        # But if no templates match at all, should return None
-        # Actually outage_template doesn't match, so this should be None
-        # Let's verify: outage_template has event_type=OUTAGE, maintenance service looks for MAINTENANCE
-        assert best is None
-
-
-@pytest.mark.django_db
-class TestGetMergedConfig:
-    """Tests for get_merged_config method."""
-
-    def test_get_merged_config_returns_dict(self, maintenance, maintenance_template, template_with_css):
-        """Test that get_merged_config returns merged dict."""
-        service = TemplateMatchingService(event=maintenance)
-        config = service.get_merged_config()
-
-        assert isinstance(config, dict)
-        assert "subject_template" in config
-        assert "body_template" in config
-        assert "css_template" in config
-
-    def test_get_merged_config_no_matches(self, maintenance, outage_template):
-        """Test that get_merged_config returns None when no matches."""
-        service = TemplateMatchingService(event=maintenance)
-        config = service.get_merged_config()
-
-        assert config is None
-
-
-# ============================================================================
-# Event Provider Resolution Tests
-# ============================================================================
-
-
-@pytest.mark.django_db
-class TestEventProviderResolution:
-    """Tests for resolving provider from event."""
-
-    def test_provider_resolved_from_event(self, maintenance, maintenance_template, provider):
-        """Test that provider is resolved from event.provider."""
-        provider_ct = ContentType.objects.get_for_model(provider)
-        TemplateScope.objects.create(
-            template=maintenance_template,
-            content_type=provider_ct,
-            object_id=provider.pk,
-            weight=500,
-        )
-
-        # Don't pass provider explicitly - should be resolved from event
-        service = TemplateMatchingService(event=maintenance)
-        templates = service.find_templates()
-
-        # Template should match because maintenance.provider == provider
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" in template_names
-
-    def test_explicit_provider_overrides_event_provider(
-        self, maintenance, maintenance_template, provider, provider_secondary
-    ):
-        """Test that explicit provider takes precedence."""
-        provider_ct = ContentType.objects.get_for_model(provider)
-        TemplateScope.objects.create(
-            template=maintenance_template,
-            content_type=provider_ct,
-            object_id=provider_secondary.pk,  # Scope for secondary provider
-            weight=500,
-        )
-
-        # Pass secondary provider explicitly (different from maintenance.provider)
-        service = TemplateMatchingService(event=maintenance, provider=provider_secondary)
-        templates = service.find_templates()
-
-        # Template should match because we explicitly passed provider_secondary
-        template_names = [t.name for t, _ in templates]
-        assert "Maintenance Template" in template_names

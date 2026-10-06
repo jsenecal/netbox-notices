@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from netbox.models import NetBoxModel
@@ -136,6 +137,37 @@ class NotificationTemplate(NetBoxModel):
 
     def get_absolute_url(self):
         return reverse("plugins:notices:notificationtemplate", args=[self.pk])
+
+    @property
+    def is_override(self):
+        """True when this template overrides a non-base parent for matching recipient groups."""
+        return self.extends_id is not None and not self.extends.is_base_template
+
+    @property
+    def root_kind(self):
+        """The independent notification kind this template belongs to (itself unless it is an override)."""
+        template = self
+        while template.is_override:
+            template = template.extends
+        return template
+
+    def clean(self):
+        super().clean()
+        seen = {self.pk} if self.pk else set()
+        parent = self.extends
+        while parent is not None:
+            if parent.pk in seen or parent is self:
+                raise ValidationError({"extends": "Template inheritance would form a cycle."})
+            seen.add(parent.pk)
+            parent = parent.extends
+        if self.extends is not None and not self.extends.is_base_template:
+            if self.granularity != self.extends.granularity:
+                raise ValidationError(
+                    {
+                        "granularity": "An override must use the same granularity as the template it "
+                        f"extends ({self.extends.get_granularity_display()})."
+                    }
+                )
 
 
 class TemplateScope(models.Model):
