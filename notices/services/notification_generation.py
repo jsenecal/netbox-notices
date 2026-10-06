@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from types import SimpleNamespace
 
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 
 from notices.choices import GenerationActionChoices as Action
@@ -38,6 +39,16 @@ _PAST_TENSE = {
 }
 
 
+_PLANNED = {
+    Action.CREATE: "to create",
+    Action.UPDATE: "to update",
+    Action.KEEP: "to keep",
+    Action.DELETE: "to delete",
+    Action.SKIP: "to skip",
+    Action.ERROR: "failing",
+}
+
+
 @dataclass
 class PlannedNotification:
     """What one generation run intends to do for one recipient group."""
@@ -58,13 +69,16 @@ class PlannedNotification:
 class GenerationResult:
     items: list
     counts: dict
+    planned: bool = False
 
     @classmethod
-    def from_plan(cls, plan):
-        return cls(items=plan, counts=dict(Counter(item.action for item in plan)))
+    def from_plan(cls, plan, planned=True):
+        """Count a plan's actions; `planned` marks a result that was not applied (dry run)."""
+        return cls(items=plan, counts=dict(Counter(item.action for item in plan)), planned=planned)
 
     def summary(self):
-        parts = [f"{count} {_PAST_TENSE[action]}" for action, count in self.counts.items() if count]
+        words = _PLANNED if self.planned else _PAST_TENSE
+        parts = [f"{count} {words[action]}" for action, count in self.counts.items() if count]
         return ", ".join(parts) or "Nothing to generate"
 
 
@@ -116,11 +130,20 @@ class NotificationGenerator:
         return items
 
     @transaction.atomic
-    def apply(self, plan):
+    def apply(self, plan, user=None):
+        """Write a plan. With `user`, every write must be allowed by that user's object permissions.
+
+        A violation raises PermissionDenied and rolls the whole run back; `user=None` skips the checks.
+        """
         from notices.models import PreparedNotification
+
+        def require(obj, action):
+            if user is not None and not PreparedNotification.objects.restrict(user, action).filter(pk=obj.pk).exists():
+                raise PermissionDenied(f"You do not have permission to {action} this notification.")
 
         for item in plan:
             if item.action == Action.DELETE:
+                require(item.existing, "delete")
                 item.existing.delete()
                 continue
             if item.action == Action.CREATE:
@@ -142,11 +165,12 @@ class NotificationGenerator:
                 continue
             # No full_clean(): it would try to validate the database-generated content_hash.
             item.notification.save()
+            require(item.notification, "add" if item.action == Action.CREATE else "change")
             item.notification.contacts.set(item.contacts)
             item.notification.mark_rendered()
-        return GenerationResult.from_plan(plan)
+        return GenerationResult.from_plan(plan, planned=False)
 
-    def reset(self, notification):
+    def reset(self, notification, user=None):
         """Re-render one draft from its template family, event and group, discarding edits."""
         if notification.status != Status.DRAFT or notification.event is None:
             raise ValueError("Only drafts linked to an event can be reset.")
@@ -163,7 +187,7 @@ class NotificationGenerator:
         if item.action == Action.ERROR:
             raise TemplateRenderError(item.error)
         item.action, item.existing = Action.UPDATE, notification
-        self.apply([item])
+        self.apply([item], user=user)
         return notification
 
     # -- internals --------------------------------------------------------------------------

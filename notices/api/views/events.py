@@ -46,7 +46,11 @@ class GenerateNotificationsMixin:
         if templates := params.validated_data.get("templates"):
             generator = NotificationGenerator(event, templates=templates)
         plan = generator.plan()
-        result = GenerationResult.from_plan(plan) if params.validated_data["dry_run"] else generator.apply(plan)
+        result = (
+            GenerationResult.from_plan(plan)
+            if params.validated_data["dry_run"]
+            else generator.apply(plan, user=request.user)
+        )
         return Response(
             {
                 "summary": result.summary(),

@@ -40,8 +40,8 @@ def _url(event):
     return f"/api/plugins/notices/maintenance/{event.pk}/generate-notifications/"
 
 
-def _grant(user, name, actions, *models):
-    perm = ObjectPermission.objects.create(name=name, actions=actions)
+def _grant(user, name, actions, *models, constraints=None):
+    perm = ObjectPermission.objects.create(name=name, actions=actions, constraints=constraints)
     perm.object_types.add(*[ObjectType.objects.get(app_label="notices", model=m) for m in models])
     perm.users.add(user)
 
@@ -81,6 +81,16 @@ class TestGenerateAction:
         _grant(user, "gen", ["view", "add", "change", "delete"], "preparednotification")
         _grant(user, "view-maint", ["view"], "maintenance")
         assert _client(user).post(_url(event), {"dry_run": True}, format="json").status_code == 200
+
+    def test_permissions_constrained_to_other_tenant_are_forbidden(self, maintenance_with_two_tenants, kind):
+        event, _, tenant_b = maintenance_with_two_tenants
+        kind.granularity = "per_tenant"
+        kind.save()
+        user = User.objects.create_user(username="scoped", password="x")
+        _grant(user, "view-maint3", ["view"], "maintenance")
+        _grant(user, "scoped", ["add", "change", "delete"], "preparednotification", constraints={"tenant": tenant_b.pk})
+        assert _client(user).post(_url(event), {}, format="json").status_code == 403
+        assert PreparedNotification.objects.count() == 0
 
     def test_without_notification_permissions_is_forbidden(self, maintenance_with_two_tenants, kind):
         event, *_ = maintenance_with_two_tenants

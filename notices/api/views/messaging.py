@@ -54,7 +54,7 @@ class PreparedNotificationViewSet(NetBoxModelViewSet):
             raise PermissionDenied()
         notification = get_object_or_404(PreparedNotification.objects.restrict(request.user, "change"), pk=pk)
         try:
-            NotificationGenerator(notification.event).reset(notification)
+            NotificationGenerator(notification.event).reset(notification, user=request.user)
         except (ValueError, TemplateRenderError) as e:
             raise ValidationError({"detail": str(e)})
         return Response(self.get_serializer(notification).data)

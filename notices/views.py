@@ -4,7 +4,7 @@ from circuits.models import Provider
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count
 from django.http import (
     HttpResponse,
@@ -921,7 +921,11 @@ class BaseGenerateNotificationsView(PermissionRequiredMixin, View):
 
     def post(self, request, pk):
         event, _, _, generator = self._generator(request, pk)
-        result = generator.apply(generator.plan())
+        try:
+            result = generator.apply(generator.plan(), user=request.user)
+        except PermissionDenied as e:
+            messages.error(request, str(e))
+            return redirect(event.get_absolute_url())
         messages.success(request, f"Notifications: {result.summary()}.")
         return redirect(event.get_absolute_url())
 
@@ -959,9 +963,9 @@ class PreparedNotificationResetView(PermissionRequiredMixin, View):
     def post(self, request, pk):
         notification = get_object_or_404(PreparedNotification.objects.restrict(request.user, "change"), pk=pk)
         try:
-            NotificationGenerator(notification.event).reset(notification)
+            NotificationGenerator(notification.event).reset(notification, user=request.user)
             messages.success(request, "Notification content reset to its template.")
-        except (ValueError, TemplateRenderError) as e:
+        except (ValueError, TemplateRenderError, PermissionDenied) as e:
             messages.error(request, str(e))
         return redirect(_safe_return_url(request, notification.get_absolute_url()))
 

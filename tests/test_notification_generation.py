@@ -1,10 +1,14 @@
 """Tests for NotificationGenerator."""
 
 import pytest
+from core.models import ObjectType
+from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import PermissionDenied
+from users.models import ObjectPermission
 
 from notices.models import NotificationTemplate, PreparedNotification, TemplateScope
-from notices.services.notification_generation import NotificationGenerator
+from notices.services.notification_generation import GenerationResult, NotificationGenerator, PlannedNotification
 
 
 def _kind(slug, **kw):
@@ -179,3 +183,35 @@ class TestReset:
         n.status = "ready"
         with pytest.raises(ValueError):
             NotificationGenerator(event).reset(n)
+
+
+@pytest.mark.django_db
+class TestObjectPermissions:
+    def test_apply_rejects_writes_outside_permission_constraints(self, maintenance_with_two_tenants):
+        event, tenant_a, tenant_b = maintenance_with_two_tenants
+        _kind("noc")
+        user = get_user_model().objects.create_user(username="scoped", password="x")
+        perm = ObjectPermission.objects.create(
+            name="other-tenant", actions=["add", "change", "delete"], constraints={"tenant": tenant_b.pk}
+        )
+        perm.object_types.add(ObjectType.objects.get(app_label="notices", model="preparednotification"))
+        perm.users.add(user)
+        gen = NotificationGenerator(event)
+        with pytest.raises(PermissionDenied):
+            gen.apply(gen.plan(), user=user)
+        assert PreparedNotification.objects.count() == 0
+
+
+class TestSummaryWording:
+    def _items(self):
+        return [
+            PlannedNotification("create", None),
+            PlannedNotification("create", None),
+            PlannedNotification("error", None),
+        ]
+
+    def test_planned_result_uses_future_wording(self):
+        assert GenerationResult.from_plan(self._items()).summary() == "2 to create, 1 failing"
+
+    def test_applied_result_uses_past_tense(self):
+        assert GenerationResult.from_plan(self._items(), planned=False).summary() == "2 created, 1 failed"
