@@ -93,34 +93,6 @@ def maintenance_template():
 
 
 @pytest.fixture
-def outage_template():
-    """Create a basic outage template."""
-    return NotificationTemplate.objects.create(
-        name="Outage Template",
-        slug="outage-template",
-        event_type=MessageEventTypeChoices.OUTAGE,
-        granularity=MessageGranularityChoices.PER_TENANT,
-        subject_template="Outage: {{ outage.name }}",
-        body_template="Outage reported: {{ outage.summary }}",
-        weight=1000,
-    )
-
-
-@pytest.fixture
-def both_template():
-    """Create a template for both event types."""
-    return NotificationTemplate.objects.create(
-        name="Both Template",
-        slug="both-template",
-        event_type=MessageEventTypeChoices.BOTH,
-        granularity=MessageGranularityChoices.PER_TENANT,
-        subject_template="Event: {{ maintenance.name if maintenance else outage.name }}",
-        body_template="Event details here",
-        weight=500,
-    )
-
-
-@pytest.fixture
 def high_weight_template():
     """Create a high-weight template for testing priority."""
     return NotificationTemplate.objects.create(
