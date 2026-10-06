@@ -31,7 +31,7 @@ from utilities.views import register_model_view
 
 from . import filtersets, forms, models, tables
 from .ical_utils import calculate_etag, feed_last_modified, generate_maintenance_ical, maintenance_window_cutoff
-from .models import Maintenance, NotificationTemplate, Outage, PreparedNotification, SentNotification, TemplateScope
+from .models import NotificationTemplate, PreparedNotification, SentNotification, TemplateScope
 from .timeline_utils import build_timeline_item, get_timeline_changes
 
 
@@ -118,32 +118,26 @@ class DashboardView(PermissionRequiredMixin, View):
         )
 
 
-# Maintenance Views
-@register_model_view(models.Maintenance)
-class MaintenanceView(generic.ObjectView):
-    queryset = models.Maintenance.objects.prefetch_related("impacts").all()
+class EventDetailMixin:
+    """Shared detail-page context for Maintenance and Outage."""
 
     def get_extra_context(self, request, instance):
-        # Load the maintenance event impact (prefetch sites/locations to avoid
-        # N+1 when the template renders the Sites column).
-        impact = models.Impact.objects.filter(
-            event_content_type__model="maintenance", event_object_id=instance.pk
-        ).prefetch_related("sites", "locations")
-
-        # Load the maintenance event notifications
-        notification = models.EventNotification.objects.filter(
-            event_content_type__model="maintenance", event_object_id=instance.pk
-        )
-
-        # Load timeline changes
-        object_changes = get_timeline_changes(instance, Maintenance, limit=20)
-        timeline_items = [build_timeline_item(change, "maintenance") for change in object_changes]
+        model_name = instance._meta.model_name
+        # Prefetch sites/locations to avoid N+1 when the template renders the Sites column.
+        impacts = instance.impacts.prefetch_related("sites", "locations")
+        object_changes = get_timeline_changes(instance, type(instance), limit=20)
 
         return {
-            "impacts": impact,
-            "notifications": notification,
-            "timeline": timeline_items,
+            "impacts": impacts,
+            "notifications": instance.notifications.all(),
+            "timeline": [build_timeline_item(change, model_name) for change in object_changes],
         }
+
+
+# Maintenance Views
+@register_model_view(models.Maintenance)
+class MaintenanceView(EventDetailMixin, generic.ObjectView):
+    queryset = models.Maintenance.objects.all()
 
 
 @register_model_view(models.Maintenance, "list", path="", detail=False)
@@ -397,29 +391,8 @@ class OutageListView(generic.ObjectListView):
 
 
 @register_model_view(models.Outage)
-class OutageView(generic.ObjectView):
+class OutageView(EventDetailMixin, generic.ObjectView):
     queryset = models.Outage.objects.all()
-
-    def get_extra_context(self, request, instance):
-        # Load the outage event impact (prefetch sites/locations for the table).
-        impact = models.Impact.objects.filter(
-            event_content_type__model="outage", event_object_id=instance.pk
-        ).prefetch_related("sites", "locations")
-
-        # Load the outage event notifications
-        notification = models.EventNotification.objects.filter(
-            event_content_type__model="outage", event_object_id=instance.pk
-        )
-
-        # Load timeline changes
-        object_changes = get_timeline_changes(instance, Outage, limit=20)
-        timeline_items = [build_timeline_item(change, "outage") for change in object_changes]
-
-        return {
-            "impacts": impact,
-            "notifications": notification,
-            "timeline": timeline_items,
-        }
 
 
 @register_model_view(models.Outage, "add", detail=False)

@@ -258,7 +258,7 @@ class TestMaintenanceDetailView:
         """Should show impacts on detail page."""
         ct = ContentType.objects.get_for_model(circuit)
         maint_ct = ContentType.objects.get_for_model(maintenance)
-        Impact.objects.create(
+        impact = Impact.objects.create(
             event_content_type=maint_ct,
             event_object_id=maintenance.pk,
             target_content_type=ct,
@@ -270,11 +270,11 @@ class TestMaintenanceDetailView:
         response = admin_client.get(url)
 
         assert response.status_code == 200
-        assert "impacts" in response.context
+        assert list(response.context["impacts"]) == [impact]
 
     def test_detail_view_shows_notifications(self, admin_client, maintenance):
         """Should show notifications on detail page."""
-        EventNotification.objects.create(
+        notification = EventNotification.objects.create(
             event_content_type=ContentType.objects.get_for_model(maintenance),
             event_object_id=maintenance.pk,
             email=b"data",
@@ -288,7 +288,7 @@ class TestMaintenanceDetailView:
         response = admin_client.get(url)
 
         assert response.status_code == 200
-        assert "notifications" in response.context
+        assert list(response.context["notifications"]) == [notification]
 
 
 @pytest.mark.django_db
@@ -306,7 +306,7 @@ class TestOutageDetailView:
         """Should show impacts on detail page."""
         ct = ContentType.objects.get_for_model(circuit)
         outage_ct = ContentType.objects.get_for_model(outage)
-        Impact.objects.create(
+        impact = Impact.objects.create(
             event_content_type=outage_ct,
             event_object_id=outage.pk,
             target_content_type=ct,
@@ -318,7 +318,7 @@ class TestOutageDetailView:
         response = admin_client.get(url)
 
         assert response.status_code == 200
-        assert "impacts" in response.context
+        assert list(response.context["impacts"]) == [impact]
 
 
 @pytest.mark.django_db
