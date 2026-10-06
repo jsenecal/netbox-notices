@@ -170,7 +170,9 @@ class NotificationGenerator:
 
     def _existing_by_group(self, root_pks):
         by_group = defaultdict(list)
-        for n in notifications_for_event(self.event):
+        # Notifications without a rendered_hash were created by hand, not by the generator, so
+        # they belong to no recipient group and must never be updated, kept or deleted.
+        for n in notifications_for_event(self.event).exclude(rendered_hash=""):
             root = n.template.root_kind
             if root.pk in root_pks:
                 by_group[_group_key(root.pk, n.tenant, n.impact)].append(n)

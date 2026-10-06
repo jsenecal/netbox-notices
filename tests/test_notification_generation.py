@@ -132,6 +132,29 @@ class TestRegeneration:
         assert n.event == event and not n.is_modified and n.rendered_hash
         assert list(n.contacts.values_list("email", flat=True)) == ["c1@example.com"]
 
+    def test_hand_created_draft_is_untouched_and_does_not_suppress_creation(self, maintenance_with_two_tenants):
+        event, *_ = maintenance_with_two_tenants
+        kind = _kind("noc", granularity="per_event")
+        manual = PreparedNotification.objects.create(
+            template=kind, event=event, subject="mine", body_text="mine", status="draft"
+        )
+        result = self._generate(event)
+        assert result.counts == {"create": 1}
+        manual.refresh_from_db()
+        assert manual.subject == "mine" and manual.body_text == "mine"
+        assert PreparedNotification.objects.count() == 2
+
+    def test_hand_created_tenant_draft_is_not_deleted_as_stale(self, maintenance_with_two_tenants):
+        event, tenant_a, _ = maintenance_with_two_tenants
+        kind = _kind("customer")
+        manual = PreparedNotification.objects.create(
+            template=kind, event=event, tenant=tenant_a, subject="mine", body_text="mine", status="draft"
+        )
+        event.impacts.all().delete()
+        result = self._generate(event)
+        assert "delete" not in result.counts
+        assert PreparedNotification.objects.filter(pk=manual.pk).exists()
+
 
 @pytest.mark.django_db
 class TestReset:
