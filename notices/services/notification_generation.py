@@ -25,7 +25,13 @@ from notices.services.template_matching import (
 )
 from notices.services.template_renderer import TemplateRenderer, TemplateRenderError, split_body
 
-__all__ = ("GenerationResult", "NotificationGenerator", "PlannedNotification", "notifications_for_event")
+__all__ = (
+    "GenerationResult",
+    "NotificationGenerator",
+    "PlannedNotification",
+    "notifications_for_event",
+    "require_notification_permission",
+)
 
 SUBJECT_MAX_LENGTH = 255
 
@@ -94,6 +100,18 @@ def notifications_for_event(event):
     ).select_related("template__extends", "tenant", "impact")
 
 
+def require_notification_permission(user, notification, action):
+    """Raise PermissionDenied unless `user` may perform `action` on the notification as saved now.
+
+    Called after a write inside a transaction, so a violation rolls the write back the same way
+    NetBox's own edit views re-check object permissions.
+    """
+    from notices.models import PreparedNotification
+
+    if not PreparedNotification.objects.restrict(user, action).filter(pk=notification.pk).exists():
+        raise PermissionDenied(f"You do not have permission to {action} this notification.")
+
+
 def _delete_item(notification):
     return PlannedNotification(
         Action.DELETE,
@@ -138,8 +156,8 @@ class NotificationGenerator:
         from notices.models import PreparedNotification
 
         def require(obj, action):
-            if user is not None and not PreparedNotification.objects.restrict(user, action).filter(pk=obj.pk).exists():
-                raise PermissionDenied(f"You do not have permission to {action} this notification.")
+            if user is not None:
+                require_notification_permission(user, obj, action)
 
         for item in plan:
             if item.action == Action.DELETE:

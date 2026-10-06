@@ -1,8 +1,10 @@
 """Tests for the notification generation, approve and reset views."""
 
 import pytest
+from core.models import ObjectType
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from users.models import ObjectPermission
 
 from notices.filtersets import PreparedNotificationFilterSet
 from notices.models import NotificationTemplate, PreparedNotification
@@ -75,6 +77,21 @@ class TestApproveAndReset:
         admin_client.post(reverse("plugins:notices:preparednotification_approve", args=[n.pk]))
         n.refresh_from_db()
         assert n.status == "ready" and n.approved_by is not None and n.recipients
+
+    def test_approve_respects_post_change_permission_constraints(self, client, maintenance_with_two_tenants, kind):
+        """A drafter whose change permission only covers drafts cannot approve."""
+        event, *_ = maintenance_with_two_tenants
+        n = self._generated(event)
+        user = User.objects.create_user(username="drafter", password="x")
+        perm = ObjectPermission.objects.create(
+            name="drafts-only", actions=["view", "change"], constraints={"status": "draft"}
+        )
+        perm.object_types.add(ObjectType.objects.get(app_label="notices", model="preparednotification"))
+        perm.users.add(user)
+        client.force_login(user)
+        client.post(reverse("plugins:notices:preparednotification_approve", args=[n.pk]))
+        n.refresh_from_db()
+        assert n.status == "draft" and n.approved_by is None
 
     def test_reset_restores_template_content(self, admin_client, maintenance_with_two_tenants, kind):
         event, *_ = maintenance_with_two_tenants

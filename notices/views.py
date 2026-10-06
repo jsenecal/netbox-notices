@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
 from django.db.models import Count
 from django.http import (
     HttpResponse,
@@ -35,7 +36,11 @@ from .choices import PreparedNotificationStatusChoices
 from .constants import GENERATE_NOTIFICATIONS_PERMISSIONS
 from .ical_utils import calculate_etag, feed_last_modified, generate_maintenance_ical, maintenance_window_cutoff
 from .models import Maintenance, NotificationTemplate, Outage, PreparedNotification, SentNotification, TemplateScope
-from .services.notification_generation import NotificationGenerator, notifications_for_event
+from .services.notification_generation import (
+    NotificationGenerator,
+    notifications_for_event,
+    require_notification_permission,
+)
 from .services.template_renderer import TemplateRenderError
 from .timeline_utils import build_timeline_item, get_timeline_changes
 from .validators import PreparedNotificationStateMachine
@@ -947,12 +952,17 @@ class PreparedNotificationApproveView(PermissionRequiredMixin, View):
     def post(self, request, pk):
         notification = get_object_or_404(PreparedNotification.objects.restrict(request.user, "change"), pk=pk)
         try:
-            PreparedNotificationStateMachine(notification, user=request.user).transition_to(
-                PreparedNotificationStatusChoices.READY
-            )
+            # Re-check the saved state too, so a permission constrained to drafts cannot approve.
+            with transaction.atomic():
+                PreparedNotificationStateMachine(notification, user=request.user).transition_to(
+                    PreparedNotificationStatusChoices.READY
+                )
+                require_notification_permission(request.user, notification, "change")
             messages.success(request, "Notification approved.")
         except ValidationError as e:
             messages.error(request, "; ".join(e.messages))
+        except PermissionDenied as e:
+            messages.error(request, str(e))
         return redirect(_safe_return_url(request, notification.get_absolute_url()))
 
 
