@@ -11,6 +11,7 @@ All plugin behaviour is configured through the `PLUGINS_CONFIG["notices"]` dict 
 | `ical_cache_max_age` | `900` | `Cache-Control: max-age` (seconds) sent with the iCal subscription feed. |
 | `ical_token_placeholder` | `"changeme"` | Placeholder string shown in the calendar UI's iCal subscription URL. Cosmetic only; the user replaces it with their own API token. |
 | `event_history_days` | `30` | Window (days, looking back from now) for the event-history widgets shown on Provider, Circuit, Device, etc detail pages. |
+| `auto_generate_notifications` | `{"maintenance": [], "outage": []}` | Event statuses for which draft outgoing notifications are generated automatically when an event changes. Empty lists (the default) turn it off. |
 
 The settings are declared in `notices/__init__.py` as the `default_settings` dict on `NoticesConfig`. The defaults for `allowed_content_types` come from `notices/constants.py:DEFAULT_ALLOWED_CONTENT_TYPES`.
 
@@ -35,6 +36,10 @@ PLUGINS_CONFIG = {
         "ical_past_days_default": 14,
         "ical_cache_max_age": 600,
         "event_history_days": 60,
+        "auto_generate_notifications": {
+            "maintenance": ["CONFIRMED", "RE-SCHEDULED"],
+            "outage": ["REPORTED", "INVESTIGATING"],
+        },
     },
 }
 ```
@@ -69,6 +74,44 @@ When you add a new content type to the list:
 | `dcim.Rack` | Needs a custom resolver (resolves through `Rack.site` / `Rack.location`). |
 | `virtualization.VirtualMachine` | Needs a custom resolver (resolves through `VM.site` or `VM.cluster.site`). |
 | `ipam.Prefix` / `ipam.IPAddress` | Needs a custom resolver (typically scoped via `vrf` -> `tenant` rather than site). |
+
+## auto_generate_notifications
+
+Opt-in automatic generation of draft outgoing notifications. The value maps an event type to the list of statuses that trigger generation:
+
+```python
+PLUGINS_CONFIG = {
+    "notices": {
+        "auto_generate_notifications": {
+            "maintenance": ["CONFIRMED", "RE-SCHEDULED"],
+            "outage": ["REPORTED", "INVESTIGATING"],
+        },
+    },
+}
+```
+
+An event whose current status is not in its type's list is never generated automatically. Use the status values of the event model (see [Maintenance](events/maintenance.md) and [Outage](events/outage.md)). Automatic runs produce drafts only; nothing is approved or sent.
+
+### What triggers a run
+
+A run is queued when an event changes meaningfully:
+
+- the event is created;
+- its `status`, `start`, `end` or `estimated_time_to_repair` changes;
+- an impact is added to it, changed on it or removed from it.
+
+Other edits, such as a summary or comment change, do not trigger anything.
+
+### How it runs
+
+- It runs after the surrounding database transaction commits, so it sees the saved event and impacts.
+- It runs once per event per transaction. Creating an event and its impacts in one request produces a single run, not one per save.
+- It runs as the system, not as a user, so NetBox object-level permission constraints are not applied. Manual UI and API runs are checked against the requesting user.
+- Regeneration rules apply as usual: untouched drafts are refreshed, edited drafts and anything approved or sent are kept. See [Outgoing Notifications](outgoing-notifications.md).
+- A failure never breaks the save that triggered it. Render errors and unexpected exceptions are logged and recorded as a warning journal entry on the event.
+- Runs happen outside a request, so NetBox does not attribute them to a user; the drafts they create do not appear on the event timeline the way UI and API runs do.
+
+In a script or `nbshell` there is no surrounding transaction (autocommit), so every save commits on its own. Creating an event and then N impacts therefore runs generation N+1 times. Generation is idempotent on drafts, so the result is the same, only slower; wrap the work in `transaction.atomic()` to get a single run.
 
 ## iCal feed settings
 

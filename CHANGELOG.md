@@ -8,6 +8,20 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ## [Unreleased]
 
+### Added
+
+- Generate outgoing notifications from a maintenance or outage: "Generate Notifications" in the event's Operations menu (with preview), `POST /api/plugins/notices/{maintenance,outage}/{id}/generate-notifications/` (with `dry_run`), and opt-in automatic generation via `auto_generate_notifications`.
+- Regeneration re-renders untouched drafts in place and keeps hand-edited drafts and anything already approved or sent. Notifications created by hand are never touched by generation.
+- Generation enforces NetBox object-level permissions: a UI or API run that would create, update or delete a notification the user may not add, change or delete is refused and rolled back as a whole.
+- "Reset to template" for hand-edited drafts (UI and `POST .../prepared-notifications/{id}/reset/`), and "Approve" in the UI.
+- Prepared notifications record their recipient group (`tenant`, `impact`) and expose a `modified` flag, filterable in the list and API.
+- Outgoing notifications appear on the event timeline.
+
+### Changed
+
+- Template matching: every non-base template is an independent notification kind; a template that extends a non-base template overrides it for the recipient groups its scopes match. Fields merge only along the `extends` chain instead of across every matching template. `{% extends "base" %}` now renders with the full context and resolves to the template's own parent.
+- An override must use the same granularity as the template it extends, and `extends` cycles are rejected on save.
+
 ## [1.3.0] - 2026-09-12
 
 ### Added

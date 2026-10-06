@@ -279,7 +279,59 @@ The `timestamp` field lets a batching delivery system record when something actu
 
 Read `recipients`, not `contacts`, when delivering. The full rationale, side effects and a polling loop are in [Approval Workflow](../messaging/workflow.md).
 
-Filters: `id`, `status`, `template_id`. `status` accepts multiple values. `q` searches subject and body text.
+Filters: `id`, `status`, `template_id`, `event_type`, `event_id`, `tenant_id`, `modified`. `status` accepts multiple values. `modified` selects generated drafts whose content was edited since rendering (`?modified=true`). `q` searches subject and body text.
+
+The read-only `tenant` and `impact` fields name the recipient group a generated notification belongs to, and `modified` is true for a hand-edited generated draft.
+
+### Generate notifications
+
+```
+POST /api/plugins/notices/maintenance/{id}/generate-notifications/
+POST /api/plugins/notices/outage/{id}/generate-notifications/
+```
+
+Creates, updates and deletes draft notifications for the event. Body fields, both optional: `templates` (list of notification kind IDs; empty or absent means all applicable kinds; IDs that are not kinds for the event are rejected with `400`) and `dry_run` (boolean, default `false`).
+
+```bash
+# Preview
+curl -X POST -H "Authorization: Token $API_TOKEN" -H "Content-Type: application/json" \
+  -d '{"dry_run": true}' \
+  https://netbox.example.com/api/plugins/notices/maintenance/42/generate-notifications/
+
+# Apply, for kinds 3 and 5 only
+curl -X POST -H "Authorization: Token $API_TOKEN" -H "Content-Type: application/json" \
+  -d '{"templates": [3, 5]}' \
+  https://netbox.example.com/api/plugins/notices/maintenance/42/generate-notifications/
+```
+
+The response has a `summary` string, `counts` per action and one entry per recipient group in `items`:
+
+```json
+{
+  "summary": "2 created",
+  "counts": {"create": 2},
+  "items": [
+    {"action": "create", "template": 3, "root_template": 3, "tenant": 7, "impact": null,
+     "contacts": [12, 15], "subject": "[CONFIRMED] Acme Maintenance: MAINT-1001",
+     "error": null, "notification": 91}
+  ]
+}
+```
+
+A dry run words the summary as a plan (`"2 to create, 1 failing"`) and returns `notification: null` for new drafts. An applied run is atomic: every write is checked against the caller's object permissions, and a violation returns `403` with nothing written. The caller needs add, change and delete on prepared notifications and view on the event. The actions are described in [Outgoing Notifications](../outgoing-notifications.md).
+
+### Reset a draft
+
+```
+POST /api/plugins/notices/prepared-notifications/{id}/reset/
+```
+
+```bash
+curl -X POST -H "Authorization: Token $API_TOKEN" \
+  https://netbox.example.com/api/plugins/notices/prepared-notifications/91/reset/
+```
+
+Re-renders a draft from its template and discards manual edits, returning the notification. Requires change on the notification. A notification that is not a draft, is not linked to an event, or fails to render returns `400`.
 
 ## Sent notifications
 
