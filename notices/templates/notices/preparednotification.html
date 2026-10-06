@@ -2,6 +2,21 @@
 {% load helpers %}
 {% load notices_filters %}
 
+{% block extra_controls %}
+  {% if perms.notices.change_preparednotification and object.status == 'draft' %}
+    {% if object.event and object.is_modified %}
+      <form method="post" action="{% url 'plugins:notices:preparednotification_reset' pk=object.pk %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-warning"><i class="mdi mdi-restore"></i> Reset to template</button>
+      </form>
+    {% endif %}
+    <form method="post" action="{% url 'plugins:notices:preparednotification_approve' pk=object.pk %}" class="d-inline">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-success"><i class="mdi mdi-check"></i> Approve</button>
+    </form>
+  {% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="row mb-3">
     <div class="col col-md-6">
@@ -28,6 +43,16 @@
                             <span class="badge bg-secondary">{{ object.event_type_name|title }}</span>
                             {{ object.event|linkify }}
                         </td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <th scope="row">Group</th>
+                        <td>{% if object.impact %}{{ object.impact.target }}{% elif object.tenant %}{{ object.tenant|linkify }}{% else %}All{% endif %}</td>
+                    </tr>
+                    {% if object.is_modified %}
+                    <tr>
+                        <th scope="row">Modified</th>
+                        <td><span class="badge text-bg-warning">Edited since generation</span></td>
                     </tr>
                     {% endif %}
                 </table>

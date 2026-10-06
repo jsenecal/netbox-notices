@@ -68,6 +68,14 @@
                 <li><span class="dropdown-item disabled"><i class="mdi mdi-check-circle"></i> Mark Completed</span></li>
                 {% endif %}
 
+                {% if perms.notices.add_preparednotification %}
+                <li>
+                    <a class="dropdown-item" href="{% url 'plugins:notices:maintenance_generate_notifications' pk=object.pk %}">
+                        <i class="mdi mdi-email-arrow-right"></i> Generate Notifications
+                    </a>
+                </li>
+                {% endif %}
+
                 <li><hr class="dropdown-divider"></li>
 
                 {# Cancel #}
@@ -244,6 +252,12 @@
             This maintenance is Completed or Cancelled, the maintenance impact can no longer be modified.
           </div>
         {% endif %}
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      {% include 'notices/inc/outgoing_notifications_card.html' %}
     </div>
   </div>
 

@@ -225,6 +225,9 @@ class PreparedNotificationTable(NetBoxTable):
 
     subject = tables.Column(linkify=True)
     template = tables.Column(linkify=True)
+    event = tables.Column(linkify=True, orderable=False)
+    tenant = tables.Column(linkify=True)
+    is_modified = columns.BooleanColumn(verbose_name="Modified", orderable=False)
     status = columns.ChoiceFieldColumn()
     approved_by = tables.Column(linkify=True)
     sent_at = columns.DateTimeColumn()
@@ -238,6 +241,9 @@ class PreparedNotificationTable(NetBoxTable):
             "id",
             "subject",
             "template",
+            "event",
+            "tenant",
+            "is_modified",
             "status",
             "approved_by",
             "approved_at",
@@ -249,6 +255,7 @@ class PreparedNotificationTable(NetBoxTable):
         default_columns = (
             "subject",
             "template",
+            "tenant",
             "status",
             "sent_at",
         )

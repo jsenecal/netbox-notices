@@ -4,6 +4,7 @@ from circuits.models import Provider
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.http import (
     HttpResponse,
@@ -13,7 +14,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.cache import get_conditional_response
-from django.utils.http import http_date, quote_etag
+from django.utils.http import http_date, quote_etag, url_has_allowed_host_and_scheme
 from django.views.generic import View
 from netbox.api.authentication import TokenAuthentication
 from netbox.config import get_config
@@ -30,9 +31,14 @@ from rest_framework import exceptions
 from utilities.views import register_model_view
 
 from . import filtersets, forms, models, tables
+from .choices import PreparedNotificationStatusChoices
+from .constants import GENERATE_NOTIFICATIONS_PERMISSIONS
 from .ical_utils import calculate_etag, feed_last_modified, generate_maintenance_ical, maintenance_window_cutoff
 from .models import Maintenance, NotificationTemplate, Outage, PreparedNotification, SentNotification, TemplateScope
+from .services.notification_generation import NotificationGenerator, notifications_for_event
+from .services.template_renderer import TemplateRenderError
 from .timeline_utils import build_timeline_item, get_timeline_changes
+from .validators import PreparedNotificationStateMachine
 
 
 # Dashboard View
@@ -142,6 +148,7 @@ class MaintenanceView(generic.ObjectView):
         return {
             "impacts": impact,
             "notifications": notification,
+            "outgoing_notifications": notifications_for_event(instance),
             "timeline": timeline_items,
         }
 
@@ -418,6 +425,7 @@ class OutageView(generic.ObjectView):
         return {
             "impacts": impact,
             "notifications": notification,
+            "outgoing_notifications": notifications_for_event(instance),
             "timeline": timeline_items,
         }
 
@@ -827,7 +835,7 @@ class NotificationTemplateBulkDeleteView(generic.BulkDeleteView):
 # PreparedNotification Views
 @register_model_view(PreparedNotification, "list", path="", detail=False)
 class PreparedNotificationListView(generic.ObjectListView):
-    queryset = PreparedNotification.objects.select_related("template", "approved_by")
+    queryset = PreparedNotification.objects.select_related("template", "approved_by", "tenant")
     table = tables.PreparedNotificationTable
     filterset = filtersets.PreparedNotificationFilterSet
     filterset_form = forms.PreparedNotificationFilterForm
@@ -880,6 +888,82 @@ class PreparedNotificationView(generic.ObjectView):
         return {
             "contacts": contacts,
         }
+
+
+def _safe_return_url(request, fallback):
+    url = request.POST.get("return_url") or request.GET.get("return_url")
+    if url and url_has_allowed_host_and_scheme(url, allowed_hosts={request.get_host()}):
+        return url
+    return fallback
+
+
+class BaseGenerateNotificationsView(PermissionRequiredMixin, View):
+    """Preview (GET) and generate (POST) outgoing notifications for one event."""
+
+    permission_required = GENERATE_NOTIFICATIONS_PERMISSIONS
+    model = None
+
+    def _generator(self, request, pk):
+        event = get_object_or_404(self.model.objects.restrict(request.user, "view"), pk=pk)
+        kinds = NotificationGenerator(event).applicable_kinds()
+        params = request.POST if request.method == "POST" else request.GET
+        selected_ids = params.getlist("templates")
+        selected = [k for k in kinds if str(k.pk) in selected_ids] if selected_ids else list(kinds)
+        return event, kinds, selected, NotificationGenerator(event, templates=selected)
+
+    def get(self, request, pk):
+        event, kinds, selected, generator = self._generator(request, pk)
+        return render(
+            request,
+            "notices/generate_notifications.html",
+            {"object": event, "kinds": kinds, "selected": selected, "plan": generator.plan()},
+        )
+
+    def post(self, request, pk):
+        event, _, _, generator = self._generator(request, pk)
+        result = generator.apply(generator.plan())
+        messages.success(request, f"Notifications: {result.summary()}.")
+        return redirect(event.get_absolute_url())
+
+
+@register_model_view(models.Maintenance, "generate_notifications", path="generate-notifications")
+class MaintenanceGenerateNotificationsView(BaseGenerateNotificationsView):
+    model = models.Maintenance
+
+
+@register_model_view(models.Outage, "generate_notifications", path="generate-notifications")
+class OutageGenerateNotificationsView(BaseGenerateNotificationsView):
+    model = models.Outage
+
+
+@register_model_view(PreparedNotification, "approve")
+class PreparedNotificationApproveView(PermissionRequiredMixin, View):
+    permission_required = "notices.change_preparednotification"
+
+    def post(self, request, pk):
+        notification = get_object_or_404(PreparedNotification.objects.restrict(request.user, "change"), pk=pk)
+        try:
+            PreparedNotificationStateMachine(notification, user=request.user).transition_to(
+                PreparedNotificationStatusChoices.READY
+            )
+            messages.success(request, "Notification approved.")
+        except ValidationError as e:
+            messages.error(request, "; ".join(e.messages))
+        return redirect(_safe_return_url(request, notification.get_absolute_url()))
+
+
+@register_model_view(PreparedNotification, "reset")
+class PreparedNotificationResetView(PermissionRequiredMixin, View):
+    permission_required = "notices.change_preparednotification"
+
+    def post(self, request, pk):
+        notification = get_object_or_404(PreparedNotification.objects.restrict(request.user, "change"), pk=pk)
+        try:
+            NotificationGenerator(notification.event).reset(notification)
+            messages.success(request, "Notification content reset to its template.")
+        except (ValueError, TemplateRenderError) as e:
+            messages.error(request, str(e))
+        return redirect(_safe_return_url(request, notification.get_absolute_url()))
 
 
 @register_model_view(PreparedNotification, "add", detail=False)
