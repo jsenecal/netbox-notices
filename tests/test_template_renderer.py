@@ -8,6 +8,7 @@ from notices.services.template_renderer import (
     TemplateRenderError,
     ical_datetime,
     render_markdown,
+    split_body,
 )
 
 
@@ -104,15 +105,23 @@ class TestTemplateRenderer:
             renderer.validate("{% if unclosed")
 
     def test_render_with_blocks(self):
-        """Test rendering with Jinja blocks."""
-        templates = {
-            "base": "{% block content %}default{% endblock %}",
-        }
-        renderer = TemplateRenderer(templates)
+        """Test rendering with Jinja blocks using for_chain."""
 
-        child = '{% extends "base" %}{% block content %}custom{% endblock %}'
-        result = renderer.render_with_inheritance(child)
-        assert result == "custom"
+        def _chain(*specs):
+            """Build unsaved templates linked by extends: specs are (slug, body), most specific first."""
+            from notices.models import NotificationTemplate
+
+            templates = [NotificationTemplate(name=s, slug=s, body_template=b) for s, b in specs]
+            for child, parent in zip(templates, templates[1:], strict=False):
+                child.extends = parent
+            return templates
+
+        chain = _chain(
+            ("child", '{% extends "base" %}{% block content %}hi {{ name }}{% endblock %}'),
+            ("parent", "[{% block content %}default{% endblock %}]"),
+        )
+        renderer = TemplateRenderer.for_chain(chain)
+        assert renderer.render_body(chain, {"name": "acme"}) == "[hi acme]"
 
     def test_build_context_minimal(self):
         """Test building minimal context."""
@@ -156,3 +165,50 @@ class TestTemplateRendererWithEvent:
 
         assert "maintenance" in context
         assert context["maintenance"] == maintenance
+
+
+def _chain(*specs):
+    """Build unsaved templates linked by extends: specs are (slug, body), most specific first."""
+    from notices.models import NotificationTemplate
+
+    templates = [NotificationTemplate(name=s, slug=s, body_template=b) for s, b in specs]
+    for child, parent in zip(templates, templates[1:], strict=False):
+        child.extends = parent
+    return templates
+
+
+class TestChainRendering:
+    def test_child_block_overrides_parent_with_context(self):
+        chain = _chain(
+            ("child", '{% extends "base" %}{% block content %}hi {{ name }}{% endblock %}'),
+            ("parent", "[{% block content %}default{% endblock %}]"),
+        )
+        renderer = TemplateRenderer.for_chain(chain)
+        assert renderer.render_body(chain, {"name": "acme"}) == "[hi acme]"
+
+    def test_three_level_base_resolves_to_each_parent(self):
+        chain = _chain(
+            ("leaf", '{% extends "base" %}{% block a %}LEAF{% endblock %}'),
+            ("mid", '{% extends "base" %}{% block b %}MID{% endblock %}'),
+            ("top", "{% block a %}a{% endblock %}-{% block b %}b{% endblock %}"),
+        )
+        assert TemplateRenderer.for_chain(chain).render_body(chain, {}) == "LEAF-MID"
+
+    def test_empty_child_body_falls_back_to_parent(self):
+        chain = _chain(("child", ""), ("parent", "P {{ x }}"))
+        assert TemplateRenderer.for_chain(chain).render_body(chain, {"x": 1}) == "P 1"
+
+
+class TestSplitBody:
+    def test_markdown_keeps_source_as_text_and_renders_html(self):
+        text, html = split_body("markdown", "**hi**")
+        assert text == "**hi**"
+        assert "<strong>hi</strong>" in html
+
+    def test_html_strips_tags_for_text(self):
+        text, html = split_body("html", "<p>hi <b>there</b></p>")
+        assert html == "<p>hi <b>there</b></p>"
+        assert text == "hi there"
+
+    def test_text_has_no_html(self):
+        assert split_body("text", "plain") == ("plain", "")

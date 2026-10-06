@@ -3,9 +3,10 @@ from datetime import UTC
 import markdown
 from django.conf import settings
 from django.utils import timezone
+from django.utils.html import strip_tags
 from jinja2 import BaseLoader, Environment, TemplateSyntaxError, UndefinedError
 
-__all__ = ("TemplateRenderer", "TemplateRenderError")
+__all__ = ("TemplateRenderer", "TemplateRenderError", "split_body")
 
 
 class TemplateRenderError(Exception):
@@ -45,6 +46,28 @@ def render_markdown(text):
     )
 
 
+class ChainEnvironment(Environment):
+    """Jinja environment where `{% extends "base" %}` means "my own parent template"."""
+
+    def __init__(self, parents, **kwargs):
+        super().__init__(**kwargs)
+        self.parents = parents
+
+    def join_path(self, template, parent):
+        if template == "base" and parent in self.parents:
+            return self.parents[parent]
+        return template
+
+
+def split_body(body_format, rendered):
+    """Return (body_text, body_html) for a rendered body according to its format."""
+    if body_format == "markdown":
+        return rendered, render_markdown(rendered)
+    if body_format == "html":
+        return strip_tags(rendered).strip(), rendered
+    return rendered, ""
+
+
 class TemplateRenderer:
     """
     Renders Jinja templates with message context.
@@ -52,18 +75,26 @@ class TemplateRenderer:
     Provides custom filters for iCal datetime formatting and Markdown rendering.
     """
 
-    def __init__(self, templates=None):
+    def __init__(self, templates=None, parents=None):
         """
         Initialize renderer.
 
         Args:
             templates: Optional dict of template_name -> template_string for inheritance
+            parents: Optional dict of slug -> parent_slug for chain inheritance
         """
         loader = StringLoader(templates) if templates else None
-        self.env = Environment(
-            loader=loader,
-            autoescape=False,
-        )
+        if parents:
+            self.env = ChainEnvironment(
+                parents=parents,
+                loader=loader,
+                autoescape=False,
+            )
+        else:
+            self.env = Environment(
+                loader=loader,
+                autoescape=False,
+            )
         # Register custom filters
         self.env.filters["ical_datetime"] = ical_datetime
         self.env.filters["markdown"] = render_markdown
@@ -107,22 +138,22 @@ class TemplateRenderer:
         except TemplateSyntaxError as e:
             raise TemplateRenderError(f"Invalid template syntax: {e}")
 
-    def render_with_inheritance(self, child_template, base_name="base"):
-        """
-        Render a template that extends a base template.
+    @classmethod
+    def for_chain(cls, chain):
+        """Renderer whose loader knows every template in an inheritance chain by slug."""
+        templates = {t.slug: t.body_template or "" for t in chain}
+        parents = {t.slug: t.extends.slug for t in chain if t.extends_id is not None or t.extends is not None}
+        return cls(templates=templates, parents=parents)
 
-        Args:
-            child_template: Child template string (should have {% extends "base" %})
-            base_name: Name of the base template in self.templates
-
-        Returns:
-            Rendered string
-        """
+    def render_body(self, chain, context):
+        """Render the most specific non-empty body in the chain, with inheritance and context."""
+        source = next((t for t in chain if t.body_template), None)
+        if source is None:
+            return ""
         try:
-            template = self.env.from_string(child_template)
-            return template.render()
+            return self.env.get_template(source.slug).render(**context)
         except (TemplateSyntaxError, UndefinedError) as e:
-            raise TemplateRenderError(f"Template inheritance rendering failed: {e}")
+            raise TemplateRenderError(f"Template rendering failed: {e}")
 
     @classmethod
     def build_context(cls, notification_template, event=None, tenant=None, impacts=None, **extra):
