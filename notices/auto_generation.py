@@ -18,8 +18,20 @@ MEANINGFUL_FIELDS = ("status", "start", "end", "estimated_time_to_repair")
 
 
 def auto_statuses(event):
+    """Statuses that trigger automatic generation for this event's model; [] means off.
+
+    A malformed setting is logged and treated as off: it must never break an event save.
+    """
     setting = get_config().PLUGINS_CONFIG.get("notices", {}).get("auto_generate_notifications") or {}
-    return setting.get(event._meta.model_name, [])
+    if not isinstance(setting, dict):
+        logger.warning("Ignoring auto_generate_notifications: expected a dict, got %r", setting)
+        return []
+    model_name = event._meta.model_name
+    statuses = setting.get(model_name) or []
+    if not isinstance(statuses, list | tuple):
+        logger.warning("Ignoring auto_generate_notifications[%r]: expected a list, got %r", model_name, statuses)
+        return []
+    return list(statuses)
 
 
 def is_meaningful_event_change(instance, created):
@@ -42,10 +54,15 @@ class _PendingRun:
         self.done = False
 
     def __call__(self):
+        # Django's on-commit capture helper runs callbacks without removing them from
+        # run_on_commit, so _already_queued needs this flag to tell a spent run from a pending one.
         self.done = True
-        event = self.model.objects.filter(pk=self.key[1]).first()
-        if event is not None and event.status in auto_statuses(event):
-            run_generation(event)
+        try:
+            event = self.model.objects.filter(pk=self.key[1]).first()
+            if event is not None and event.status in auto_statuses(event):
+                run_generation(event)
+        except Exception:  # never break the request whose commit triggered us
+            logger.exception("Automatic notification generation failed for %s %s", self.model.__name__, self.key[1])
 
 
 def _already_queued(key):
@@ -67,7 +84,14 @@ def schedule_generation(event):
     key = (ContentType.objects.get_for_model(event).pk, event.pk)
     if _already_queued(key):
         return
-    transaction.on_commit(_PendingRun(key, type(event)))
+    transaction.on_commit(_PendingRun(key, type(event)), robust=True)
+
+
+def schedule_if_meaningful(event, created):
+    """Queue generation for a saved event when auto mode is on and the change matters."""
+    # Check the cheap setting first: change detection serializes the event.
+    if auto_statuses(event) and is_meaningful_event_change(event, created):
+        schedule_generation(event)
 
 
 def run_generation(event):
@@ -80,7 +104,9 @@ def run_generation(event):
         generator = NotificationGenerator(event)
         result = generator.apply(generator.plan())
         errors = [item.error for item in result.items if item.action == GenerationActionChoices.ERROR]
-    except Exception as e:  # never break the save that triggered us
+        for error in errors:
+            logger.warning("Automatic notification generation for %s: %s", event, error)
+    except Exception as e:
         logger.exception("Automatic notification generation failed for %s", event)
         errors = [str(e)]
     if errors:

@@ -6,7 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-from .auto_generation import is_meaningful_event_change, schedule_generation
+from .auto_generation import schedule_generation, schedule_if_meaningful
 from .choices import MaintenanceTypeChoices
 from .models import Impact, Maintenance, Outage
 
@@ -113,8 +113,7 @@ def _circuit_termination_changed(sender, instance, **kwargs):
 @receiver(post_save, sender=Outage)
 def _auto_generate_on_event_save(sender, instance, created, **kwargs):
     """Queue opt-in automatic notification generation when an event changes meaningfully."""
-    if is_meaningful_event_change(instance, created):
-        schedule_generation(instance)
+    schedule_if_meaningful(instance, created)
 
 
 @receiver(post_save, sender=Impact)

@@ -97,3 +97,47 @@ class TestAutoGeneration:
             event.status = "CANCELLED"
             event.save()
         assert JournalEntry.objects.filter(assigned_object_id=event.pk, kind="warning").exists()
+
+    def test_status_gate_is_checked_when_the_run_starts(
+        self, maintenance_with_two_tenants, kind, django_capture_on_commit_callbacks
+    ):
+        event, *_ = maintenance_with_two_tenants
+        with mock.patch(SETTING, return_value=["CANCELLED"]), django_capture_on_commit_callbacks(execute=True):
+            event.snapshot()
+            event.start = event.start - datetime.timedelta(hours=1)
+            event.save()
+        assert event.status == "CONFIRMED"
+        assert PreparedNotification.objects.count() == 0
+
+    def test_change_detection_skipped_when_auto_mode_is_off(self, maintenance_with_two_tenants):
+        event, *_ = maintenance_with_two_tenants
+        with mock.patch.object(auto_generation, "is_meaningful_event_change") as meaningful:
+            event.save()
+        meaningful.assert_not_called()
+
+    @pytest.mark.parametrize("setting", [["CONFIRMED"], "CONFIRMED", {"maintenance": "CONFIRMED"}])
+    def test_malformed_setting_does_not_break_save(
+        self, maintenance_with_two_tenants, kind, setting, django_capture_on_commit_callbacks
+    ):
+        event, *_ = maintenance_with_two_tenants
+        config = mock.Mock(PLUGINS_CONFIG={"notices": {"auto_generate_notifications": setting}})
+        with (
+            mock.patch("notices.auto_generation.get_config", return_value=config),
+            django_capture_on_commit_callbacks(execute=True),
+        ):
+            event.save()
+        assert PreparedNotification.objects.count() == 0
+
+    def test_callback_failure_does_not_escape(
+        self, maintenance_with_two_tenants, kind, django_capture_on_commit_callbacks
+    ):
+        event, *_ = maintenance_with_two_tenants
+        with (
+            mock.patch(SETTING, return_value=["CANCELLED"]),
+            mock.patch.object(auto_generation, "run_generation", side_effect=RuntimeError("boom")),
+            django_capture_on_commit_callbacks(execute=True),
+        ):
+            event.snapshot()
+            event.status = "CANCELLED"
+            event.save()
+        assert PreparedNotification.objects.count() == 0
