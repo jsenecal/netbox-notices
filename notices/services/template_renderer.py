@@ -4,7 +4,7 @@ import markdown
 from django.conf import settings
 from django.utils import timezone
 from django.utils.html import strip_tags
-from jinja2 import BaseLoader, Environment, TemplateSyntaxError, UndefinedError
+from jinja2 import BaseLoader, Environment, TemplateSyntaxError
 
 __all__ = ("TemplateRenderer", "TemplateRenderError", "split_body")
 
@@ -99,6 +99,26 @@ class TemplateRenderer:
         self.env.filters["ical_datetime"] = ical_datetime
         self.env.filters["markdown"] = render_markdown
 
+    def _safe_render(self, template, context, prefix="Template rendering failed"):
+        """
+        Safely render a template, wrapping any exception in TemplateRenderError.
+
+        Args:
+            template: Jinja2 template object
+            context: Dict of template variables
+            prefix: Error message prefix
+
+        Returns:
+            Rendered string
+
+        Raises:
+            TemplateRenderError: For any error during rendering
+        """
+        try:
+            return template.render(**context)
+        except Exception as e:
+            raise TemplateRenderError(f"{prefix}: {e}")
+
     def render(self, template_string, context):
         """
         Render a template string with context.
@@ -115,8 +135,10 @@ class TemplateRenderer:
         """
         try:
             template = self.env.from_string(template_string)
-            return template.render(**context)
-        except (TemplateSyntaxError, UndefinedError) as e:
+            return self._safe_render(template, context)
+        except TemplateRenderError:
+            raise
+        except Exception as e:
             raise TemplateRenderError(f"Template rendering failed: {e}")
 
     def validate(self, template_string):
@@ -150,10 +172,8 @@ class TemplateRenderer:
         source = next((t for t in chain if t.body_template), None)
         if source is None:
             return ""
-        try:
-            return self.env.get_template(source.slug).render(**context)
-        except (TemplateSyntaxError, UndefinedError) as e:
-            raise TemplateRenderError(f"Template rendering failed: {e}")
+        template = self.env.get_template(source.slug)
+        return self._safe_render(template, context)
 
     @classmethod
     def build_context(cls, notification_template, event=None, tenant=None, impacts=None, **extra):

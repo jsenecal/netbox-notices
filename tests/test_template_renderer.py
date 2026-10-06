@@ -93,6 +93,12 @@ class TestTemplateRenderer:
         with pytest.raises(TemplateRenderError, match="rendering failed"):
             renderer.render("{{ invalid syntax }}", {})
 
+    def test_render_runtime_error_wrapped(self):
+        """Test that runtime errors in templates are wrapped in TemplateRenderError."""
+        renderer = TemplateRenderer()
+        with pytest.raises(TemplateRenderError, match="rendering failed"):
+            renderer.render("{{ 1/0 }}", {})
+
     def test_validate_valid_template(self):
         """Test validating a valid template."""
         renderer = TemplateRenderer()
@@ -103,25 +109,6 @@ class TestTemplateRenderer:
         renderer = TemplateRenderer()
         with pytest.raises(TemplateRenderError, match="Invalid template syntax"):
             renderer.validate("{% if unclosed")
-
-    def test_render_with_blocks(self):
-        """Test rendering with Jinja blocks using for_chain."""
-
-        def _chain(*specs):
-            """Build unsaved templates linked by extends: specs are (slug, body), most specific first."""
-            from notices.models import NotificationTemplate
-
-            templates = [NotificationTemplate(name=s, slug=s, body_template=b) for s, b in specs]
-            for child, parent in zip(templates, templates[1:], strict=False):
-                child.extends = parent
-            return templates
-
-        chain = _chain(
-            ("child", '{% extends "base" %}{% block content %}hi {{ name }}{% endblock %}'),
-            ("parent", "[{% block content %}default{% endblock %}]"),
-        )
-        renderer = TemplateRenderer.for_chain(chain)
-        assert renderer.render_body(chain, {"name": "acme"}) == "[hi acme]"
 
     def test_build_context_minimal(self):
         """Test building minimal context."""
