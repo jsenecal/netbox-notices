@@ -29,8 +29,10 @@ __all__ = (
     "GenerationResult",
     "NotificationGenerator",
     "PlannedNotification",
+    "ResetError",
     "notifications_for_event",
     "require_notification_permission",
+    "select_kinds",
 )
 
 SUBJECT_MAX_LENGTH = 255
@@ -88,6 +90,10 @@ class GenerationResult:
         return ", ".join(parts) or "Nothing to generate"
 
 
+class ResetError(ValueError):
+    """A draft cannot be reset: it is not a draft linked to an event, or its template fails to render."""
+
+
 def _group_key(root_pk, tenant, impact):
     return (root_pk, getattr(tenant, "pk", None), getattr(impact, "pk", None))
 
@@ -98,6 +104,23 @@ def notifications_for_event(event):
     return PreparedNotification.objects.filter(
         event_content_type=ContentType.objects.get_for_model(event), event_id=event.pk
     ).select_related("template__extends", "tenant", "impact")
+
+
+def select_kinds(event, template_pks=None):
+    """Return (kinds, selected, unknown_pks) for an operator's choice of kinds for `event`.
+
+    `kinds` are all kinds that apply to the event; `selected` are those named in `template_pks`
+    (string or integer ids, duplicates ignored), in kind order, or every kind when none are named;
+    `unknown_pks` are the named ids that are not a kind for this event.
+    """
+    kinds = list(kinds_for_event(event))
+    if not template_pks:
+        return kinds, kinds, []
+    wanted = {str(pk) for pk in template_pks}
+    known = {str(kind.pk) for kind in kinds}
+    selected = [kind for kind in kinds if str(kind.pk) in wanted]
+    unknown = [pk for pk in dict.fromkeys(template_pks) if str(pk) not in known]
+    return kinds, selected, unknown
 
 
 def require_notification_permission(user, notification, action):
@@ -128,11 +151,8 @@ class NotificationGenerator:
         self.event = event
         self.templates = list(templates) if templates is not None else None
 
-    def applicable_kinds(self):
-        return kinds_for_event(self.event)
-
     def plan(self):
-        kinds = self.templates if self.templates is not None else list(self.applicable_kinds())
+        kinds = self.templates if self.templates is not None else list(kinds_for_event(self.event))
         existing = self._existing_by_group({kind.pk for kind in kinds})
         items = []
         for root in kinds:
@@ -195,14 +215,14 @@ class NotificationGenerator:
     def reset(self, notification, user=None):
         """Re-render one draft from its template family, event and group, discarding edits."""
         if notification.status != Status.DRAFT or notification.event is None:
-            raise ValueError("Only drafts linked to an event can be reset.")
+            raise ResetError("Only drafts linked to an event can be reset.")
         root = notification.template.root_kind
         group = self._group_for(notification, root)
         matcher = TemplateMatchingService(event=self.event, tenant=group.tenant)
         siblings = self._existing_by_group({root.pk}).get(_group_key(root.pk, group.tenant, group.impact), [])
         item = self._render_item(root, group, matcher, sent_count=self._sent_count(siblings), require_contacts=False)
         if item.action == Action.ERROR:
-            raise TemplateRenderError(item.error)
+            raise ResetError(item.error)
         item.action, item.existing = Action.UPDATE, notification
         self.apply([item], user=user)
         return notification

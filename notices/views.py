@@ -38,10 +38,11 @@ from .ical_utils import calculate_etag, feed_last_modified, generate_maintenance
 from .models import Maintenance, NotificationTemplate, Outage, PreparedNotification, SentNotification, TemplateScope
 from .services.notification_generation import (
     NotificationGenerator,
+    ResetError,
     notifications_for_event,
     require_notification_permission,
+    select_kinds,
 )
-from .services.template_renderer import TemplateRenderError
 from .timeline_utils import build_timeline_item, get_timeline_changes
 from .validators import PreparedNotificationStateMachine
 
@@ -910,10 +911,9 @@ class BaseGenerateNotificationsView(PermissionRequiredMixin, View):
 
     def _generator(self, request, pk):
         event = get_object_or_404(self.model.objects.restrict(request.user, "view"), pk=pk)
-        kinds = NotificationGenerator(event).applicable_kinds()
         params = request.POST if request.method == "POST" else request.GET
-        selected_ids = params.getlist("templates")
-        selected = [k for k in kinds if str(k.pk) in selected_ids] if selected_ids else list(kinds)
+        # Ids that are not a kind for this event are ignored: the form only offers valid ones.
+        kinds, selected, _ = select_kinds(event, params.getlist("templates"))
         return event, kinds, selected, NotificationGenerator(event, templates=selected)
 
     def get(self, request, pk):
@@ -975,7 +975,7 @@ class PreparedNotificationResetView(PermissionRequiredMixin, View):
         try:
             NotificationGenerator(notification.event).reset(notification, user=request.user)
             messages.success(request, "Notification content reset to its template.")
-        except (ValueError, TemplateRenderError, PermissionDenied) as e:
+        except (ResetError, PermissionDenied) as e:
             messages.error(request, str(e))
         return redirect(_safe_return_url(request, notification.get_absolute_url()))
 

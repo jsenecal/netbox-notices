@@ -8,6 +8,7 @@ from tenancy.models import Contact
 
 from notices.choices import PreparedNotificationStatusChoices
 from notices.models import NotificationTemplate, PreparedNotification, SentNotification, TemplateScope
+from notices.services.notification_generation import select_kinds
 from notices.validators import PreparedNotificationStateMachine
 
 __all__ = (
@@ -333,11 +334,10 @@ class GenerateNotificationsSerializer(serializers.Serializer):
     dry_run = serializers.BooleanField(default=False)
 
     def validate_templates(self, value):
-        kinds = set(self.context["kinds"])
-        invalid = [t.pk for t in value if t not in kinds]
-        if invalid:
-            raise serializers.ValidationError(f"Not a notification kind for this event: {invalid}")
-        return list(dict.fromkeys(value))
+        _, selected, unknown = select_kinds(self.context["event"], [t.pk for t in value])
+        if unknown:
+            raise serializers.ValidationError(f"Not a notification kind for this event: {unknown}")
+        return selected
 
 
 class PlannedNotificationSerializer(serializers.Serializer):

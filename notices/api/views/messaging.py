@@ -12,8 +12,7 @@ from notices.api.serializers import (
 )
 from notices.filtersets import NotificationTemplateFilterSet, PreparedNotificationFilterSet
 from notices.models import NotificationTemplate, PreparedNotification, SentNotification
-from notices.services.notification_generation import NotificationGenerator
-from notices.services.template_renderer import TemplateRenderError
+from notices.services.notification_generation import NotificationGenerator, ResetError
 
 __all__ = (
     "NotificationTemplateViewSet",
@@ -55,7 +54,7 @@ class PreparedNotificationViewSet(NetBoxModelViewSet):
         notification = get_object_or_404(PreparedNotification.objects.restrict(request.user, "change"), pk=pk)
         try:
             NotificationGenerator(notification.event).reset(notification, user=request.user)
-        except (ValueError, TemplateRenderError) as e:
+        except ResetError as e:
             raise ValidationError({"detail": str(e)})
         return Response(self.get_serializer(notification).data)
 

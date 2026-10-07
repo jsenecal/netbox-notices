@@ -40,11 +40,9 @@ class GenerateNotificationsMixin:
                 "Generating notifications requires add, change and delete on prepared notifications."
             )
         event = get_object_or_404(self.queryset.model.objects.restrict(request.user, "view"), pk=pk)
-        generator = NotificationGenerator(event)
-        params = GenerateNotificationsSerializer(data=request.data, context={"kinds": generator.applicable_kinds()})
+        params = GenerateNotificationsSerializer(data=request.data, context={"event": event})
         params.is_valid(raise_exception=True)
-        if templates := params.validated_data.get("templates"):
-            generator = NotificationGenerator(event, templates=templates)
+        generator = NotificationGenerator(event, templates=params.validated_data.get("templates"))
         plan = generator.plan()
         result = (
             GenerationResult.from_plan(plan)

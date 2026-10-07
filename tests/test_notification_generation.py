@@ -8,7 +8,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 
 from notices.models import PreparedNotification, TemplateScope
-from notices.services.notification_generation import GenerationResult, NotificationGenerator, PlannedNotification
+from notices.services.notification_generation import (
+    GenerationResult,
+    NotificationGenerator,
+    PlannedNotification,
+    ResetError,
+)
 
 
 @pytest.fixture
@@ -192,7 +197,7 @@ class TestReset:
         NotificationGenerator(event).generate()
         n = PreparedNotification.objects.get()
         n.status = "ready"
-        with pytest.raises(ValueError):
+        with pytest.raises(ResetError):
             NotificationGenerator(event).reset(n)
 
 
