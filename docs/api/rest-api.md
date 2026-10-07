@@ -65,7 +65,7 @@ DELETE /api/plugins/notices/maintenance/{id}/
 
 Setting `replaces` on creation moves the replaced maintenance to `RE-SCHEDULED` through a signal. Nothing in the request body reflects that; re-read the other event to see it.
 
-The response also carries `impacts` and `notifications` keys. Both are currently always `null`, whatever the record holds, because the serializer sources them from attributes that do not exist on the model. Do not build against them. To retrieve an event's impacts, query the impact endpoint by event, as shown below.
+The response also carries two read-only lists: `impacts`, the event's linked `Impact` records in their nested form (event, target, impact level), and `notifications`, the event's received `EventNotification` records without the raw email or body. Both are present on maintenance and outage responses. To filter or page through an event's impacts, query the impact endpoint by event, as shown below.
 
 ### Filters
 
@@ -156,7 +156,7 @@ Filters accept the dotted form instead, which is easier to use by hand. `event_c
 GET /api/plugins/notices/impact/?event_content_type=notices.maintenance&event_object_id=42
 ```
 
-That is the supported way to list an event's impacts, given that the `impacts` key on the event serializers is not usable.
+Use it when you need the full `Impact` representation or impact filters; the `impacts` list on the event response carries only the nested form.
 
 Other filters: `id`, `event_object_id`, `target_object_id`, `impact`, `site_id`, `region_id`, `site_group_id`, `location_id`.
 
@@ -190,6 +190,8 @@ Stores the provider email that produced an event. This is the endpoint a parser 
 | `email_body` | string | Rendered on the detail page after sanitisation. |
 
 The model also has a binary `email` field holding the raw MIME message. It is not exposed through the serializer.
+
+Notifications belong to their event: deleting a maintenance or outage, through the API or the UI, deletes its notifications along with its impacts. The UI delete confirmation lists them before you confirm.
 
 Filters: `id`, `event_content_type`, `event_object_id`, `subject`, `email_from`, `email_received`, `email_body`. `q` searches subject, body and sender.
 

@@ -8,6 +8,24 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ## [Unreleased]
 
+### Fixed
+
+- The maintenance and outage REST API responses never included the event's
+  `impacts` or `notifications`: both serializer fields pointed at reverse
+  accessors that do not exist on these models, so DRF silently dropped them.
+  Both keys now return the nested list of linked impacts and received
+  notifications, and the list endpoints prefetch them so response time does
+  not grow a query per event. (#61)
+
+### Changed
+
+- `Maintenance` and `Outage` gain a `notifications` generic relation to
+  `EventNotification`, mirroring `impacts`. No migration is required.
+  Deleting a maintenance or outage now also deletes its event notifications,
+  as it already did its impacts, and the delete confirmation page lists them
+  among the objects that will be removed; previously they were left orphaned
+  with a dangling event reference.
+
 ## [1.3.0] - 2026-09-12
 
 ### Added
