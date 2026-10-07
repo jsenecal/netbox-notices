@@ -11,6 +11,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import DEFAULT_DB_ALIAS, connections, transaction
 from netbox.config import get_config
 
+from notices.services.template_matching import event_type_of
+
 logger = logging.getLogger("notices.auto_generation")
 
 # Event fields whose change warrants telling customers again.
@@ -26,10 +28,10 @@ def auto_statuses(event):
     if not isinstance(setting, dict):
         logger.warning("Ignoring auto_generate_notifications: expected a dict, got %r", setting)
         return []
-    model_name = event._meta.model_name
-    statuses = setting.get(model_name) or []
+    event_type = event_type_of(event)
+    statuses = setting.get(event_type) or []
     if not isinstance(statuses, list | tuple):
-        logger.warning("Ignoring auto_generate_notifications[%r]: expected a list, got %r", model_name, statuses)
+        logger.warning("Ignoring auto_generate_notifications[%r]: expected a list, got %r", event_type, statuses)
         return []
     return list(statuses)
 

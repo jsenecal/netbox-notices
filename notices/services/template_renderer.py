@@ -7,7 +7,12 @@ from django.utils.html import strip_tags
 from jinja2 import BaseLoader, TemplateSyntaxError
 from jinja2.sandbox import SandboxedEnvironment
 
-__all__ = ("TemplateRenderer", "TemplateRenderError", "split_body")
+from notices.services.template_matching import event_type_of
+
+__all__ = ("TemplateRenderer", "TemplateRenderError", "highest_impact", "split_body")
+
+# Impact levels, worst first.
+IMPACT_SEVERITY = ("OUTAGE", "DEGRADED", "REDUCED-REDUNDANCY", "NO-IMPACT")
 
 
 class TemplateRenderError(Exception):
@@ -35,6 +40,16 @@ def ical_datetime(dt):
     if timezone.is_aware(dt):
         dt = dt.astimezone(UTC)
     return dt.strftime("%Y%m%dT%H%M%SZ")
+
+
+def highest_impact(impacts):
+    """Worst impact level among `impacts`; levels that are missing or unknown are ignored."""
+    levels = [getattr(impact, "impact", None) for impact in impacts or ()]
+    return min(
+        (level for level in levels if level in IMPACT_SEVERITY),
+        key=IMPACT_SEVERITY.index,
+        default="NO-IMPACT",
+    )
 
 
 def render_markdown(text):
@@ -194,17 +209,12 @@ class TemplateRenderer:
             "netbox_url": getattr(settings, "BASE_URL", ""),
             "tenant": tenant,
             "impacts": impacts or [],
+            "highest_impact": highest_impact(impacts),
         }
 
         if event:
-            # Determine event type and add appropriate variables
-            event_type = event.__class__.__name__.lower()
-            context[event_type] = event
-
-            if event_type == "maintenance":
-                context["maintenance"] = event
-            elif event_type == "outage":
-                context["outage"] = event
+            # Expose the event as `maintenance` or `outage`
+            context[event_type_of(event)] = event
 
             # Filter impacts for this tenant if specified
             if tenant and impacts:
@@ -213,17 +223,6 @@ class TemplateRenderer:
                 ]
             else:
                 context["tenant_impacts"] = impacts or []
-
-            # Calculate highest impact
-            if impacts:
-                impact_order = ["OUTAGE", "DEGRADED", "REDUCED-REDUNDANCY", "NO-IMPACT"]
-                highest = "NO-IMPACT"
-                for impact in impacts:
-                    impact_level = getattr(impact, "impact", None) or "NO-IMPACT"
-                    if impact_level in impact_order:
-                        if impact_order.index(impact_level) < impact_order.index(highest):
-                            highest = impact_level
-                context["highest_impact"] = highest
 
         context.update(extra)
         return context

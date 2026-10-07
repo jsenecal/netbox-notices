@@ -10,7 +10,12 @@ from django.db.models import Q
 
 from notices.choices import MessageEventTypeChoices
 
-__all__ = ("TemplateMatchingService", "kinds_for_event", "merge_templates", "resolve_chain")
+__all__ = ("TemplateMatchingService", "event_type_of", "kinds_for_event", "merge_templates", "resolve_chain")
+
+
+def event_type_of(event):
+    """Event type name of a Maintenance or Outage: its model name ("maintenance" or "outage")."""
+    return event._meta.model_name
 
 
 class TemplateMatchingService:
@@ -33,19 +38,8 @@ class TemplateMatchingService:
         self.event = event
         self.tenant = tenant
         self.provider = provider
-        self.event_type = self._get_event_type()
+        self.event_type = event_type_of(event) if event else "none"
         self.event_status = getattr(event, "status", None) if event else None
-
-    def _get_event_type(self):
-        """Determine event type from event object."""
-        if not self.event:
-            return "none"
-        model_name = self.event.__class__.__name__.lower()
-        if "maintenance" in model_name:
-            return "maintenance"
-        elif "outage" in model_name:
-            return "outage"
-        return "none"
 
     def score(self, template):
         """Return the template's score for this context, or None when it does not apply."""
@@ -104,16 +98,20 @@ class TemplateMatchingService:
         return None
 
 
+def _renderable_for(queryset, event_type):
+    """Narrow templates to non-base ones that apply to `event_type` (directly or as "both")."""
+    return queryset.filter(
+        Q(event_type=event_type) | Q(event_type=MessageEventTypeChoices.BOTH),
+        is_base_template=False,
+    )
+
+
 def kinds_for_event(event):
     """Independent notification kinds for an event: non-base templates that override nothing."""
     from notices.models import NotificationTemplate
 
-    event_type = event._meta.model_name
     return (
-        NotificationTemplate.objects.filter(
-            Q(event_type=event_type) | Q(event_type=MessageEventTypeChoices.BOTH),
-            is_base_template=False,
-        )
+        _renderable_for(NotificationTemplate.objects.all(), event_type_of(event))
         .filter(Q(extends__isnull=True) | Q(extends__is_base_template=True))
         .prefetch_related("scopes__content_type", "contact_roles")
     )
@@ -132,10 +130,9 @@ def resolve_chain(root, matcher):
     while True:
         scored = [
             (score, child)
-            for child in current.children.filter(
-                Q(event_type=matcher.event_type) | Q(event_type=MessageEventTypeChoices.BOTH),
-                is_base_template=False,
-            ).prefetch_related("scopes__content_type")
+            for child in _renderable_for(current.children.all(), matcher.event_type).prefetch_related(
+                "scopes__content_type"
+            )
             if (score := matcher.score(child)) is not None
         ]
         if not scored:

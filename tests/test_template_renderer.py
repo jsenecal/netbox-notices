@@ -1,11 +1,13 @@
 # tests/test_template_renderer.py
 from datetime import UTC, datetime
+from types import SimpleNamespace
 
 import pytest
 
 from notices.services.template_renderer import (
     TemplateRenderer,
     TemplateRenderError,
+    highest_impact,
     ical_datetime,
     render_markdown,
     split_body,
@@ -129,6 +131,20 @@ class TestTemplateRenderer:
         assert "netbox_url" in context
         assert context["tenant"] is None
         assert context["impacts"] == []
+
+
+@pytest.mark.parametrize(
+    ("levels", "expected"),
+    [
+        ([], "NO-IMPACT"),
+        (["NO-IMPACT", "OUTAGE", "DEGRADED"], "OUTAGE"),
+        (["REDUCED-REDUNDANCY", "DEGRADED", "NO-IMPACT"], "DEGRADED"),
+        ([None, "BOGUS", "REDUCED-REDUNDANCY"], "REDUCED-REDUNDANCY"),
+        ([None, "BOGUS"], "NO-IMPACT"),
+    ],
+)
+def test_highest_impact_is_worst_known_level(levels, expected):
+    assert highest_impact([SimpleNamespace(impact=level) for level in levels]) == expected
 
 
 @pytest.mark.django_db
