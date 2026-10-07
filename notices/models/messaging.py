@@ -1,3 +1,4 @@
+import django
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -395,6 +396,14 @@ class PreparedNotification(NetBoxModel):
         if self.event_content_type:
             return self.event_content_type.model
         return None
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Django 6.0+ reads content_hash back from the UPDATE via RETURNING. Older releases
+        # (NetBox 4.5 ships Django 5.2) leave the pre-save value on the instance, which would
+        # make is_modified stale until the next reload.
+        if django.VERSION < (6, 0):
+            self.refresh_from_db(fields=["content_hash"])
 
     @property
     def is_modified(self):
