@@ -68,13 +68,7 @@
                 <li><span class="dropdown-item disabled"><i class="mdi mdi-check-circle"></i> Mark Completed</span></li>
                 {% endif %}
 
-                {% if perms.notices.add_preparednotification %}
-                <li>
-                    <a class="dropdown-item" href="{% url 'plugins:notices:maintenance_generate_notifications' pk=object.pk %}">
-                        <i class="mdi mdi-email-arrow-right"></i> Generate Notifications
-                    </a>
-                </li>
-                {% endif %}
+                {% include "notices/inc/generate_notifications_button.html" with menu=True %}
 
                 <li><hr class="dropdown-divider"></li>
 

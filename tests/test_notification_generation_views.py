@@ -2,6 +2,8 @@
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.context_processors import PermWrapper
+from django.template.loader import render_to_string
 from django.urls import reverse
 
 from notices.filtersets import PreparedNotificationFilterSet
@@ -93,6 +95,20 @@ class TestApproveAndReset:
         url = reverse("plugins:notices:maintenance_acknowledge", args=[maintenance.pk])
         response = admin_client.post(url, {"return_url": "https://evil.example.com/"})
         assert response.url == maintenance.get_absolute_url()
+
+
+@pytest.mark.django_db
+class TestGenerateButton:
+    @pytest.mark.parametrize(
+        ("actions", "shown"), [(["add"], False), (["add", "change"], False), (["add", "change", "delete"], True)]
+    )
+    def test_shown_only_with_every_generation_permission(self, maintenance, grant_permission, actions, shown):
+        user = User.objects.create_user(username="drafter", password="x")
+        grant_permission(user, actions, "preparednotification")
+        html = render_to_string(
+            "notices/inc/generate_notifications_button.html", {"object": maintenance, "perms": PermWrapper(user)}
+        )
+        assert ("Generate Notifications" in html) is shown
 
 
 @pytest.mark.django_db

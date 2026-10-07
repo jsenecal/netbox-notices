@@ -1,0 +1,13 @@
+{% load helpers %}
+{% comment %}
+Generate Notifications link for an event detail page. The view needs add, change and delete on
+prepared notifications, so the link is shown only when all three are held. Pass menu=True to
+render it as a dropdown item.
+{% endcomment %}
+{% if perms.notices.add_preparednotification and perms.notices.change_preparednotification and perms.notices.delete_preparednotification %}
+  {% if menu %}<li>{% endif %}
+  <a class="{% if menu %}dropdown-item{% else %}btn btn-primary{% endif %}" href="{% url object|viewname:'generate_notifications' pk=object.pk %}">
+    <i class="mdi mdi-email-arrow-right" aria-hidden="true"></i> Generate Notifications
+  </a>
+  {% if menu %}</li>{% endif %}
+{% endif %}

@@ -3,11 +3,7 @@
 {% load tz %}
 
 {% block extra_controls %}
-    {% if perms.notices.add_preparednotification %}
-        <a class="btn btn-primary" href="{% url 'plugins:notices:outage_generate_notifications' pk=object.pk %}">
-            <i class="mdi mdi-email-arrow-right" aria-hidden="true"></i> Generate Notifications
-        </a>
-    {% endif %}
+    {% include "notices/inc/generate_notifications_button.html" %}
 {% endblock %}
 
 {% block content %}
