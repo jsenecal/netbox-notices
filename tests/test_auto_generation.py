@@ -7,22 +7,14 @@ import pytest
 from django.db import transaction
 
 from notices import auto_generation
-from notices.models import Impact, NotificationTemplate, PreparedNotification
+from notices.models import Impact, PreparedNotification
 
 SETTING = "notices.auto_generation.auto_statuses"
 
 
 @pytest.fixture
-def kind():
-    return NotificationTemplate.objects.create(
-        name="NOC",
-        slug="noc",
-        event_type="maintenance",
-        granularity="per_event",
-        subject_template="S {{ maintenance.status }}",
-        body_template="B",
-        body_format="text",
-    )
+def kind(make_template):
+    return make_template("noc", name="NOC", subject_template="S {{ maintenance.status }}")
 
 
 @pytest.mark.django_db

@@ -1,28 +1,19 @@
 """Tests for the notification generation and reset API actions."""
 
 import pytest
-from core.models import ObjectType
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from users.constants import TOKEN_PREFIX
-from users.models import ObjectPermission, Token
+from users.models import Token
 
-from notices.models import NotificationTemplate, PreparedNotification
+from notices.models import PreparedNotification
 
 User = get_user_model()
 
 
 @pytest.fixture
-def kind():
-    return NotificationTemplate.objects.create(
-        name="NOC",
-        slug="noc",
-        event_type="maintenance",
-        granularity="per_event",
-        subject_template="S",
-        body_template="B",
-        body_format="text",
-    )
+def kind(make_template):
+    return make_template("noc", name="NOC")
 
 
 def _client(user):
@@ -38,12 +29,6 @@ def admin_api():
 
 def _url(event):
     return f"/api/plugins/notices/maintenance/{event.pk}/generate-notifications/"
-
-
-def _grant(user, name, actions, *models, constraints=None):
-    perm = ObjectPermission.objects.create(name=name, actions=actions, constraints=constraints)
-    perm.object_types.add(*[ObjectType.objects.get(app_label="notices", model=m) for m in models])
-    perm.users.add(user)
 
 
 @pytest.mark.django_db
@@ -67,35 +52,37 @@ class TestGenerateAction:
         assert response.data["counts"] == {"create": 1}
         assert PreparedNotification.objects.count() == 1
 
-    def test_rejects_template_that_is_not_a_kind_for_event(self, admin_api, maintenance_with_two_tenants, kind):
+    def test_rejects_template_that_is_not_a_kind_for_event(
+        self, admin_api, maintenance_with_two_tenants, kind, make_template
+    ):
         event, *_ = maintenance_with_two_tenants
-        outage_kind = NotificationTemplate.objects.create(
-            name="O", slug="o", event_type="outage", subject_template="S", body_template="B"
-        )
+        outage_kind = make_template("o", event_type="outage")
         response = admin_api.post(_url(event), {"templates": [outage_kind.pk]}, format="json")
         assert response.status_code == 400
 
-    def test_needs_notification_permissions_not_event_add(self, maintenance_with_two_tenants, kind):
+    def test_needs_notification_permissions_not_event_add(self, maintenance_with_two_tenants, kind, grant_permission):
         event, *_ = maintenance_with_two_tenants
         user = User.objects.create_user(username="gen", password="x")
-        _grant(user, "gen", ["view", "add", "change", "delete"], "preparednotification")
-        _grant(user, "view-maint", ["view"], "maintenance")
+        grant_permission(user, ["view", "add", "change", "delete"], "preparednotification")
+        grant_permission(user, ["view"], "maintenance")
         assert _client(user).post(_url(event), {"dry_run": True}, format="json").status_code == 200
 
-    def test_permissions_constrained_to_other_tenant_are_forbidden(self, maintenance_with_two_tenants, kind):
+    def test_permissions_constrained_to_other_tenant_are_forbidden(
+        self, maintenance_with_two_tenants, kind, grant_permission
+    ):
         event, _, tenant_b = maintenance_with_two_tenants
         kind.granularity = "per_tenant"
         kind.save()
         user = User.objects.create_user(username="scoped", password="x")
-        _grant(user, "view-maint3", ["view"], "maintenance")
-        _grant(user, "scoped", ["add", "change", "delete"], "preparednotification", constraints={"tenant": tenant_b.pk})
+        grant_permission(user, ["view"], "maintenance")
+        grant_permission(user, ["add", "change", "delete"], "preparednotification", constraints={"tenant": tenant_b.pk})
         assert _client(user).post(_url(event), {}, format="json").status_code == 403
         assert PreparedNotification.objects.count() == 0
 
-    def test_without_notification_permissions_is_forbidden(self, maintenance_with_two_tenants, kind):
+    def test_without_notification_permissions_is_forbidden(self, maintenance_with_two_tenants, kind, grant_permission):
         event, *_ = maintenance_with_two_tenants
         user = User.objects.create_user(username="viewer", password="x")
-        _grant(user, "view-maint2", ["view"], "maintenance")
+        grant_permission(user, ["view"], "maintenance")
         assert _client(user).post(_url(event), {"dry_run": True}, format="json").status_code == 403
 
     @pytest.mark.parametrize(("write_enabled", "status"), [(False, 403), (True, 200)])

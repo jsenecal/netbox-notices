@@ -230,17 +230,54 @@ def maintenance_with_two_tenants(maintenance, provider, circuit_type):
 
 
 @pytest.fixture
-def notification_template(db):
-    """Create a test notification template."""
+def make_template(db):
+    """Factory for saved NotificationTemplates: `make_template(slug, **overrides)`."""
     from notices.models import NotificationTemplate
 
-    return NotificationTemplate.objects.create(
+    def make(slug, **overrides):
+        fields = {
+            "name": slug,
+            "slug": slug,
+            "event_type": "maintenance",
+            "granularity": "per_event",
+            "subject_template": "S",
+            "body_template": "B",
+            "body_format": "text",
+            **overrides,
+        }
+        return NotificationTemplate.objects.create(**fields)
+
+    return make
+
+
+@pytest.fixture
+def notification_template(make_template):
+    """Create a test notification template."""
+    return make_template(
+        "test-template",
         name="Test Template",
-        slug="test-template",
-        event_type="maintenance",
-        granularity="per_event",
         subject_template="Test Subject: {{ maintenance.name }}",
         body_template="Test body for {{ maintenance.name }}",
-        body_format="text",
-        weight=1000,
     )
+
+
+@pytest.fixture
+def grant_permission(db):
+    """Grant an ObjectPermission: `grant_permission(user, actions, *model_names, constraints=None)`.
+
+    Model names are notices models, e.g. "preparednotification".
+    """
+    from core.models import ObjectType
+    from users.models import ObjectPermission
+
+    def grant(user, actions, *model_names, constraints=None):
+        perm = ObjectPermission.objects.create(
+            name=f"{user.username}: {'/'.join(actions)} on {'/'.join(model_names)}",
+            actions=actions,
+            constraints=constraints,
+        )
+        perm.object_types.add(*[ObjectType.objects.get(app_label="notices", model=m) for m in model_names])
+        perm.users.add(user)
+        return perm
+
+    return grant

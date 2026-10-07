@@ -1,29 +1,19 @@
 """Tests for the notification generation, approve and reset views."""
 
 import pytest
-from core.models import ObjectType
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from users.models import ObjectPermission
 
 from notices.filtersets import PreparedNotificationFilterSet
-from notices.models import NotificationTemplate, PreparedNotification
+from notices.models import PreparedNotification
 from notices.services.notification_generation import NotificationGenerator
 
 User = get_user_model()
 
 
 @pytest.fixture
-def kind():
-    return NotificationTemplate.objects.create(
-        name="NOC",
-        slug="noc",
-        event_type="maintenance",
-        granularity="per_event",
-        subject_template="S {{ maintenance.name }}",
-        body_template="B",
-        body_format="text",
-    )
+def kind(make_template):
+    return make_template("noc", name="NOC", subject_template="S {{ maintenance.name }}")
 
 
 @pytest.fixture
@@ -49,16 +39,9 @@ class TestGenerateView:
         assert [i.action for i in response.context["plan"]] == ["create"]
         assert PreparedNotification.objects.count() == 0
 
-    def test_post_applies_selected_kinds(self, admin_client, maintenance_with_two_tenants, kind):
+    def test_post_applies_selected_kinds(self, admin_client, maintenance_with_two_tenants, kind, make_template):
         event, *_ = maintenance_with_two_tenants
-        NotificationTemplate.objects.create(
-            name="Other",
-            slug="other",
-            event_type="maintenance",
-            granularity="per_event",
-            subject_template="O",
-            body_template="B",
-        )
+        make_template("other", name="Other", subject_template="O")
         url = reverse("plugins:notices:maintenance_generate_notifications", args=[event.pk])
         admin_client.post(url, {"templates": [kind.pk, kind.pk]})
         assert list(PreparedNotification.objects.values_list("template__slug", flat=True)) == ["noc"]
@@ -78,16 +61,14 @@ class TestApproveAndReset:
         n.refresh_from_db()
         assert n.status == "ready" and n.approved_by is not None and n.recipients
 
-    def test_approve_respects_post_change_permission_constraints(self, client, maintenance_with_two_tenants, kind):
+    def test_approve_respects_post_change_permission_constraints(
+        self, client, maintenance_with_two_tenants, kind, grant_permission
+    ):
         """A drafter whose change permission only covers drafts cannot approve."""
         event, *_ = maintenance_with_two_tenants
         n = self._generated(event)
         user = User.objects.create_user(username="drafter", password="x")
-        perm = ObjectPermission.objects.create(
-            name="drafts-only", actions=["view", "change"], constraints={"status": "draft"}
-        )
-        perm.object_types.add(ObjectType.objects.get(app_label="notices", model="preparednotification"))
-        perm.users.add(user)
+        grant_permission(user, ["view", "change"], "preparednotification", constraints={"status": "draft"})
         client.force_login(user)
         client.post(reverse("plugins:notices:preparednotification_approve", args=[n.pk]))
         n.refresh_from_db()

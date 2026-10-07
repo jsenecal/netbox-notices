@@ -1,6 +1,8 @@
 # tests/test_template_matching.py
 """Tests for the template matching service."""
 
+import functools
+
 import pytest
 from django.contrib.contenttypes.models import ContentType
 
@@ -152,18 +154,10 @@ def template_with_headers():
     )
 
 
-def _tpl(slug, **kw):
-    defaults = {
-        "name": slug,
-        "slug": slug,
-        "event_type": "maintenance",
-        "granularity": "per_tenant",
-        "subject_template": "",
-        "body_template": "",
-        "weight": 1000,
-    }
-    defaults.update(kw)
-    return NotificationTemplate.objects.create(**defaults)
+@pytest.fixture
+def tpl(make_template):
+    """Per-tenant templates with empty subject and body, so merge precedence is explicit."""
+    return functools.partial(make_template, granularity="per_tenant", subject_template="", body_template="")
 
 
 def _scope(template, obj, weight=1000, **kw):
@@ -182,64 +176,64 @@ def _score(template, **ctx):
 
 @pytest.mark.django_db
 class TestKinds:
-    def test_base_templates_and_overrides_are_not_kinds(self, maintenance):
-        base = _tpl("layout", is_base_template=True)
-        kind = _tpl("customer", extends=base)
-        _tpl("customer-acme", extends=kind)
-        _tpl("outage-only", event_type="outage")
-        both = _tpl("both", event_type="both")
+    def test_base_templates_and_overrides_are_not_kinds(self, maintenance, tpl):
+        base = tpl("layout", is_base_template=True)
+        kind = tpl("customer", extends=base)
+        tpl("customer-acme", extends=kind)
+        tpl("outage-only", event_type="outage")
+        both = tpl("both", event_type="both")
         assert set(kinds_for_event(maintenance)) == {kind, both}
 
-    def test_outage_event_gets_outage_and_both_kinds(self, outage):
-        _tpl("m")
-        o = _tpl("o", event_type="outage")
-        both = _tpl("both", event_type="both")
+    def test_outage_event_gets_outage_and_both_kinds(self, outage, tpl):
+        tpl("m")
+        o = tpl("o", event_type="outage")
+        both = tpl("both", event_type="both")
         assert set(kinds_for_event(outage)) == {o, both}
 
 
 @pytest.mark.django_db
 class TestScore:
-    def test_unscoped_template_applies_with_base_weight(self, maintenance):
-        t = _tpl("t", weight=10)
+    def test_unscoped_template_applies_with_base_weight(self, maintenance, tpl):
+        t = tpl("t", weight=10)
         assert _score(t, event=maintenance) == 10
 
-    def test_tenant_scope_applies_only_to_that_tenant(self, maintenance, tenant, tenant_secondary):
-        t = _tpl("t", weight=10)
+    def test_tenant_scope_applies_only_to_that_tenant(self, maintenance, tenant, tenant_secondary, tpl):
+        t = tpl("t", weight=10)
         _scope(t, tenant, weight=5)
         assert _score(t, event=maintenance, tenant=tenant) == 15
         assert _score(t, event=maintenance, tenant=tenant_secondary) is None
         assert _score(t, event=maintenance) is None
 
-    def test_wildcard_scope_matches_any_tenant(self, maintenance, tenant, tenant_secondary):
-        t = _tpl("t")
+    def test_wildcard_scope_matches_any_tenant(self, maintenance, tenant, tenant_secondary, tpl):
+        t = tpl("t")
         TemplateScope.objects.create(
             template=t, content_type=ContentType.objects.get_for_model(tenant), object_id=None, weight=500
         )
         assert _score(t, event=maintenance, tenant=tenant) == 1500
         assert _score(t, event=maintenance, tenant=tenant_secondary) == 1500
 
-    def test_event_status_filter(self, maintenance, tenant):
-        match = _tpl("match")
+    def test_event_status_filter(self, maintenance, tenant, tpl):
+        match = tpl("match")
         _scope(match, tenant, event_status="CONFIRMED")
-        miss = _tpl("miss")
+        miss = tpl("miss")
         _scope(miss, tenant, event_status="CANCELLED")
         assert _score(match, event=maintenance, tenant=tenant) == 2000
         assert _score(miss, event=maintenance, tenant=tenant) is None
 
-    def test_multiple_matching_scopes_add_weights(self, maintenance, tenant, provider):
-        t = _tpl("t")
+    def test_multiple_matching_scopes_add_weights(self, maintenance, tenant, provider, tpl):
+        t = tpl("t")
         _scope(t, tenant, weight=500)
         _scope(t, provider, weight=300)
         assert _score(t, event=maintenance, tenant=tenant, provider=provider) == 1800
 
-    def test_provider_scope_resolved_from_event(self, maintenance, provider, provider_secondary):
-        t = _tpl("t")
+    def test_provider_scope_resolved_from_event(self, maintenance, provider, provider_secondary, tpl):
+        t = tpl("t")
         _scope(t, provider)
         assert _score(t, event=maintenance) == 2000
         assert _score(t, event=maintenance, provider=provider_secondary) is None
 
-    def test_explicit_provider_overrides_event_provider(self, maintenance, provider_secondary):
-        t = _tpl("t")
+    def test_explicit_provider_overrides_event_provider(self, maintenance, provider_secondary, tpl):
+        t = tpl("t")
         _scope(t, provider_secondary)
         assert _score(t, event=maintenance) is None
         assert _score(t, event=maintenance, provider=provider_secondary) == 2000
@@ -247,47 +241,47 @@ class TestScore:
 
 @pytest.mark.django_db
 class TestResolveChain:
-    def test_matching_override_wins_over_root(self, maintenance, tenant):
-        root = _tpl("root")
-        acme = _tpl("acme", extends=root)
+    def test_matching_override_wins_over_root(self, maintenance, tenant, tpl):
+        root = tpl("root")
+        acme = tpl("acme", extends=root)
         _scope(acme, tenant)
         matcher = TemplateMatchingService(event=maintenance, tenant=tenant)
         assert resolve_chain(root, matcher) == [acme, root]
 
-    def test_non_matching_override_is_ignored(self, maintenance, tenant, tenant_secondary):
-        root = _tpl("root")
-        acme = _tpl("acme", extends=root)
+    def test_non_matching_override_is_ignored(self, maintenance, tenant, tenant_secondary, tpl):
+        root = tpl("root")
+        acme = tpl("acme", extends=root)
         _scope(acme, tenant)
         matcher = TemplateMatchingService(event=maintenance, tenant=tenant_secondary)
         assert resolve_chain(root, matcher) == [root]
 
-    def test_override_for_other_event_type_is_ignored(self, maintenance, tenant):
-        root = _tpl("root", event_type="both")
-        outage_only = _tpl("outage-only", extends=root, event_type="outage")
-        both = _tpl("both", extends=root, event_type="both", weight=1)
+    def test_override_for_other_event_type_is_ignored(self, maintenance, tenant, tpl):
+        root = tpl("root", event_type="both")
+        outage_only = tpl("outage-only", extends=root, event_type="outage")
+        both = tpl("both", extends=root, event_type="both", weight=1)
         _scope(outage_only, tenant)
         _scope(both, tenant)
         matcher = TemplateMatchingService(event=maintenance, tenant=tenant)
         assert resolve_chain(root, matcher) == [both, root]
 
-    def test_highest_scoring_override_wins(self, maintenance, tenant):
-        root = _tpl("root")
-        low = _tpl("low", extends=root, weight=1)
-        high = _tpl("high", extends=root, weight=2000)
+    def test_highest_scoring_override_wins(self, maintenance, tenant, tpl):
+        root = tpl("root")
+        low = tpl("low", extends=root, weight=1)
+        high = tpl("high", extends=root, weight=2000)
         _scope(low, tenant)
         _scope(high, tenant)
         matcher = TemplateMatchingService(event=maintenance, tenant=tenant)
         assert resolve_chain(root, matcher)[0] == high
 
-    def test_base_ancestors_are_appended(self, maintenance):
-        layout = _tpl("layout", is_base_template=True)
-        root = _tpl("root", extends=layout)
+    def test_base_ancestors_are_appended(self, maintenance, tpl):
+        layout = tpl("layout", is_base_template=True)
+        root = tpl("root", extends=layout)
         assert resolve_chain(root, TemplateMatchingService(event=maintenance)) == [root, layout]
 
-    def test_nested_overrides(self, maintenance, tenant):
-        root = _tpl("root")
-        mid = _tpl("mid", extends=root)
-        leaf = _tpl("leaf", extends=mid)
+    def test_nested_overrides(self, maintenance, tenant, tpl):
+        root = tpl("root")
+        mid = tpl("mid", extends=root)
+        leaf = tpl("leaf", extends=mid)
         _scope(leaf, tenant)
         matcher = TemplateMatchingService(event=maintenance, tenant=tenant)
         assert resolve_chain(root, matcher) == [leaf, mid, root]
@@ -295,9 +289,9 @@ class TestResolveChain:
 
 @pytest.mark.django_db
 class TestChainMerge:
-    def test_empty_fields_fall_back_to_parent(self):
-        root = _tpl("root", subject_template="S-root", body_template="B-root", css_template="c")
-        acme = _tpl("acme", extends=root, subject_template="S-acme")
+    def test_empty_fields_fall_back_to_parent(self, tpl):
+        root = tpl("root", subject_template="S-root", body_template="B-root", css_template="c")
+        acme = tpl("acme", extends=root, subject_template="S-acme")
         merged = merge_templates([acme, root])
         assert merged["subject_template"] == "S-acme"
         assert merged["body_template"] == "B-root"
@@ -305,9 +299,9 @@ class TestChainMerge:
         assert merged["granularity"] == "per_tenant"
         assert "extends" not in merged
 
-    def test_granularity_comes_from_root_kind_not_base_layout(self):
-        layout = _tpl("layout", is_base_template=True, granularity="per_tenant")
-        root = _tpl("root", extends=layout, granularity="per_event")
+    def test_granularity_comes_from_root_kind_not_base_layout(self, tpl):
+        layout = tpl("layout", is_base_template=True, granularity="per_tenant")
+        root = tpl("root", extends=layout, granularity="per_event")
         assert merge_templates([root, layout])["granularity"] == "per_event"
 
 

@@ -163,26 +163,21 @@ class TestPreparedNotification:
 
 @pytest.mark.django_db
 class TestNotificationTemplateClean:
-    def _tpl(self, slug, **kw):
-        return NotificationTemplate.objects.create(
-            name=slug, slug=slug, event_type="maintenance", subject_template="s", body_template="b", **kw
-        )
-
-    def test_self_extends_rejected(self):
-        t = self._tpl("a")
+    def test_self_extends_rejected(self, make_template):
+        t = make_template("a")
         t.extends = t
         with pytest.raises(ValidationError, match="cycle"):
             t.clean()
 
-    def test_two_template_cycle_rejected(self):
-        a = self._tpl("a")
-        b = self._tpl("b", extends=a)
+    def test_two_template_cycle_rejected(self, make_template):
+        a = make_template("a")
+        b = make_template("b", extends=a)
         a.extends = b
         with pytest.raises(ValidationError, match="cycle"):
             a.clean()
 
-    def test_override_granularity_must_match_parent(self):
-        parent = self._tpl("p", granularity="per_tenant")
+    def test_override_granularity_must_match_parent(self, make_template):
+        parent = make_template("p", granularity="per_tenant")
         child = NotificationTemplate(
             name="c",
             slug="c",
@@ -195,8 +190,8 @@ class TestNotificationTemplateClean:
         with pytest.raises(ValidationError, match="granularity"):
             child.clean()
 
-    def test_child_of_base_template_may_use_any_granularity(self):
-        base = self._tpl("base", is_base_template=True, granularity="per_tenant")
+    def test_child_of_base_template_may_use_any_granularity(self, make_template):
+        base = make_template("base", is_base_template=True, granularity="per_tenant")
         child = NotificationTemplate(
             name="c",
             slug="c",
@@ -208,11 +203,11 @@ class TestNotificationTemplateClean:
         )
         child.clean()
 
-    def test_root_kind_walks_overrides_only(self):
-        base = self._tpl("base", is_base_template=True)
-        root = self._tpl("root", extends=base)
-        mid = self._tpl("mid", extends=root)
-        leaf = self._tpl("leaf", extends=mid)
+    def test_root_kind_walks_overrides_only(self, make_template):
+        base = make_template("base", is_base_template=True)
+        root = make_template("root", extends=base)
+        mid = make_template("mid", extends=root)
+        leaf = make_template("leaf", extends=mid)
         assert leaf.root_kind == root
         assert root.root_kind == root
         assert leaf.is_override and not root.is_override
