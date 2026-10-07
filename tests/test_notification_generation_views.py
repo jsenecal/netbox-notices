@@ -89,6 +89,11 @@ class TestApproveAndReset:
         response = admin_client.post(url, {"return_url": "https://evil.example.com/"})
         assert response.url == n.get_absolute_url()
 
+    def test_maintenance_quick_action_ignores_off_site_return_url(self, admin_client, maintenance):
+        url = reverse("plugins:notices:maintenance_acknowledge", args=[maintenance.pk])
+        response = admin_client.post(url, {"return_url": "https://evil.example.com/"})
+        assert response.url == maintenance.get_absolute_url()
+
 
 @pytest.mark.django_db
 class TestFilterSet:

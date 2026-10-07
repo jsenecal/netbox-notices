@@ -15,7 +15,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.cache import get_conditional_response
-from django.utils.http import http_date, quote_etag, url_has_allowed_host_and_scheme
+from django.utils.http import http_date, quote_etag
 from django.views.generic import View
 from netbox.api.authentication import TokenAuthentication
 from netbox.config import get_config
@@ -29,7 +29,7 @@ from netbox.object_actions import (
 )
 from netbox.views import generic
 from rest_framework import exceptions
-from utilities.views import register_model_view
+from utilities.views import GetReturnURLMixin, register_model_view
 
 from . import filtersets, forms, models, tables
 from .choices import PreparedNotificationStatusChoices
@@ -274,7 +274,7 @@ class MaintenanceRescheduleView(generic.ObjectEditView):
 
 
 @register_model_view(models.Maintenance, "acknowledge")
-class MaintenanceAcknowledgeView(PermissionRequiredMixin, View):
+class MaintenanceAcknowledgeView(GetReturnURLMixin, PermissionRequiredMixin, View):
     """Quick action to acknowledge a maintenance."""
 
     permission_required = "notices.change_maintenance"
@@ -290,13 +290,11 @@ class MaintenanceAcknowledgeView(PermissionRequiredMixin, View):
         maintenance.save(update_fields=["acknowledged"])
         messages.success(request, f"Maintenance {maintenance.name} acknowledged.")
 
-        # Redirect to return_url or maintenance detail
-        return_url = request.POST.get("return_url") or request.GET.get("return_url") or maintenance.get_absolute_url()
-        return redirect(return_url)
+        return redirect(self.get_return_url(request, maintenance))
 
 
 @register_model_view(models.Maintenance, "cancel")
-class MaintenanceCancelView(PermissionRequiredMixin, View):
+class MaintenanceCancelView(GetReturnURLMixin, PermissionRequiredMixin, View):
     """Quick action to cancel a maintenance."""
 
     permission_required = "notices.change_maintenance"
@@ -304,14 +302,12 @@ class MaintenanceCancelView(PermissionRequiredMixin, View):
     def get(self, request, pk):
         # Show confirmation page
         maintenance = get_object_or_404(models.Maintenance, pk=pk)
-        return_url = request.GET.get("return_url") or maintenance.get_absolute_url()
-
         return render(
             request,
             "notices/maintenance_cancel.html",
             {
                 "object": maintenance,
-                "return_url": return_url,
+                "return_url": self.get_return_url(request, maintenance),
             },
         )
 
@@ -333,13 +329,11 @@ class MaintenanceCancelView(PermissionRequiredMixin, View):
             maintenance.save(update_fields=["status"])
             messages.success(request, f"Maintenance {maintenance.name} cancelled.")
 
-        # Redirect to return_url or maintenance detail
-        return_url = request.POST.get("return_url") or request.GET.get("return_url") or maintenance.get_absolute_url()
-        return redirect(return_url)
+        return redirect(self.get_return_url(request, maintenance))
 
 
 @register_model_view(models.Maintenance, "mark_in_progress", path="mark-in-progress")
-class MaintenanceMarkInProgressView(PermissionRequiredMixin, View):
+class MaintenanceMarkInProgressView(GetReturnURLMixin, PermissionRequiredMixin, View):
     """Quick action to mark a maintenance as in-progress."""
 
     permission_required = "notices.change_maintenance"
@@ -363,13 +357,11 @@ class MaintenanceMarkInProgressView(PermissionRequiredMixin, View):
             maintenance.save(update_fields=["status"])
             messages.success(request, f"Maintenance {maintenance.name} marked as in-progress.")
 
-        # Redirect to return_url or maintenance detail
-        return_url = request.POST.get("return_url") or request.GET.get("return_url") or maintenance.get_absolute_url()
-        return redirect(return_url)
+        return redirect(self.get_return_url(request, maintenance))
 
 
 @register_model_view(models.Maintenance, "mark_completed", path="mark-completed")
-class MaintenanceMarkCompletedView(PermissionRequiredMixin, View):
+class MaintenanceMarkCompletedView(GetReturnURLMixin, PermissionRequiredMixin, View):
     """Quick action to mark a maintenance as completed."""
 
     permission_required = "notices.change_maintenance"
@@ -394,9 +386,7 @@ class MaintenanceMarkCompletedView(PermissionRequiredMixin, View):
             maintenance.save(update_fields=["status"])
             messages.success(request, f"Maintenance {maintenance.name} completed.")
 
-        # Redirect to return_url or maintenance detail
-        return_url = request.POST.get("return_url") or request.GET.get("return_url") or maintenance.get_absolute_url()
-        return redirect(return_url)
+        return redirect(self.get_return_url(request, maintenance))
 
 
 # Outage Views
@@ -896,13 +886,6 @@ class PreparedNotificationView(generic.ObjectView):
         }
 
 
-def _safe_return_url(request, fallback):
-    url = request.POST.get("return_url") or request.GET.get("return_url")
-    if url and url_has_allowed_host_and_scheme(url, allowed_hosts={request.get_host()}):
-        return url
-    return fallback
-
-
 class BaseGenerateNotificationsView(PermissionRequiredMixin, View):
     """Preview (GET) and generate (POST) outgoing notifications for one event."""
 
@@ -946,7 +929,7 @@ class OutageGenerateNotificationsView(BaseGenerateNotificationsView):
 
 
 @register_model_view(PreparedNotification, "approve")
-class PreparedNotificationApproveView(PermissionRequiredMixin, View):
+class PreparedNotificationApproveView(GetReturnURLMixin, PermissionRequiredMixin, View):
     permission_required = "notices.change_preparednotification"
 
     def post(self, request, pk):
@@ -963,11 +946,11 @@ class PreparedNotificationApproveView(PermissionRequiredMixin, View):
             messages.error(request, "; ".join(e.messages))
         except PermissionDenied as e:
             messages.error(request, str(e))
-        return redirect(_safe_return_url(request, notification.get_absolute_url()))
+        return redirect(self.get_return_url(request, notification))
 
 
 @register_model_view(PreparedNotification, "reset")
-class PreparedNotificationResetView(PermissionRequiredMixin, View):
+class PreparedNotificationResetView(GetReturnURLMixin, PermissionRequiredMixin, View):
     permission_required = "notices.change_preparednotification"
 
     def post(self, request, pk):
@@ -977,7 +960,7 @@ class PreparedNotificationResetView(PermissionRequiredMixin, View):
             messages.success(request, "Notification content reset to its template.")
         except (ResetError, PermissionDenied) as e:
             messages.error(request, str(e))
-        return redirect(_safe_return_url(request, notification.get_absolute_url()))
+        return redirect(self.get_return_url(request, notification))
 
 
 @register_model_view(PreparedNotification, "add", detail=False)
