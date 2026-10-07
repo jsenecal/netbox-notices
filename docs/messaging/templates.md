@@ -64,6 +64,7 @@ Always present:
 | `netbox_url` | Django's `BASE_URL` setting, or an empty string if unset |
 | `tenant` | The target tenant, or `None` |
 | `impacts` | The `Impact` records in scope, or an empty list |
+| `highest_impact` | The worst level across `impacts`, ranked `OUTAGE`, `DEGRADED`, `REDUCED-REDUNDANCY`, `NO-IMPACT`. Missing or unrecognised levels are ignored; `NO-IMPACT` when there are no impacts. |
 
 Present only when the notification is linked to an event:
 
@@ -71,7 +72,6 @@ Present only when the notification is linked to an event:
 |---|---|
 | `maintenance` or `outage` | The event, under a key named for its model |
 | `tenant_impacts` | `impacts` narrowed to those whose target belongs to `tenant`. Falls back to the full list when no tenant is given. |
-| `highest_impact` | The worst level across `impacts`, ranked `OUTAGE`, `DEGRADED`, `REDUCED-REDUNDANCY`, `NO-IMPACT`. Only set when `impacts` is non-empty. |
 
 The event key is named after the model, so a maintenance is available as `{{ maintenance }}` and an outage as `{{ outage }}`. There is no generic `event` variable. A template with `event_type = both` has to handle both names:
 
@@ -84,12 +84,23 @@ The event key is named after the model, so a maintenance is available as `{{ mai
 `netbox_url` is empty unless `BASE_URL` is set in `configuration.py`. Absolute links in a template need it, so set it before relying on them:
 
 ```jinja
-View details: {{ netbox_url }}{{ maintenance.get_absolute_url }}
+View details: {{ netbox_url }}{{ maintenance.get_absolute_url() }}
 ```
 
 ## Syntax and filters
 
 Templates are standard Jinja2. The environment runs with `autoescape=False`, which suits Markdown and plain text bodies but means an HTML template is responsible for escaping anything that could contain markup. Provider-supplied fields such as `summary` and `impact` are the ones to watch.
+
+Unlike Django templates, Jinja does not call methods for you: a model method needs parentheses, as in `{{ maintenance.get_absolute_url() }}` or `{% if maintenance.has_timezone_difference() %}`. Without them the expression renders the bound method's representation, and an `if` on it is always true.
+
+### Sandbox
+
+Templates are written by users, so they render in Jinja's [sandboxed environment](https://jinja.palletsprojects.com/en/stable/sandbox/) (`SandboxedEnvironment`). Ordinary attribute access and method calls on the context objects work as shown on this page, but the sandbox blocks what could reach into Python internals or change data:
+
+- Attributes whose names start with an underscore (such as `__class__` or `_meta`) are unsafe. Printed on their own they come out as an undefined value (empty, and false in an `if`); reading an attribute of one or calling it raises a security error.
+- Calling an unsafe callable raises a security error. That covers methods Django marks as modifying data (`alters_data`), such as `save()` and `delete()` on a model or `.delete()` on a related manager.
+
+A security error fails the render like any other template error: the preview and the API report that template's notifications as failed, and nothing is written for them.
 
 Two custom filters are registered.
 
@@ -127,9 +138,9 @@ A Markdown body:
 
 - Start: {{ maintenance.start }}
 - End: {{ maintenance.end }}
-{% if maintenance.has_timezone_difference %}
+{% if maintenance.has_timezone_difference() %}
 Times shown in {{ maintenance.original_timezone }}:
-{{ maintenance.get_start_in_original_tz }} to {{ maintenance.get_end_in_original_tz }}
+{{ maintenance.get_start_in_original_tz() }} to {{ maintenance.get_end_in_original_tz() }}
 {% endif %}
 
 ## Affected services

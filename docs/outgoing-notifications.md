@@ -156,7 +156,7 @@ A maintenance notification can carry an iCal attachment following the BCOP Maint
 
 The iCal template sees the same variables as the body template, plus `message_sequence`, which maps to the iCal `SEQUENCE` property and lets a calendar client recognise an update to an event it already holds. `message_sequence` is passed by the caller and defaults to 1; it is not available in body templates.
 
-`highest_impact` is guaranteed here, defaulting to `NO-IMPACT` when there are no impacts, whereas in a body template it is only present when impacts exist.
+`highest_impact` defaults to `NO-IMPACT` when there are no impacts, here as in a body template.
 
 ### Reference template
 

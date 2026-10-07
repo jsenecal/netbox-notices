@@ -22,6 +22,10 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 - Template matching: every non-base template is an independent notification kind; a template that extends a non-base template overrides it for the recipient groups its scopes match. Fields merge only along the `extends` chain instead of across every matching template. `{% extends "base" %}` now renders with the full context and resolves to the template's own parent.
 - An override must use the same granularity as the template it extends, and `extends` cycles are rejected on save.
 
+### Security
+
+- Notification templates now render in Jinja's sandbox (`SandboxedEnvironment`): attributes whose names start with an underscore and data-modifying callables such as `save()` or `delete()` are blocked, and a blocked call or lookup fails the render. See the Sandbox section of the templates documentation.
+
 ## [1.3.0] - 2026-09-12
 
 ### Added
