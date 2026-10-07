@@ -201,6 +201,18 @@ class TestChainRendering:
         chain = _chain(("child", ""), ("parent", "P {{ x }}"))
         assert TemplateRenderer.for_chain(chain).render_body(chain, {"x": 1}) == "P 1"
 
+    def test_extends_by_slug_reaches_a_non_adjacent_ancestor(self):
+        chain = _chain(
+            ("leaf", '{% extends "top" %}{% block a %}LEAF{% endblock %}'),
+            ("mid", ""),
+            ("top", "[{% block a %}a{% endblock %}]"),
+        )
+        assert TemplateRenderer.for_chain(chain).render_body(chain, {}) == "[LEAF]"
+
+    def test_chain_of_empty_bodies_renders_empty(self):
+        chain = _chain(("child", ""), ("parent", ""))
+        assert TemplateRenderer.for_chain(chain).render_body(chain, {}) == ""
+
 
 class TestSandbox:
     ESCAPE = "{{ cycler.__init__.__globals__.os.getpid() }}"

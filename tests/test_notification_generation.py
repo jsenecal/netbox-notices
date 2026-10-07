@@ -13,6 +13,7 @@ from notices.services.notification_generation import (
     NotificationGenerator,
     PlannedNotification,
     ResetError,
+    select_kinds,
 )
 
 
@@ -59,6 +60,15 @@ class TestPlan:
         assert plan[tenant_a].template == acme and plan[tenant_a].content["subject"] == "Special"
         assert plan[tenant_a].root_template == root
 
+    def test_kind_scoped_to_one_tenant_ignores_other_groups(self, maintenance_with_two_tenants, make_kind):
+        event, tenant_a, _ = maintenance_with_two_tenants
+        scoped = make_kind("customer")
+        TemplateScope.objects.create(
+            template=scoped, content_type=ContentType.objects.get_for_model(tenant_a), object_id=tenant_a.pk
+        )
+        plan = NotificationGenerator(event).plan()
+        assert [(item.action, item.tenant) for item in plan] == [("create", tenant_a)]
+
     def test_group_without_contacts_is_skipped(self, maintenance_with_two_tenants, make_kind):
         event, *_ = maintenance_with_two_tenants
         make_kind("customer", contact_priorities=["tertiary"])
@@ -77,6 +87,16 @@ class TestPlan:
         make_kind("long", granularity="per_event", subject_template="x" * 400)
         [item] = NotificationGenerator(event).plan()
         assert len(item.content["subject"]) == 255
+
+
+@pytest.mark.django_db
+class TestSelectKinds:
+    @pytest.mark.parametrize("named", [None, []])
+    def test_no_named_kinds_selects_every_kind(self, maintenance, make_kind, named):
+        make_kind("customer")
+        make_kind("noc", granularity="per_event")
+        kinds, selected, unknown = select_kinds(maintenance, named)
+        assert len(kinds) == 2 and selected == kinds and unknown == []
 
 
 @pytest.mark.django_db
@@ -190,6 +210,30 @@ class TestReset:
         draft.save()
         assert NotificationGenerator(event).reset(draft).ical_content == "SEQ:2"
         assert PreparedNotification.objects.filter(pk=manual.pk, status="sent").exists()
+
+    def test_reset_fails_when_template_no_longer_renders(self, maintenance_with_two_tenants, make_kind):
+        event, *_ = maintenance_with_two_tenants
+        kind = make_kind("noc", granularity="per_event")
+        NotificationGenerator(event).generate()
+        n = PreparedNotification.objects.get()
+        kind.body_template = "{% if %}"
+        kind.save()
+        with pytest.raises(ResetError):
+            NotificationGenerator(event).reset(n)
+
+    def test_reset_after_group_vanished_rerenders_for_its_tenant(self, maintenance_with_two_tenants, make_kind):
+        event, tenant_a, _ = maintenance_with_two_tenants
+        make_kind("customer")
+        NotificationGenerator(event).generate()
+        n = PreparedNotification.objects.get(tenant=tenant_a)
+        n.body_text = "edited"
+        n.save()
+        event.impacts.filter(target_object_id__in=tenant_a.circuits.values_list("pk", flat=True)).delete()
+        n = NotificationGenerator(event).reset(n)
+        n.refresh_from_db()
+        assert n.body_text == "Body 0" and not n.is_modified
+        assert n.subject == "MAINT-001 for Tenant 1"
+        assert [c.email for c in n.contacts.all()] == ["c1@example.com"]
 
     def test_reset_rejects_non_draft(self, maintenance_with_two_tenants, make_kind):
         event, *_ = maintenance_with_two_tenants

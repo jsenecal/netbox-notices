@@ -133,3 +133,30 @@ class TestAutoGeneration:
             event.status = "CANCELLED"
             event.save()
         assert PreparedNotification.objects.count() == 0
+
+
+@pytest.mark.django_db
+class TestIsMeaningfulEventChange:
+    def test_created_event_is_meaningful(self, maintenance):
+        assert auto_generation.is_meaningful_event_change(maintenance, created=True)
+
+    def test_event_saved_without_snapshot_is_assumed_meaningful(self, maintenance):
+        assert not hasattr(maintenance, "_prechange_snapshot")
+        assert auto_generation.is_meaningful_event_change(maintenance, created=False)
+
+    def test_snapshot_without_meaningful_difference_is_not_meaningful(self, maintenance):
+        maintenance.snapshot()
+        maintenance.comments = "note"
+        assert not auto_generation.is_meaningful_event_change(maintenance, created=False)
+
+
+@pytest.mark.django_db
+class TestRunGenerationFailure:
+    def test_unexpected_error_becomes_warning_journal_entry(self, maintenance):
+        from extras.models import JournalEntry
+
+        with mock.patch("notices.services.notification_generation.NotificationGenerator.generate") as generate:
+            generate.side_effect = RuntimeError("boom")
+            auto_generation.run_generation(maintenance)
+        entry = JournalEntry.objects.get(assigned_object_id=maintenance.pk)
+        assert entry.kind == "warning" and "boom" in entry.comments

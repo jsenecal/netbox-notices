@@ -48,6 +48,22 @@ class TestGenerateView:
         admin_client.post(url, {"templates": [kind.pk, kind.pk]})
         assert list(PreparedNotification.objects.values_list("template__slug", flat=True)) == ["noc"]
 
+    def test_post_outside_permission_constraints_writes_nothing(
+        self, client, maintenance_with_two_tenants, kind, grant_permission
+    ):
+        event, _, tenant_b = maintenance_with_two_tenants
+        kind.granularity = "per_tenant"
+        kind.save()
+        user = User.objects.create_user(username="scoped", password="x")
+        grant_permission(user, ["view"], "maintenance")
+        grant_permission(user, ["add", "change", "delete"], "preparednotification", constraints={"tenant": tenant_b.pk})
+        client.force_login(user)
+        url = reverse("plugins:notices:maintenance_generate_notifications", args=[event.pk])
+        response = client.post(url, follow=True)
+        assert response.redirect_chain[-1][0] == event.get_absolute_url()
+        assert [m.level_tag for m in response.context["messages"]] == ["danger"]
+        assert PreparedNotification.objects.count() == 0
+
 
 @pytest.mark.django_db
 class TestApproveAndReset:
@@ -61,6 +77,15 @@ class TestApproveAndReset:
         admin_client.post(reverse("plugins:notices:preparednotification_approve", args=[n.pk]))
         n.refresh_from_db()
         assert n.status == "ready" and n.approved_by is not None and n.recipients
+
+    def test_approve_without_recipients_stays_draft(self, admin_client, maintenance_with_two_tenants, kind):
+        event, *_ = maintenance_with_two_tenants
+        n = self._generated(event)
+        n.contacts.clear()
+        response = admin_client.post(reverse("plugins:notices:preparednotification_approve", args=[n.pk]), follow=True)
+        n.refresh_from_db()
+        assert n.status == "draft" and n.approved_by is None
+        assert [m.level_tag for m in response.context["messages"]] == ["danger"]
 
     def test_approve_respects_post_change_permission_constraints(
         self, client, maintenance_with_two_tenants, kind, grant_permission
@@ -83,6 +108,17 @@ class TestApproveAndReset:
         admin_client.post(reverse("plugins:notices:preparednotification_reset", args=[n.pk]))
         n.refresh_from_db()
         assert n.body_text == "B" and not n.is_modified
+
+    def test_reset_of_non_draft_reports_error_and_changes_nothing(
+        self, admin_client, maintenance_with_two_tenants, kind
+    ):
+        event, *_ = maintenance_with_two_tenants
+        n = self._generated(event)
+        PreparedNotification.objects.update(status="sent", body_text="edited")
+        response = admin_client.post(reverse("plugins:notices:preparednotification_reset", args=[n.pk]), follow=True)
+        n.refresh_from_db()
+        assert n.body_text == "edited" and n.status == "sent"
+        assert [m.level_tag for m in response.context["messages"]] == ["danger"]
 
     def test_return_url_must_be_local(self, admin_client, maintenance_with_two_tenants, kind):
         event, *_ = maintenance_with_two_tenants

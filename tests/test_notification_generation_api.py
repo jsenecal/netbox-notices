@@ -107,6 +107,16 @@ class TestResetAction:
         assert response.status_code == 200
         assert response.data["modified"] is False and response.data["body_text"] == "B"
 
+    def test_reset_without_change_permission_is_forbidden(
+        self, admin_api, maintenance_with_two_tenants, kind, grant_permission
+    ):
+        event, *_ = maintenance_with_two_tenants
+        admin_api.post(_url(event), {}, format="json")
+        n = PreparedNotification.objects.get()
+        user = User.objects.create_user(username="reader", password="x")
+        grant_permission(user, ["view"], "preparednotification")
+        assert _client(user).post(f"/api/plugins/notices/prepared-notifications/{n.pk}/reset/").status_code == 403
+
     def test_reset_non_draft_is_400(self, admin_api, maintenance_with_two_tenants, kind):
         event, *_ = maintenance_with_two_tenants
         admin_api.post(_url(event), {}, format="json")
