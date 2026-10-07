@@ -927,7 +927,7 @@ class BaseGenerateNotificationsView(PermissionRequiredMixin, View):
     def post(self, request, pk):
         event, _, _, generator = self._generator(request, pk)
         try:
-            result = generator.apply(generator.plan(), user=request.user)
+            result = generator.generate(user=request.user)
         except PermissionDenied as e:
             messages.error(request, str(e))
             return redirect(event.get_absolute_url())

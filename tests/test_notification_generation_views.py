@@ -50,8 +50,7 @@ class TestGenerateView:
 @pytest.mark.django_db
 class TestApproveAndReset:
     def _generated(self, event):
-        gen = NotificationGenerator(event)
-        gen.apply(gen.plan())
+        NotificationGenerator(event).generate()
         return PreparedNotification.objects.get()
 
     def test_approve_goes_through_state_machine(self, admin_client, maintenance_with_two_tenants, kind):
@@ -95,8 +94,7 @@ class TestApproveAndReset:
 class TestFilterSet:
     def test_modified_filter(self, maintenance_with_two_tenants, kind):
         event, *_ = maintenance_with_two_tenants
-        gen = NotificationGenerator(event)
-        gen.apply(gen.plan())
+        NotificationGenerator(event).generate()
         n = PreparedNotification.objects.get()
         qs = PreparedNotification.objects.all()
         assert PreparedNotificationFilterSet({"modified": True}, qs).qs.count() == 0

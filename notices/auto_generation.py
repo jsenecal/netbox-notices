@@ -103,8 +103,7 @@ def run_generation(event):
     from notices.services.notification_generation import NotificationGenerator
 
     try:
-        generator = NotificationGenerator(event)
-        result = generator.apply(generator.plan())
+        result = NotificationGenerator(event).generate()
         errors = [item.error for item in result.items if item.action == GenerationActionChoices.ERROR]
         for error in errors:
             logger.warning("Automatic notification generation for %s: %s", event, error)

@@ -188,19 +188,18 @@ class NotificationGenerator:
             item.notification.mark_rendered()
         return GenerationResult.from_plan(plan, planned=False)
 
+    def generate(self, user=None):
+        """Plan and apply in one step."""
+        return self.apply(self.plan(), user=user)
+
     def reset(self, notification, user=None):
         """Re-render one draft from its template family, event and group, discarding edits."""
         if notification.status != Status.DRAFT or notification.event is None:
             raise ValueError("Only drafts linked to an event can be reset.")
         root = notification.template.root_kind
-        group = self._group_for(notification, root.granularity)
+        group = self._group_for(notification, root)
         matcher = TemplateMatchingService(event=self.event, tenant=group.tenant)
-        siblings = [
-            n
-            for n in notifications_for_event(self.event)
-            if n.template.root_kind.pk == root.pk
-            and (n.tenant_id, n.impact_id) == (notification.tenant_id, notification.impact_id)
-        ]
+        siblings = self._existing_by_group({root.pk}).get(_group_key(root.pk, group.tenant, group.impact), [])
         item = self._render_item(root, group, matcher, sent_count=self._sent_count(siblings), require_contacts=False)
         if item.action == Action.ERROR:
             raise TemplateRenderError(item.error)
@@ -271,12 +270,10 @@ class NotificationGenerator:
             item.action, item.error = Action.ERROR, str(e)
         return item
 
-    def _group_for(self, notification, granularity):
-        for group in group_impacts(self.event, granularity):
-            if (getattr(group.tenant, "pk", None), getattr(group.impact, "pk", None)) == (
-                notification.tenant_id,
-                notification.impact_id,
-            ):
+    def _group_for(self, notification, root):
+        key = _group_key(root.pk, notification.tenant, notification.impact)
+        for group in group_impacts(self.event, root.granularity):
+            if _group_key(root.pk, group.tenant, group.impact) == key:
                 return group
         tenant = notification.tenant
         return RecipientGroup(tenant=tenant, impact=notification.impact, tenants=(tenant,) if tenant else ())

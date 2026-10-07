@@ -77,8 +77,7 @@ class TestPlan:
 @pytest.mark.django_db
 class TestRegeneration:
     def _generate(self, event, **kw):
-        gen = NotificationGenerator(event, **kw)
-        return gen.apply(gen.plan())
+        return NotificationGenerator(event, **kw).generate()
 
     def test_untouched_draft_is_updated_in_place(self, maintenance_with_two_tenants, make_kind):
         event, *_ = maintenance_with_two_tenants
@@ -164,8 +163,7 @@ class TestReset:
     def test_reset_discards_edits(self, maintenance_with_two_tenants, make_kind):
         event, *_ = maintenance_with_two_tenants
         make_kind("noc", granularity="per_event")
-        gen = NotificationGenerator(event)
-        gen.apply(gen.plan())
+        NotificationGenerator(event).generate()
         n = PreparedNotification.objects.get()
         original = n.body_text
         n.body_text = "edited"
@@ -173,11 +171,25 @@ class TestReset:
         n = NotificationGenerator(event).reset(n)
         assert n.body_text == original and not n.is_modified
 
+    def test_reset_and_regeneration_agree_on_ical_sequence(self, maintenance_with_two_tenants, make_kind):
+        """A hand-created sent notification in the group counts for neither, so both give SEQUENCE 2."""
+        event, *_ = maintenance_with_two_tenants
+        kind = make_kind("noc", granularity="per_event", include_ical=True, ical_template="SEQ:{{ message_sequence }}")
+        NotificationGenerator(event).generate()
+        manual = PreparedNotification.objects.create(template=kind, event=event, subject="mine", body_text="mine")
+        PreparedNotification.objects.update(status="sent")
+        NotificationGenerator(event).generate()
+        draft = PreparedNotification.objects.get(status="draft")
+        assert draft.ical_content == "SEQ:2"
+        draft.ical_content = "edited"
+        draft.save()
+        assert NotificationGenerator(event).reset(draft).ical_content == "SEQ:2"
+        assert PreparedNotification.objects.filter(pk=manual.pk, status="sent").exists()
+
     def test_reset_rejects_non_draft(self, maintenance_with_two_tenants, make_kind):
         event, *_ = maintenance_with_two_tenants
         make_kind("noc", granularity="per_event")
-        gen = NotificationGenerator(event)
-        gen.apply(gen.plan())
+        NotificationGenerator(event).generate()
         n = PreparedNotification.objects.get()
         n.status = "ready"
         with pytest.raises(ValueError):
@@ -193,9 +205,8 @@ class TestObjectPermissions:
         make_kind("noc")
         user = get_user_model().objects.create_user(username="scoped", password="x")
         grant_permission(user, ["add", "change", "delete"], "preparednotification", constraints={"tenant": tenant_b.pk})
-        gen = NotificationGenerator(event)
         with pytest.raises(PermissionDenied):
-            gen.apply(gen.plan(), user=user)
+            NotificationGenerator(event).generate(user=user)
         assert PreparedNotification.objects.count() == 0
 
 
