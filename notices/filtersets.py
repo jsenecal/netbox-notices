@@ -2,6 +2,7 @@ import django_filters
 from dcim.models import Location, Region, Site, SiteGroup
 from django.db.models import Q
 from netbox.filtersets import NetBoxModelFilterSet
+from tenancy.models import Tenant
 from utilities.filters import ContentTypeFilter
 
 from .choices import (
@@ -17,6 +18,7 @@ from .models import (
     Outage,
     PreparedNotification,
 )
+from .models.messaging import MODIFIED_Q
 
 
 class MaintenanceFilterSet(NetBoxModelFilterSet):
@@ -282,6 +284,13 @@ class PreparedNotificationFilterSet(NetBoxModelFilterSet):
         queryset=NotificationTemplate.objects.all(),
         field_name="template",
     )
+    event_type = django_filters.ChoiceFilter(
+        choices=(("maintenance", "Maintenance"), ("outage", "Outage")),
+        field_name="event_content_type__model",
+    )
+    event_id = django_filters.NumberFilter()
+    tenant_id = django_filters.ModelMultipleChoiceFilter(queryset=Tenant.objects.all(), field_name="tenant")
+    modified = django_filters.BooleanFilter(method="filter_modified")
     q = django_filters.CharFilter(
         method="search",
         label="Search",
@@ -289,7 +298,10 @@ class PreparedNotificationFilterSet(NetBoxModelFilterSet):
 
     class Meta:
         model = PreparedNotification
-        fields = ["id", "status", "template_id"]
+        fields = ["id", "status", "template_id", "event_type", "event_id", "tenant_id", "modified"]
+
+    def filter_modified(self, queryset, name, value):
+        return queryset.filter(MODIFIED_Q) if value else queryset.exclude(MODIFIED_Q)
 
     def search(self, queryset, name, value):
         if not value.strip():

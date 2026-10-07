@@ -372,6 +372,7 @@ The plugin supports generating and tracking outgoing notifications to customers 
 - **Notification Templates**: Define Jinja templates for different event types and scenarios
 - **Template Scoping**: Scope templates to specific tenants, providers, sites, etc. (similar to Config Contexts)
 - **Template Inheritance**: Base templates can be extended for customization
+- **Notification Generation**: Draft outgoing notifications from a maintenance or outage in one click (UI or API), regenerate safely as the event changes, or opt in to automatic generation
 - **Recipient Discovery**: Automatically discover contacts based on roles and priorities
 - **Approval Workflow**: Notifications go through draft -> ready -> approved -> sent states
 - **Delivery Tracking**: Track when notifications are sent, delivered, and viewed

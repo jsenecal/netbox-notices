@@ -408,3 +408,41 @@ class TestBuildTimelineItemUserNameFallback:
 
         item = build_timeline_item(object_change, "maintenance")
         assert item["user_name"] == "System"
+
+
+class TestOutgoingCategory:
+    def test_prepared_notification_is_outgoing(self):
+        assert categorize_change("preparednotification", "create", None, {"subject": "s"}) == "outgoing"
+
+    def test_icon_and_color(self):
+        assert get_category_icon("outgoing") == "email-arrow-right"
+        assert get_category_color("outgoing") == "purple"
+
+    def test_titles(self):
+        test_cases = [
+            ("create", None, {"subject": "S", "status": "draft"}, "Notification drafted: S"),
+            (
+                "update",
+                {"subject": "S", "status": "draft"},
+                {"subject": "S", "status": "ready"},
+                "Notification approved: S",
+            ),
+            ("update", {"subject": "S", "status": "ready"}, {"subject": "S", "status": "sent"}, "Notification sent: S"),
+            (
+                "update",
+                {"subject": "S", "status": "sent"},
+                {"subject": "S", "status": "failed"},
+                "Notification failed: S",
+            ),
+            (
+                "update",
+                {"subject": "S", "status": "draft"},
+                {"subject": "T", "status": "draft"},
+                "Notification edited: T",
+            ),
+            ("delete", {"subject": "S"}, None, "Notification discarded: S"),
+        ]
+
+        for action, pre, post, expected in test_cases:
+            result = _build_title("outgoing", action, "preparednotification", "repr", pre or {}, post or {})
+            assert result == expected, f"Failed for action={action}, pre={pre}, post={post}"

@@ -207,3 +207,77 @@ def maintenance(provider):
         start=now,
         end=now + timedelta(hours=4),
     )
+
+
+@pytest.fixture
+def maintenance_with_two_tenants(maintenance, provider, circuit_type):
+    """A maintenance impacting one circuit of each of two tenants, each with a primary NOC contact."""
+    from circuits.models import Circuit
+    from tenancy.models import Contact, ContactAssignment, ContactRole, Tenant
+
+    from notices.models import Impact
+
+    role = ContactRole.objects.create(name="NOC", slug="noc")
+    tenants = []
+    for idx in (1, 2):
+        tenant = Tenant.objects.create(name=f"Tenant {idx}", slug=f"tenant-{idx}")
+        contact = Contact.objects.create(name=f"Contact {idx}", email=f"c{idx}@example.com")
+        ContactAssignment.objects.create(object=tenant, contact=contact, role=role, priority="primary")
+        circuit = Circuit.objects.create(cid=f"CID-{idx}", provider=provider, type=circuit_type, tenant=tenant)
+        Impact.objects.create(event=maintenance, target=circuit, impact="OUTAGE")
+        tenants.append(tenant)
+    return maintenance, tenants[0], tenants[1]
+
+
+@pytest.fixture
+def make_template(db):
+    """Factory for saved NotificationTemplates: `make_template(slug, **overrides)`."""
+    from notices.models import NotificationTemplate
+
+    def make(slug, **overrides):
+        fields = {
+            "name": slug,
+            "slug": slug,
+            "event_type": "maintenance",
+            "granularity": "per_event",
+            "subject_template": "S",
+            "body_template": "B",
+            "body_format": "text",
+            **overrides,
+        }
+        return NotificationTemplate.objects.create(**fields)
+
+    return make
+
+
+@pytest.fixture
+def notification_template(make_template):
+    """Create a test notification template."""
+    return make_template(
+        "test-template",
+        name="Test Template",
+        subject_template="Test Subject: {{ maintenance.name }}",
+        body_template="Test body for {{ maintenance.name }}",
+    )
+
+
+@pytest.fixture
+def grant_permission(db):
+    """Grant an ObjectPermission: `grant_permission(user, actions, *model_names, constraints=None)`.
+
+    Model names are notices models, e.g. "preparednotification".
+    """
+    from core.models import ObjectType
+    from users.models import ObjectPermission
+
+    def grant(user, actions, *model_names, constraints=None):
+        perm = ObjectPermission.objects.create(
+            name=f"{user.username}: {'/'.join(actions)} on {'/'.join(model_names)}",
+            actions=actions,
+            constraints=constraints,
+        )
+        perm.object_types.add(*[ObjectType.objects.get(app_label="notices", model=m) for m in model_names])
+        perm.users.add(user)
+        return perm
+
+    return grant

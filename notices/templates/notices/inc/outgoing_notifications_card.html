@@ -1,0 +1,23 @@
+{% load helpers %}
+<div class="card">
+  <h5 class="card-header">Outgoing Notifications</h5>
+  {% if outgoing_notifications %}
+    <table class="table table-hover">
+      <thead><tr><th>Subject</th><th>Group</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for n in outgoing_notifications %}
+          <tr>
+            <td>{{ n|linkify:"subject" }}{% if n.is_modified %} <span class="badge text-bg-warning">modified</span>{% endif %}</td>
+            <td>{% include "notices/inc/recipient_group.html" with impact=n.impact tenant=n.tenant only %}</td>
+            <td>{% badge n.get_status_display %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="card-body text-muted">No outgoing notifications yet.</div>
+  {% endif %}
+  <div class="card-footer text-end noprint">
+    <a href="{% url 'plugins:notices:preparednotification_list' %}?event_type={{ object|meta:'model_name' }}&event_id={{ object.pk }}" class="btn btn-sm btn-outline-primary">All notifications</a>
+  </div>
+</div>

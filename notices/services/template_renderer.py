@@ -3,9 +3,16 @@ from datetime import UTC
 import markdown
 from django.conf import settings
 from django.utils import timezone
-from jinja2 import BaseLoader, Environment, TemplateSyntaxError, UndefinedError
+from django.utils.html import strip_tags
+from jinja2 import BaseLoader, TemplateSyntaxError
+from jinja2.sandbox import SandboxedEnvironment
 
-__all__ = ("TemplateRenderer", "TemplateRenderError")
+from notices.services.template_matching import event_type_of
+
+__all__ = ("TemplateRenderer", "TemplateRenderError", "highest_impact", "split_body")
+
+# Impact levels, worst first.
+IMPACT_SEVERITY = ("OUTAGE", "DEGRADED", "REDUCED-REDUNDANCY", "NO-IMPACT")
 
 
 class TemplateRenderError(Exception):
@@ -35,6 +42,16 @@ def ical_datetime(dt):
     return dt.strftime("%Y%m%dT%H%M%SZ")
 
 
+def highest_impact(impacts):
+    """Worst impact level among `impacts`; levels that are missing or unknown are ignored."""
+    levels = [getattr(impact, "impact", None) for impact in impacts or ()]
+    return min(
+        (level for level in levels if level in IMPACT_SEVERITY),
+        key=IMPACT_SEVERITY.index,
+        default="NO-IMPACT",
+    )
+
+
 def render_markdown(text):
     """Render markdown text to HTML."""
     if not text:
@@ -45,6 +62,28 @@ def render_markdown(text):
     )
 
 
+class ChainEnvironment(SandboxedEnvironment):
+    """Sandboxed Jinja environment where `{% extends "base" %}` means "my own parent template"."""
+
+    def __init__(self, parents, **kwargs):
+        super().__init__(**kwargs)
+        self.parents = parents
+
+    def join_path(self, template, parent):
+        if template == "base" and parent in self.parents:
+            return self.parents[parent]
+        return template
+
+
+def split_body(body_format, rendered):
+    """Return (body_text, body_html) for a rendered body according to its format."""
+    if body_format == "markdown":
+        return rendered, render_markdown(rendered)
+    if body_format == "html":
+        return strip_tags(rendered).strip(), rendered
+    return rendered, ""
+
+
 class TemplateRenderer:
     """
     Renders Jinja templates with message context.
@@ -52,21 +91,44 @@ class TemplateRenderer:
     Provides custom filters for iCal datetime formatting and Markdown rendering.
     """
 
-    def __init__(self, templates=None):
+    def __init__(self, templates=None, parents=None):
         """
         Initialize renderer.
 
         Args:
             templates: Optional dict of template_name -> template_string for inheritance
+            parents: Optional dict of slug -> parent_slug for chain inheritance
         """
-        loader = StringLoader(templates) if templates else None
-        self.env = Environment(
-            loader=loader,
+        # Template bodies are user-authored, so they always render in a sandbox.
+        # Without parents, ChainEnvironment resolves paths exactly like a plain sandbox.
+        self.env = ChainEnvironment(
+            parents=parents or {},
+            loader=StringLoader(templates) if templates else None,
             autoescape=False,
         )
         # Register custom filters
         self.env.filters["ical_datetime"] = ical_datetime
         self.env.filters["markdown"] = render_markdown
+
+    def _safe_render(self, template, context, prefix="Template rendering failed"):
+        """
+        Safely render a template, wrapping any exception in TemplateRenderError.
+
+        Args:
+            template: Jinja2 template object
+            context: Dict of template variables
+            prefix: Error message prefix
+
+        Returns:
+            Rendered string
+
+        Raises:
+            TemplateRenderError: For any error during rendering
+        """
+        try:
+            return template.render(**context)
+        except Exception as e:
+            raise TemplateRenderError(f"{prefix}: {e}")
 
     def render(self, template_string, context):
         """
@@ -84,8 +146,10 @@ class TemplateRenderer:
         """
         try:
             template = self.env.from_string(template_string)
-            return template.render(**context)
-        except (TemplateSyntaxError, UndefinedError) as e:
+            return self._safe_render(template, context)
+        except TemplateRenderError:
+            raise
+        except Exception as e:
             raise TemplateRenderError(f"Template rendering failed: {e}")
 
     def validate(self, template_string):
@@ -107,22 +171,23 @@ class TemplateRenderer:
         except TemplateSyntaxError as e:
             raise TemplateRenderError(f"Invalid template syntax: {e}")
 
-    def render_with_inheritance(self, child_template, base_name="base"):
-        """
-        Render a template that extends a base template.
+    @classmethod
+    def for_chain(cls, chain):
+        """Renderer whose loader knows every template in an inheritance chain by slug."""
+        templates = {t.slug: t.body_template or "" for t in chain}
+        parents = {t.slug: t.extends.slug for t in chain if t.extends_id is not None or t.extends is not None}
+        return cls(templates=templates, parents=parents)
 
-        Args:
-            child_template: Child template string (should have {% extends "base" %})
-            base_name: Name of the base template in self.templates
-
-        Returns:
-            Rendered string
-        """
+    def render_body(self, chain, context):
+        """Render the most specific non-empty body in the chain, with inheritance and context."""
+        source = next((t for t in chain if t.body_template), None)
+        if source is None:
+            return ""
         try:
-            template = self.env.from_string(child_template)
-            return template.render()
-        except (TemplateSyntaxError, UndefinedError) as e:
-            raise TemplateRenderError(f"Template inheritance rendering failed: {e}")
+            template = self.env.get_template(source.slug)
+        except Exception as e:
+            raise TemplateRenderError(f"Template rendering failed: {e}")
+        return self._safe_render(template, context)
 
     @classmethod
     def build_context(cls, notification_template, event=None, tenant=None, impacts=None, **extra):
@@ -144,17 +209,12 @@ class TemplateRenderer:
             "netbox_url": getattr(settings, "BASE_URL", ""),
             "tenant": tenant,
             "impacts": impacts or [],
+            "highest_impact": highest_impact(impacts),
         }
 
         if event:
-            # Determine event type and add appropriate variables
-            event_type = event.__class__.__name__.lower()
-            context[event_type] = event
-
-            if event_type == "maintenance":
-                context["maintenance"] = event
-            elif event_type == "outage":
-                context["outage"] = event
+            # Expose the event as `maintenance` or `outage`
+            context[event_type_of(event)] = event
 
             # Filter impacts for this tenant if specified
             if tenant and impacts:
@@ -163,17 +223,6 @@ class TemplateRenderer:
                 ]
             else:
                 context["tenant_impacts"] = impacts or []
-
-            # Calculate highest impact
-            if impacts:
-                impact_order = ["OUTAGE", "DEGRADED", "REDUCED-REDUNDANCY", "NO-IMPACT"]
-                highest = "NO-IMPACT"
-                for impact in impacts:
-                    impact_level = getattr(impact, "impact", None) or "NO-IMPACT"
-                    if impact_level in impact_order:
-                        if impact_order.index(impact_level) < impact_order.index(highest):
-                            highest = impact_level
-                context["highest_impact"] = highest
 
         context.update(extra)
         return context

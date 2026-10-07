@@ -30,21 +30,6 @@ def api_client(superuser):
 
 
 @pytest.fixture
-def notification_template():
-    """Create a test notification template."""
-    return NotificationTemplate.objects.create(
-        name="Test Template",
-        slug="test-template",
-        event_type="maintenance",
-        granularity="per_event",
-        subject_template="Test Subject: {{ maintenance.name }}",
-        body_template="Test body for {{ maintenance.name }}",
-        body_format="text",
-        weight=1000,
-    )
-
-
-@pytest.fixture
 def prepared_notification(notification_template, contact):
     """Create a test prepared notification."""
     notification = PreparedNotification.objects.create(

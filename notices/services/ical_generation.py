@@ -6,6 +6,7 @@ This module provides functionality to generate iCal calendar attachments
 that comply with the BCOP (Best Current Operating Practice) Maintnote standard.
 """
 
+from notices.services.template_matching import event_type_of
 from notices.services.template_renderer import TemplateRenderer
 
 __all__ = ("ICalGenerationService", "generate_ical", "DEFAULT_BCOP_ICAL_TEMPLATE")
@@ -142,10 +143,7 @@ class ICalGenerationService:
         Returns:
             bool: True if event is a Maintenance model instance
         """
-        if not self.event:
-            return False
-        model_name = self.event.__class__.__name__.lower()
-        return "maintenance" in model_name
+        return self.event is not None and event_type_of(self.event) == "maintenance"
 
     def _build_context(self, message_sequence):
         """
@@ -157,45 +155,13 @@ class ICalGenerationService:
         Returns:
             dict: Context variables for template rendering
         """
-        context = TemplateRenderer.build_context(
+        return TemplateRenderer.build_context(
             self.template,
             event=self.event,
             tenant=self.tenant,
             impacts=self.impacts,
+            message_sequence=message_sequence,
         )
-
-        # Ensure maintenance is always in context (for backward compatibility)
-        if self.event and "maintenance" not in context:
-            context["maintenance"] = self.event
-
-        # Add iCal-specific context
-        context["message_sequence"] = message_sequence
-
-        # Ensure highest_impact is calculated
-        if "highest_impact" not in context:
-            context["highest_impact"] = self._calculate_highest_impact()
-
-        return context
-
-    def _calculate_highest_impact(self):
-        """
-        Calculate the highest (worst) impact level.
-
-        Returns:
-            str: Highest impact level from impacts, or 'NO-IMPACT' if none
-        """
-        if not self.impacts:
-            return "NO-IMPACT"
-
-        impact_order = ["OUTAGE", "DEGRADED", "REDUCED-REDUNDANCY", "NO-IMPACT"]
-        highest = "NO-IMPACT"
-
-        for impact in self.impacts:
-            impact_level = getattr(impact, "impact", "NO-IMPACT")
-            if impact_level and impact_order.index(impact_level) < impact_order.index(highest):
-                highest = impact_level
-
-        return highest
 
 
 def generate_ical(template, event, tenant=None, impacts=None, message_sequence=1):

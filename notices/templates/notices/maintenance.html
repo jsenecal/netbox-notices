@@ -68,6 +68,8 @@
                 <li><span class="dropdown-item disabled"><i class="mdi mdi-check-circle"></i> Mark Completed</span></li>
                 {% endif %}
 
+                {% include "notices/inc/generate_notifications_button.html" with menu=True %}
+
                 <li><hr class="dropdown-divider"></li>
 
                 {# Cancel #}
@@ -244,6 +246,12 @@
             This maintenance is Completed or Cancelled, the maintenance impact can no longer be modified.
           </div>
         {% endif %}
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      {% include 'notices/inc/outgoing_notifications_card.html' %}
     </div>
   </div>
 

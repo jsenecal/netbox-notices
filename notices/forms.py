@@ -6,8 +6,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from netbox.forms import NetBoxModelBulkEditForm, NetBoxModelFilterSetForm, NetBoxModelForm, NetBoxModelImportForm
-from tenancy.models import ContactRole
+from tenancy.models import ContactRole, Tenant
 from utilities.forms import add_blank_choice, get_field_value
+from utilities.forms.constants import BOOLEAN_WITH_BLANK_CHOICES
 from utilities.forms.fields import (
     CSVChoiceField,
     CSVModelChoiceField,
@@ -895,7 +896,7 @@ class PreparedNotificationFilterForm(NetBoxModelFilterSetForm):
 
     fieldsets = (
         FieldSet("q", "filter_id", "tag"),
-        FieldSet("status", "template_id", name="Attributes"),
+        FieldSet("status", "template_id", "tenant_id", "modified", name="Attributes"),
     )
     selector_fields = ("filter_id", "q", "status", "template_id")
 
@@ -908,6 +909,8 @@ class PreparedNotificationFilterForm(NetBoxModelFilterSetForm):
         required=False,
         label="Template",
     )
+    tenant_id = DynamicModelMultipleChoiceField(queryset=Tenant.objects.all(), required=False, label="Tenant")
+    modified = forms.NullBooleanField(required=False, widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES))
     tag = TagFilterField(model)
 
 

@@ -10,7 +10,12 @@ from django.db.models import Q
 
 from notices.choices import MessageEventTypeChoices
 
-__all__ = ("TemplateMatchingService", "find_matching_templates", "merge_templates")
+__all__ = ("TemplateMatchingService", "event_type_of", "kinds_for_event", "merge_templates", "resolve_chain")
+
+
+def event_type_of(event):
+    """Event type name of a Maintenance or Outage: its model name ("maintenance" or "outage")."""
+    return event._meta.model_name
 
 
 class TemplateMatchingService:
@@ -33,98 +38,18 @@ class TemplateMatchingService:
         self.event = event
         self.tenant = tenant
         self.provider = provider
-        self.event_type = self._get_event_type()
+        self.event_type = event_type_of(event) if event else "none"
         self.event_status = getattr(event, "status", None) if event else None
 
-    def _get_event_type(self):
-        """Determine event type from event object."""
-        if not self.event:
-            return "none"
-        model_name = self.event.__class__.__name__.lower()
-        if "maintenance" in model_name:
-            return "maintenance"
-        elif "outage" in model_name:
-            return "outage"
-        return "none"
-
-    def find_templates(self):
-        """
-        Find all templates matching the current context.
-
-        Returns:
-            List of (template, score) tuples sorted by score descending
-        """
-        # Get candidate templates by event type
-        candidates = self._get_candidates_by_event_type()
-
-        # Score each template
-        scored = []
-        for template in candidates:
-            score, matches = self._score_template(template)
-            if matches:
-                scored.append((template, score))
-
-        # Sort by score descending
-        scored.sort(key=lambda x: x[1], reverse=True)
-        return scored
-
-    def get_best_template(self):
-        """Get the highest-scoring matching template."""
-        templates = self.find_templates()
-        return templates[0][0] if templates else None
-
-    def get_merged_config(self):
-        """
-        Get merged template configuration.
-
-        Returns:
-            Dict with merged field values from all matching templates
-        """
-        templates = self.find_templates()
-        if not templates:
-            return None
-
-        return merge_templates([t for t, _ in templates])
-
-    def _get_candidates_by_event_type(self):
-        """Get templates filtered by event type."""
-        from notices.models import NotificationTemplate
-
-        if self.event_type == "maintenance":
-            return NotificationTemplate.objects.filter(
-                Q(event_type=MessageEventTypeChoices.MAINTENANCE) | Q(event_type=MessageEventTypeChoices.BOTH)
-            ).prefetch_related("scopes", "scopes__content_type", "contact_roles")
-        elif self.event_type == "outage":
-            return NotificationTemplate.objects.filter(
-                Q(event_type=MessageEventTypeChoices.OUTAGE) | Q(event_type=MessageEventTypeChoices.BOTH)
-            ).prefetch_related("scopes", "scopes__content_type", "contact_roles")
-        else:
-            return NotificationTemplate.objects.filter(event_type=MessageEventTypeChoices.NONE).prefetch_related(
-                "scopes", "scopes__content_type", "contact_roles"
-            )
-
-    def _score_template(self, template):
-        """
-        Calculate score for a template.
-
-        Returns:
-            (score, matches) where matches is True if template should be included
-        """
-        score = template.weight
+    def score(self, template):
+        """Return the template's score for this context, or None when it does not apply."""
         scopes = list(template.scopes.all())
-
-        # No scopes = global default, always matches
         if not scopes:
-            return score, True
-
-        # Check each scope
-        has_match = False
-        for scope in scopes:
-            if self._scope_matches(scope):
-                score += scope.weight
-                has_match = True
-
-        return score, has_match
+            return template.weight
+        matched = [scope.weight for scope in scopes if self._scope_matches(scope)]
+        if not matched:
+            return None
+        return template.weight + sum(matched)
 
     def _scope_matches(self, scope):
         """Check if a scope matches the current context."""
@@ -173,15 +98,63 @@ class TemplateMatchingService:
         return None
 
 
+def _renderable_for(queryset, event_type):
+    """Narrow templates to non-base ones that apply to `event_type` (directly or as "both")."""
+    return queryset.filter(
+        Q(event_type=event_type) | Q(event_type=MessageEventTypeChoices.BOTH),
+        is_base_template=False,
+    )
+
+
+def kinds_for_event(event):
+    """Independent notification kinds for an event: non-base templates that override nothing."""
+    from notices.models import NotificationTemplate
+
+    return (
+        _renderable_for(NotificationTemplate.objects.all(), event_type_of(event))
+        .filter(Q(extends__isnull=True) | Q(extends__is_base_template=True))
+        .prefetch_related("scopes__content_type", "contact_roles")
+    )
+
+
+def resolve_chain(root, matcher):
+    """
+    Return the inheritance chain to render for one recipient group, most specific first.
+
+    Starting at the root kind, descend into the highest-scoring override that applies to the
+    matcher's context and event type, repeatedly; then append the root's base-template
+    ancestors, which only contribute layout and fallback fields.
+    """
+    chain = [root]
+    current = root
+    while True:
+        scored = [
+            (score, child)
+            for child in _renderable_for(current.children.all(), matcher.event_type).prefetch_related(
+                "scopes__content_type"
+            )
+            if (score := matcher.score(child)) is not None
+        ]
+        if not scored:
+            break
+        scored.sort(key=lambda pair: pair[0], reverse=True)
+        current = scored[0][1]
+        chain.insert(0, current)
+    ancestor = root.extends
+    while ancestor is not None:
+        chain.append(ancestor)
+        ancestor = ancestor.extends
+    return chain
+
+
 def merge_templates(templates):
     """
-    Merge multiple templates with field-level precedence.
+    Merge an inheritance chain with field-level precedence.
 
-    Templates should be ordered by score (highest first).
-    Higher-scored template's non-empty fields win.
+    The first (most specific) template's non-empty fields win.
 
     Args:
-        templates: List of NotificationTemplate instances (highest score first)
+        templates: inheritance chain, most specific first (see resolve_chain)
 
     Returns:
         Dict with merged configuration
@@ -200,7 +173,6 @@ def merge_templates(templates):
         "include_ical": False,
         "contact_roles": set(),
         "contact_priorities": set(),
-        "extends": None,
     }
 
     # Process templates from highest to lowest score
@@ -239,28 +211,13 @@ def merge_templates(templates):
         if template.contact_priorities:
             config["contact_priorities"].update(template.contact_priorities)
 
-        # Extends - first non-null wins
-        if not config["extends"] and template.extends:
-            config["extends"] = template.extends
+    # Granularity belongs to the root kind, i.e. the last non-base entry of the chain
+    config["granularity"] = next(
+        (t.granularity for t in reversed(templates) if not t.is_base_template), templates[-1].granularity
+    )
 
     # Convert sets to lists for JSON compatibility
     config["contact_roles"] = list(config["contact_roles"])
     config["contact_priorities"] = list(config["contact_priorities"])
 
     return config
-
-
-def find_matching_templates(event=None, tenant=None, provider=None):
-    """
-    Convenience function to find matching templates.
-
-    Args:
-        event: Optional Maintenance or Outage instance
-        tenant: Optional Tenant instance
-        provider: Optional Provider instance
-
-    Returns:
-        List of (template, score) tuples sorted by score descending
-    """
-    service = TemplateMatchingService(event=event, tenant=tenant, provider=provider)
-    return service.find_templates()

@@ -2,6 +2,10 @@
 {% load helpers %}
 {% load tz %}
 
+{% block extra_controls %}
+    {% include "notices/inc/generate_notifications_button.html" %}
+{% endblock %}
+
 {% block content %}
 <div class="row mb-3">
     <div class="col col-md-6">
@@ -167,6 +171,12 @@
             This outage is resolved, the impact can no longer be modified.
           </div>
         {% endif %}
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      {% include 'notices/inc/outgoing_notifications_card.html' %}
     </div>
   </div>
 

@@ -34,6 +34,16 @@ The `SentNotification` proxy model has no permissions of its own: NetBox resolve
 permissions to the concrete model, so viewing the sent list needs `view_preparednotification`.
 Granting `notices.view_sentnotification` or `notices.delete_sentnotification` has no effect.
 
+### Generating, approving and resetting notifications
+
+| Action | Requires |
+|--------|----------|
+| Generate notifications (UI **Generate Notifications**, API `generate-notifications/`) | `notices.add_preparednotification`, `notices.change_preparednotification` and `notices.delete_preparednotification`, plus view on the event (`notices.view_maintenance` or `notices.view_outage`) |
+| Approve (UI) | `notices.change_preparednotification` |
+| Reset to template (UI, API `reset/`) | `notices.change_preparednotification` |
+
+Generation needs all three notification rights because a run can create, re-render and delete drafts. Object-level constraints are enforced per notification: the run checks each notification it creates, updates or deletes against the user's add, change or delete permissions, and one violation rolls the whole run back (`403` from the API, an error message in the UI). Missing add, change or delete on prepared notifications is refused with `403`; an event the user cannot view is not found (`404`). A dry run or preview writes nothing. Automatic generation (`auto_generate_notifications`) runs as the system and applies no user checks.
+
 ### Which lists offer bulk actions
 
 | List | Import | Edit Selected | Delete Selected |
@@ -83,7 +93,8 @@ back to `draft` to repair the record afterwards. Create the notification, then `
 |------|------------------------|
 | **NOC operator** (handles live events) | `view_*`, `change_maintenance`, `change_outage`, `add_impact`, `change_impact` |
 | **NOC supervisor** (full event lifecycle) | All of the above plus `add_maintenance`, `add_outage`, `delete_*` for events |
-| **Notification approver** | `view_preparednotification`, `change_preparednotification` (to transition `draft` -> `ready`; this is a REST API call, not a web UI action -- see above) |
+| **Notification approver** | `view_preparednotification`, `change_preparednotification` (to approve `draft` -> `ready` with the UI Approve button or an API call; later transitions are API only -- see above) |
+| **Notification drafter** | `add_preparednotification`, `change_preparednotification`, `delete_preparednotification`, plus `view_maintenance` / `view_outage` (to generate notifications) |
 | **External delivery service** (API token) | `view_preparednotification`, `change_preparednotification` (to mark `ready` -> `sent` -> `delivered/failed`); `add_eventnotification` if it also stores received emails |
 | **Provider parser** (API token) | `add_maintenance`, `add_outage`, `add_impact`, `add_eventnotification`, `change_maintenance`, `change_outage` |
 | **Read-only auditor** | All `view_*` permissions |

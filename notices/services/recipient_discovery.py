@@ -1,8 +1,72 @@
+from dataclasses import dataclass
+
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from tenancy.models import ContactAssignment
 
-__all__ = ("RecipientDiscoveryService", "discover_recipients")
+__all__ = (
+    "RecipientDiscoveryService",
+    "RecipientGroup",
+    "contacts_for_tenants",
+    "discover_recipients",
+    "group_impacts",
+    "tenant_for_impact",
+)
+
+
+@dataclass(frozen=True)
+class RecipientGroup:
+    """One outgoing notification's audience: the impacts it covers and whose contacts receive it."""
+
+    tenant: object = None
+    impact: object = None
+    impacts: tuple = ()
+    tenants: tuple = ()
+
+
+def tenant_for_impact(impact):
+    """The tenant owning an impact's target, or None when the target has no tenant."""
+    return getattr(impact.target, "tenant", None) if impact.target is not None else None
+
+
+def group_impacts(event, granularity):
+    """Split an event's impacts into recipient groups for the given granularity."""
+    from notices.choices import MessageGranularityChoices
+
+    impacts = list(event.impacts.all())
+    pairs = [(impact, tenant_for_impact(impact)) for impact in impacts]
+
+    if granularity == MessageGranularityChoices.PER_IMPACT:
+        return [
+            RecipientGroup(tenant=tenant, impact=impact, impacts=(impact,), tenants=(tenant,) if tenant else ())
+            for impact, tenant in pairs
+        ]
+    if granularity == MessageGranularityChoices.PER_TENANT:
+        by_tenant = {}
+        for impact, tenant in pairs:
+            if tenant is not None:
+                by_tenant.setdefault(tenant, []).append(impact)
+        return [RecipientGroup(tenant=t, impacts=tuple(i), tenants=(t,)) for t, i in by_tenant.items()]
+    tenants = tuple(dict.fromkeys(t for _, t in pairs if t is not None))
+    return [RecipientGroup(impacts=tuple(impacts), tenants=tenants)]
+
+
+def contacts_for_tenants(tenants, roles, priorities):
+    """Unique contacts assigned to any of the tenants, filtered by role and priority (never inactive)."""
+    tenants = [t for t in tenants if t is not None]
+    if not tenants:
+        return []
+    tenant_ct = ContentType.objects.get_for_model(tenants[0])
+    # NetBox names the content type field 'object_type', not 'content_type'.
+    filters = Q(object_type=tenant_ct, object_id__in=[t.pk for t in tenants]) & ~Q(priority="inactive")
+    if roles:
+        filters &= Q(role__in=roles)
+    if priorities:
+        filters &= Q(priority__in=priorities)
+    contacts = {}
+    for assignment in ContactAssignment.objects.filter(filters).select_related("contact").order_by("pk"):
+        contacts.setdefault(assignment.contact_id, assignment.contact)
+    return list(contacts.values())
 
 
 class RecipientDiscoveryService:
@@ -40,18 +104,13 @@ class RecipientDiscoveryService:
         from notices.choices import MessageGranularityChoices
 
         granularity = granularity or self.template.granularity
+        groups = group_impacts(event, granularity)
 
-        # Get impacts from the event
-        impacts = self._get_impacts(event)
-
-        if granularity == MessageGranularityChoices.PER_EVENT:
-            return self._discover_per_event(impacts)
-        elif granularity == MessageGranularityChoices.PER_TENANT:
-            return self._discover_per_tenant(impacts)
-        elif granularity == MessageGranularityChoices.PER_IMPACT:
-            return self._discover_per_impact(impacts)
-        else:
-            return self._discover_per_event(impacts)
+        if granularity == MessageGranularityChoices.PER_TENANT:
+            return {g.tenant: self._get_contacts_for_tenant(g.tenant) for g in groups}
+        if granularity == MessageGranularityChoices.PER_IMPACT:
+            return {g.impact: self._get_contacts_for_tenant(g.tenant) for g in groups}
+        return contacts_for_tenants(groups[0].tenants, self.roles, self.priorities)
 
     def discover_for_tenant(self, tenant):
         """
@@ -65,102 +124,9 @@ class RecipientDiscoveryService:
         """
         return self._get_contacts_for_tenant(tenant)
 
-    def _get_impacts(self, event):
-        """Get impact records from an event."""
-        # Check for different impact relation names
-        if hasattr(event, "impacts"):
-            return list(event.impacts.all())
-        elif hasattr(event, "circuitmaintenanceimpact_set"):
-            return list(event.circuitmaintenanceimpact_set.all())
-        return []
-
-    def _get_tenant_from_impact(self, impact):
-        """Extract tenant from an impact's target object."""
-        # Impact models have different field names for the target
-        target = None
-        if hasattr(impact, "circuit"):
-            target = impact.circuit
-        elif hasattr(impact, "target"):
-            target = impact.target
-
-        if target and hasattr(target, "tenant"):
-            return target.tenant
-        return None
-
-    def _discover_per_event(self, impacts):
-        """Discover all contacts for all tenants in the event."""
-        contacts = set()
-        seen_tenants = set()
-
-        for impact in impacts:
-            tenant = self._get_tenant_from_impact(impact)
-            if tenant and tenant.pk not in seen_tenants:
-                seen_tenants.add(tenant.pk)
-                contacts.update(self._get_contacts_for_tenant(tenant))
-
-        return list(contacts)
-
-    def _discover_per_tenant(self, impacts):
-        """Group contacts by tenant."""
-        result = {}
-
-        for impact in impacts:
-            tenant = self._get_tenant_from_impact(impact)
-            if tenant and tenant not in result:
-                result[tenant] = self._get_contacts_for_tenant(tenant)
-
-        return result
-
-    def _discover_per_impact(self, impacts):
-        """Get contacts for each impact separately."""
-        result = {}
-
-        for impact in impacts:
-            tenant = self._get_tenant_from_impact(impact)
-            if tenant:
-                result[impact] = self._get_contacts_for_tenant(tenant)
-            else:
-                result[impact] = []
-
-        return result
-
     def _get_contacts_for_tenant(self, tenant):
-        """
-        Get contacts assigned to a tenant matching role/priority filters.
-
-        Queries ContactAssignment to find contacts with matching roles and priorities.
-        """
-        if not tenant:
-            return []
-
-        # Get content type for tenant
-        tenant_ct = ContentType.objects.get_for_model(tenant)
-
-        # Build filter for ContactAssignment
-        # Note: NetBox uses 'object_type' for the content type field, not 'content_type'
-        filters = Q(object_id=tenant.pk) & Q(object_type=tenant_ct)
-
-        # Filter by roles if specified
-        if self.roles:
-            filters &= Q(role__in=self.roles)
-
-        # Filter by priorities if specified (exclude 'inactive')
-        if self.priorities:
-            filters &= Q(priority__in=self.priorities)
-        filters &= ~Q(priority="inactive")
-
-        # Get contact assignments for this tenant
-        assignments = ContactAssignment.objects.filter(filters).select_related("contact")
-
-        # Return unique contacts
-        contacts = []
-        seen = set()
-        for assignment in assignments:
-            if assignment.contact_id not in seen:
-                seen.add(assignment.contact_id)
-                contacts.append(assignment.contact)
-
-        return contacts
+        """Contacts assigned to a tenant matching the template's role/priority filters."""
+        return contacts_for_tenants([tenant], self.roles, self.priorities)
 
 
 def discover_recipients(template, event=None, tenant=None, granularity=None):

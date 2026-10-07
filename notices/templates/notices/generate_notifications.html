@@ -1,0 +1,48 @@
+{% extends 'generic/_base.html' %}
+{% load helpers %}
+
+{% block title %}Generate notifications: {{ object }}{% endblock %}
+
+{% block content %}
+<form method="get" class="card mb-3">
+  <h5 class="card-header">Notification templates</h5>
+  <div class="card-body">
+    {% for kind in kinds %}
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="templates" value="{{ kind.pk }}" id="kind-{{ kind.pk }}"
+               {% if kind in selected %}checked{% endif %}>
+        <label class="form-check-label" for="kind-{{ kind.pk }}">{{ kind }} <span class="text-muted">({{ kind.get_granularity_display }})</span></label>
+      </div>
+    {% empty %}
+      <div class="text-muted">No notification templates apply to this event.</div>
+    {% endfor %}
+  </div>
+  <div class="card-footer"><button type="submit" class="btn btn-outline-primary">Preview</button></div>
+</form>
+
+<div class="card">
+  <h5 class="card-header">Preview</h5>
+  <table class="table table-hover">
+    <thead><tr><th>Template</th><th>Group</th><th>Recipients</th><th>Action</th><th>Subject</th></tr></thead>
+    <tbody>
+      {% for item in plan %}
+        <tr>
+          <td>{{ item.template|default:item.root_template|linkify }}</td>
+          <td>{% include "notices/inc/recipient_group.html" with impact=item.impact tenant=item.tenant only %}</td>
+          <td>{% for c in item.contacts %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="text-muted">none</span>{% endfor %}</td>
+          <td>{% badge item.action %}</td>
+          <td>{% if item.error %}<span class="text-danger">{{ item.error }}</span>{% elif item.content.subject %}{{ item.content.subject }}{% elif item.existing %}{{ item.existing.subject }}{% endif %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="text-muted">Nothing to generate.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <form method="post" class="card-footer">
+    {% csrf_token %}
+    {% for kind in selected %}<input type="hidden" name="templates" value="{{ kind.pk }}">{% endfor %}
+    <button type="submit" class="btn btn-primary" {% if not plan %}disabled{% endif %}>Generate</button>
+    <a href="{{ object.get_absolute_url }}" class="btn btn-outline-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

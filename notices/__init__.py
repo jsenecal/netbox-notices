@@ -31,6 +31,7 @@ class NoticesConfig(PluginConfig):
         "ical_cache_max_age": 900,
         "ical_token_placeholder": "changeme",
         "event_history_days": 30,
+        "auto_generate_notifications": {"maintenance": [], "outage": []},
     }
 
     def ready(self):

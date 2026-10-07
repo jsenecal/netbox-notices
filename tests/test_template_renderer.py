@@ -1,13 +1,16 @@
 # tests/test_template_renderer.py
 from datetime import UTC, datetime
+from types import SimpleNamespace
 
 import pytest
 
 from notices.services.template_renderer import (
     TemplateRenderer,
     TemplateRenderError,
+    highest_impact,
     ical_datetime,
     render_markdown,
+    split_body,
 )
 
 
@@ -92,6 +95,12 @@ class TestTemplateRenderer:
         with pytest.raises(TemplateRenderError, match="rendering failed"):
             renderer.render("{{ invalid syntax }}", {})
 
+    def test_render_runtime_error_wrapped(self):
+        """Test that runtime errors in templates are wrapped in TemplateRenderError."""
+        renderer = TemplateRenderer()
+        with pytest.raises(TemplateRenderError, match="rendering failed"):
+            renderer.render("{{ 1/0 }}", {})
+
     def test_validate_valid_template(self):
         """Test validating a valid template."""
         renderer = TemplateRenderer()
@@ -102,17 +111,6 @@ class TestTemplateRenderer:
         renderer = TemplateRenderer()
         with pytest.raises(TemplateRenderError, match="Invalid template syntax"):
             renderer.validate("{% if unclosed")
-
-    def test_render_with_blocks(self):
-        """Test rendering with Jinja blocks."""
-        templates = {
-            "base": "{% block content %}default{% endblock %}",
-        }
-        renderer = TemplateRenderer(templates)
-
-        child = '{% extends "base" %}{% block content %}custom{% endblock %}'
-        result = renderer.render_with_inheritance(child)
-        assert result == "custom"
 
     def test_build_context_minimal(self):
         """Test building minimal context."""
@@ -133,6 +131,20 @@ class TestTemplateRenderer:
         assert "netbox_url" in context
         assert context["tenant"] is None
         assert context["impacts"] == []
+
+
+@pytest.mark.parametrize(
+    ("levels", "expected"),
+    [
+        ([], "NO-IMPACT"),
+        (["NO-IMPACT", "OUTAGE", "DEGRADED"], "OUTAGE"),
+        (["REDUCED-REDUNDANCY", "DEGRADED", "NO-IMPACT"], "DEGRADED"),
+        ([None, "BOGUS", "REDUCED-REDUNDANCY"], "REDUCED-REDUNDANCY"),
+        ([None, "BOGUS"], "NO-IMPACT"),
+    ],
+)
+def test_highest_impact_is_worst_known_level(levels, expected):
+    assert highest_impact([SimpleNamespace(impact=level) for level in levels]) == expected
 
 
 @pytest.mark.django_db
@@ -156,3 +168,78 @@ class TestTemplateRendererWithEvent:
 
         assert "maintenance" in context
         assert context["maintenance"] == maintenance
+
+
+def _chain(*specs):
+    """Build unsaved templates linked by extends: specs are (slug, body), most specific first."""
+    from notices.models import NotificationTemplate
+
+    templates = [NotificationTemplate(name=s, slug=s, body_template=b) for s, b in specs]
+    for child, parent in zip(templates, templates[1:], strict=False):
+        child.extends = parent
+    return templates
+
+
+class TestChainRendering:
+    def test_child_block_overrides_parent_with_context(self):
+        chain = _chain(
+            ("child", '{% extends "base" %}{% block content %}hi {{ name }}{% endblock %}'),
+            ("parent", "[{% block content %}default{% endblock %}]"),
+        )
+        renderer = TemplateRenderer.for_chain(chain)
+        assert renderer.render_body(chain, {"name": "acme"}) == "[hi acme]"
+
+    def test_three_level_base_resolves_to_each_parent(self):
+        chain = _chain(
+            ("leaf", '{% extends "base" %}{% block a %}LEAF{% endblock %}'),
+            ("mid", '{% extends "base" %}{% block b %}MID{% endblock %}'),
+            ("top", "{% block a %}a{% endblock %}-{% block b %}b{% endblock %}"),
+        )
+        assert TemplateRenderer.for_chain(chain).render_body(chain, {}) == "LEAF-MID"
+
+    def test_empty_child_body_falls_back_to_parent(self):
+        chain = _chain(("child", ""), ("parent", "P {{ x }}"))
+        assert TemplateRenderer.for_chain(chain).render_body(chain, {"x": 1}) == "P 1"
+
+    def test_extends_by_slug_reaches_a_non_adjacent_ancestor(self):
+        chain = _chain(
+            ("leaf", '{% extends "top" %}{% block a %}LEAF{% endblock %}'),
+            ("mid", ""),
+            ("top", "[{% block a %}a{% endblock %}]"),
+        )
+        assert TemplateRenderer.for_chain(chain).render_body(chain, {}) == "[LEAF]"
+
+    def test_chain_of_empty_bodies_renders_empty(self):
+        chain = _chain(("child", ""), ("parent", ""))
+        assert TemplateRenderer.for_chain(chain).render_body(chain, {}) == ""
+
+
+class TestSandbox:
+    ESCAPE = "{{ cycler.__init__.__globals__.os.getpid() }}"
+
+    def test_plain_render_blocks_attribute_escape(self):
+        with pytest.raises(TemplateRenderError):
+            TemplateRenderer().render(self.ESCAPE, {})
+
+    def test_chain_render_blocks_attribute_escape(self):
+        chain = _chain(
+            ("child", '{% extends "base" %}{% block a %}' + self.ESCAPE + "{% endblock %}"),
+            ("parent", "{% block a %}{% endblock %}"),
+        )
+        with pytest.raises(TemplateRenderError):
+            TemplateRenderer.for_chain(chain).render_body(chain, {})
+
+
+class TestSplitBody:
+    def test_markdown_keeps_source_as_text_and_renders_html(self):
+        text, html = split_body("markdown", "**hi**")
+        assert text == "**hi**"
+        assert "<strong>hi</strong>" in html
+
+    def test_html_strips_tags_for_text(self):
+        text, html = split_body("html", "<p>hi <b>there</b></p>")
+        assert html == "<p>hi <b>there</b></p>"
+        assert text == "hi there"
+
+    def test_text_has_no_html(self):
+        assert split_body("text", "plain") == ("plain", "")

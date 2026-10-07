@@ -2,7 +2,7 @@
 
 A `NotificationTemplate` is the Jinja source for an outgoing notification, together with the rules that decide when it applies and who it goes to. Templates are managed under **Notices > Messaging > Notification Templates**.
 
-This page covers the model, the rendering context, and how the plugin picks a template out of several candidates. For the states a rendered notification moves through, see [Approval Workflow](workflow.md). For how contacts are found, see [Recipient Discovery](recipient-discovery.md).
+This page covers the model, the rendering context, and how templates become notification kinds, override each other and merge. For the states a rendered notification moves through, see [Approval Workflow](workflow.md). For how contacts are found, see [Recipient Discovery](recipient-discovery.md).
 
 ## Model
 
@@ -64,6 +64,7 @@ Always present:
 | `netbox_url` | Django's `BASE_URL` setting, or an empty string if unset |
 | `tenant` | The target tenant, or `None` |
 | `impacts` | The `Impact` records in scope, or an empty list |
+| `highest_impact` | The worst level across `impacts`, ranked `OUTAGE`, `DEGRADED`, `REDUCED-REDUNDANCY`, `NO-IMPACT`. Missing or unrecognised levels are ignored; `NO-IMPACT` when there are no impacts. |
 
 Present only when the notification is linked to an event:
 
@@ -71,7 +72,6 @@ Present only when the notification is linked to an event:
 |---|---|
 | `maintenance` or `outage` | The event, under a key named for its model |
 | `tenant_impacts` | `impacts` narrowed to those whose target belongs to `tenant`. Falls back to the full list when no tenant is given. |
-| `highest_impact` | The worst level across `impacts`, ranked `OUTAGE`, `DEGRADED`, `REDUCED-REDUNDANCY`, `NO-IMPACT`. Only set when `impacts` is non-empty. |
 
 The event key is named after the model, so a maintenance is available as `{{ maintenance }}` and an outage as `{{ outage }}`. There is no generic `event` variable. A template with `event_type = both` has to handle both names:
 
@@ -84,12 +84,23 @@ The event key is named after the model, so a maintenance is available as `{{ mai
 `netbox_url` is empty unless `BASE_URL` is set in `configuration.py`. Absolute links in a template need it, so set it before relying on them:
 
 ```jinja
-View details: {{ netbox_url }}{{ maintenance.get_absolute_url }}
+View details: {{ netbox_url }}{{ maintenance.get_absolute_url() }}
 ```
 
 ## Syntax and filters
 
 Templates are standard Jinja2. The environment runs with `autoescape=False`, which suits Markdown and plain text bodies but means an HTML template is responsible for escaping anything that could contain markup. Provider-supplied fields such as `summary` and `impact` are the ones to watch.
+
+Unlike Django templates, Jinja does not call methods for you: a model method needs parentheses, as in `{{ maintenance.get_absolute_url() }}` or `{% if maintenance.has_timezone_difference() %}`. Without them the expression renders the bound method's representation, and an `if` on it is always true.
+
+### Sandbox
+
+Templates are written by users, so they render in Jinja's [sandboxed environment](https://jinja.palletsprojects.com/en/stable/sandbox/) (`SandboxedEnvironment`). Ordinary attribute access and method calls on the context objects work as shown on this page, but the sandbox blocks what could reach into Python internals or change data:
+
+- Attributes whose names start with an underscore (such as `__class__` or `_meta`) are unsafe. Printed on their own they come out as an undefined value (empty, and false in an `if`); reading an attribute of one or calling it raises a security error.
+- Calling an unsafe callable raises a security error. That covers methods Django marks as modifying data (`alters_data`), such as `save()` and `delete()` on a model or `.delete()` on a related manager.
+
+A security error fails the render like any other template error: the preview and the API report that template's notifications as failed, and nothing is written for them.
 
 Two custom filters are registered.
 
@@ -127,9 +138,9 @@ A Markdown body:
 
 - Start: {{ maintenance.start }}
 - End: {{ maintenance.end }}
-{% if maintenance.has_timezone_difference %}
+{% if maintenance.has_timezone_difference() %}
 Times shown in {{ maintenance.original_timezone }}:
-{{ maintenance.get_start_in_original_tz }} to {{ maintenance.get_end_in_original_tz }}
+{{ maintenance.get_start_in_original_tz() }} to {{ maintenance.get_end_in_original_tz() }}
 {% endif %}
 
 ## Affected services
@@ -153,11 +164,27 @@ Reply-To: "noc@example.com"
 
 The rendered result is stored on the `PreparedNotification` and is for the delivery system to apply. The plugin does not send mail, so nothing here is validated as a real mail header.
 
-## Inheritance
+## Kinds, overrides and base templates
 
-A shared layout can live in one template that others extend.
+Every template that is not a base template is an independent notification *kind*: generating notifications for an event produces drafts for each kind whose `event_type` fits. A kind is a template that extends nothing, or extends a base template.
 
-Mark the parent with `is_base_template = True` and point children at it with `extends`. Children then use Jinja block syntax:
+A template that extends a *non-base* template is an **override** of it. It does not produce notifications of its own; instead, for the recipient groups its scopes match, it replaces the template it extends. This lets a general "maintenance" kind carry a customised variant for one tenant:
+
+| Template | Extends | Scopes | Role |
+|---|---|---|---|
+| `Maintenance` | none | none | Kind, used for every group |
+| `Maintenance - Acme` | `Maintenance` | tenant Acme | Override, used for Acme only |
+
+Overrides can nest (an override of an override); at each level the highest-scoring matching override wins. Two rules are validated on save:
+
+- An override must use the same granularity as the template it extends.
+- `extends` cycles are rejected.
+
+A **base template** (`is_base_template = True`) is only a layout. It never produces notifications on its own and is not a kind; kinds and overrides extend it to share blocks and fallback fields.
+
+### Block inheritance
+
+Children use Jinja block syntax:
 
 ```jinja
 {% extends "base" %}
@@ -167,13 +194,23 @@ Provider {{ maintenance.provider.name }} has scheduled work.
 {% endblock %}
 ```
 
-The literal name `base` is what `TemplateRenderer.render_with_inheritance()` registers the parent under by default.
+`"base"` always means the template's own immediate parent in the `extends` chain, at every level. In a three-level chain each template's `{% extends "base" %}` resolves to the one above it, never to itself. The full rendering context is available inside every level.
 
-`extends` is a plain FK with `on_delete=SET_NULL` and no cycle check, so a template pointing at itself, or two pointing at each other, is accepted by the model and fails at render time instead.
+### Body format
+
+`body_format` decides how the rendered body is stored:
+
+| Format | `body_text` | `body_html` |
+|---|---|---|
+| `markdown` | The rendered Markdown, as written | The Markdown converted to HTML |
+| `html` | The rendered HTML with tags stripped | The rendered HTML |
+| `text` | The rendered text | Empty |
+
+The format used is the one on the template whose body is rendered, which is the most specific template in the chain with a non-empty body.
 
 ## Scopes and matching
 
-A `TemplateScope` attaches a template to a NetBox object, in the manner of config contexts. When several templates could apply, scopes decide which wins.
+A `TemplateScope` attaches a template to a NetBox object, in the manner of config contexts. When several overrides could apply, scopes decide which wins.
 
 | Field | Notes |
 |---|---|
@@ -185,15 +222,9 @@ A `TemplateScope` attaches a template to a NetBox object, in the manner of confi
 
 Scopes are edited from the parent template's page. A unique constraint on `(template, content_type, object_id, event_type, event_status)` stops the same scope being added twice.
 
-### How a template is chosen
+### How a group is matched
 
-`TemplateMatchingService` takes a context of event, tenant and provider, and works in three steps.
-
-First it selects candidates by event type. An event of a given type pulls templates matching that type or `both`; no event pulls templates with `none`.
-
-Then it scores each candidate. A template with no scopes at all is a global default and always matches, at its own weight. A template with scopes matches only if at least one scope matches, and each matching scope adds its weight to the total.
-
-Finally it sorts by score, highest first. `get_best_template()` returns the top one.
+For each recipient group, `TemplateMatchingService` scores a template against the group's context (event, tenant, provider). A template with no scopes always applies, at its own `weight`. A template with scopes applies only if at least one scope matches, and its score is its `weight` plus the weight of every matching scope. A kind that does not apply to a group produces nothing for it.
 
 A scope matches when all of its populated filters agree:
 
@@ -203,9 +234,11 @@ A scope matches when all of its populated filters agree:
 
 So a scope on `tenancy.tenant` with no `object_id` matches every tenant, while one naming a specific tenant only matches that one, and both add their weight when they match.
 
+Starting at the kind, the generator then descends into the highest-scoring override that applies to the group, repeatedly. The result is the group's *chain*: the chosen overrides, most specific first, then the kind, then its base templates.
+
 ### Merging
 
-`get_merged_config()` folds every matching template into one configuration rather than using only the winner. The rules are per field, applied from highest score to lowest:
+The chain is folded into one configuration, field by field, from the most specific template to the least:
 
 | Field | Rule |
 |---|---|
@@ -213,13 +246,13 @@ So a scope on `tenancy.tenant` with no `object_id` matches every tenant, while o
 | `body_template` | First non-empty wins, and carries its `body_format` with it |
 | `css_template` | First non-empty wins |
 | `ical_template` | First non-empty wins |
-| `extends` | First non-null wins |
-| `headers_template` | Merged key by key, the higher-scored value winning per key |
-| `include_ical` | True if true on any matching template |
-| `contact_roles` | Union across all matching templates |
-| `contact_priorities` | Union across all matching templates |
+| `headers_template` | Merged key by key, the more specific value winning per key |
+| `include_ical` | True if true on any template in the chain |
+| `contact_roles` | Union across the chain |
+| `contact_priorities` | Union across the chain |
+| `granularity` | Taken from the kind, not from an override |
 
-The two union fields are the ones that surprise people. A low-weight global template that adds a role or priority widens the recipient list for every notification, because the union is taken across everything that matched rather than only the winner.
+Merging follows the `extends` chain only. Other templates that happen to match the same event do not contribute: they are separate kinds. The two union fields still widen the recipient list, so a base template that adds a role or priority applies it to every kind that extends it.
 
 ## See also
 

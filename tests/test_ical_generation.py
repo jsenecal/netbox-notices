@@ -2,6 +2,7 @@
 """Tests for iCal Generation Service."""
 
 from datetime import UTC
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
@@ -38,6 +39,8 @@ class MockTemplate:
 class MockMaintenance:
     """Mock Maintenance event for testing."""
 
+    _meta = SimpleNamespace(model_name="maintenance")
+
     def __init__(
         self,
         pk=1,
@@ -62,6 +65,8 @@ class MockMaintenance:
 
 class MockOutage:
     """Mock Outage event for testing."""
+
+    _meta = SimpleNamespace(model_name="outage")
 
     def __init__(self, pk=1, name="OUT-001"):
         from datetime import datetime
@@ -292,58 +297,6 @@ class TestICalGenerationServiceValidateTemplate:
         assert service.validate_template() is True
 
 
-class TestICalGenerationServiceCalculateHighestImpact:
-    """Tests for _calculate_highest_impact() method."""
-
-    def test_returns_no_impact_when_no_impacts(self):
-        """_calculate_highest_impact() returns NO-IMPACT when no impacts."""
-        template = MockTemplate()
-        maintenance = MockMaintenance()
-
-        service = ICalGenerationService(template, maintenance, impacts=[])
-
-        assert service._calculate_highest_impact() == "NO-IMPACT"
-
-    def test_returns_outage_as_highest(self):
-        """_calculate_highest_impact() returns OUTAGE as highest severity."""
-        template = MockTemplate()
-        maintenance = MockMaintenance()
-        impacts = [
-            MockImpact(impact="NO-IMPACT"),
-            MockImpact(impact="OUTAGE"),
-            MockImpact(impact="DEGRADED"),
-        ]
-
-        service = ICalGenerationService(template, maintenance, impacts=impacts)
-
-        assert service._calculate_highest_impact() == "OUTAGE"
-
-    def test_returns_degraded_when_no_outage(self):
-        """_calculate_highest_impact() returns DEGRADED when no OUTAGE."""
-        template = MockTemplate()
-        maintenance = MockMaintenance()
-        impacts = [
-            MockImpact(impact="NO-IMPACT"),
-            MockImpact(impact="DEGRADED"),
-            MockImpact(impact="REDUCED-REDUNDANCY"),
-        ]
-
-        service = ICalGenerationService(template, maintenance, impacts=impacts)
-
-        assert service._calculate_highest_impact() == "DEGRADED"
-
-    def test_handles_none_impact_values(self):
-        """_calculate_highest_impact() handles None impact values."""
-        template = MockTemplate()
-        maintenance = MockMaintenance()
-        impact = MockImpact()
-        impact.impact = None
-
-        service = ICalGenerationService(template, maintenance, impacts=[impact])
-
-        assert service._calculate_highest_impact() == "NO-IMPACT"
-
-
 class TestGenerateIcalConvenienceFunction:
     """Tests for generate_ical() convenience function."""
 
@@ -510,19 +463,6 @@ class TestICalGenerationServiceIsMaintenance:
         service = ICalGenerationService(template, None)
 
         assert service._is_maintenance() is False
-
-    def test_handles_custom_class_with_maintenance_in_name(self):
-        """_is_maintenance() detects 'maintenance' in class name."""
-
-        class CustomMaintenance:
-            pass
-
-        template = MockTemplate()
-        event = CustomMaintenance()
-
-        service = ICalGenerationService(template, event)
-
-        assert service._is_maintenance() is True
 
 
 @pytest.mark.django_db

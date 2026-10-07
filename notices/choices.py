@@ -290,3 +290,23 @@ class ContactPriorityChoices(ChoiceSet):
         (SECONDARY, "Secondary"),
         (TERTIARY, "Tertiary"),
     ]
+
+
+class GenerationActionChoices(ChoiceSet):
+    """What a generation run does with one recipient group."""
+
+    CREATE = "create"
+    UPDATE = "update"
+    KEEP = "keep"
+    DELETE = "delete"
+    SKIP = "skip"
+    ERROR = "error"
+
+    CHOICES = [
+        (CREATE, "Create", "green"),
+        (UPDATE, "Update", "blue"),
+        (KEEP, "Keep", "gray"),
+        (DELETE, "Delete", "red"),
+        (SKIP, "Skip", "yellow"),
+        (ERROR, "Error", "red"),
+    ]

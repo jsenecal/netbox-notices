@@ -1,6 +1,7 @@
 # tests/test_messaging_models.py
 import pytest
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 
 from notices.choices import (
     BodyFormatChoices,
@@ -158,3 +159,87 @@ class TestPreparedNotification:
             body_text="Body",
         )
         assert str(notification) == "A" * 50 + "..."
+
+
+@pytest.mark.django_db
+class TestNotificationTemplateClean:
+    def test_self_extends_rejected(self, make_template):
+        t = make_template("a")
+        t.extends = t
+        with pytest.raises(ValidationError, match="cycle"):
+            t.clean()
+
+    def test_two_template_cycle_rejected(self, make_template):
+        a = make_template("a")
+        b = make_template("b", extends=a)
+        a.extends = b
+        with pytest.raises(ValidationError, match="cycle"):
+            a.clean()
+
+    def test_override_granularity_must_match_parent(self, make_template):
+        parent = make_template("p", granularity="per_tenant")
+        child = NotificationTemplate(
+            name="c",
+            slug="c",
+            event_type="maintenance",
+            subject_template="s",
+            body_template="b",
+            extends=parent,
+            granularity="per_event",
+        )
+        with pytest.raises(ValidationError, match="granularity"):
+            child.clean()
+
+    def test_child_of_base_template_may_use_any_granularity(self, make_template):
+        base = make_template("base", is_base_template=True, granularity="per_tenant")
+        child = NotificationTemplate(
+            name="c",
+            slug="c",
+            event_type="maintenance",
+            subject_template="s",
+            body_template="b",
+            extends=base,
+            granularity="per_event",
+        )
+        child.clean()
+
+    def test_root_kind_walks_overrides_only(self, make_template):
+        base = make_template("base", is_base_template=True)
+        root = make_template("root", extends=base)
+        mid = make_template("mid", extends=root)
+        leaf = make_template("leaf", extends=mid)
+        assert leaf.root_kind == root
+        assert root.root_kind == root
+        assert leaf.is_override and not root.is_override
+
+
+@pytest.mark.django_db
+class TestPreparedNotificationModified:
+    def _make(self, notification_template, **kw):
+        defaults = {"template": notification_template, "subject": "S", "body_text": "B", **kw}
+        return PreparedNotification.objects.create(**defaults)
+
+    def test_hand_created_is_never_modified(self, notification_template):
+        n = self._make(notification_template)
+        assert not n.is_modified
+        assert not PreparedNotification.objects.modified().filter(pk=n.pk).exists()
+
+    def test_edit_after_render_is_modified(self, notification_template):
+        n = self._make(notification_template)
+        n.mark_rendered()
+        assert not n.is_modified
+        n.body_text = "edited"
+        n.save()
+        assert n.is_modified
+        assert PreparedNotification.objects.modified().filter(pk=n.pk).exists()
+
+    def test_header_key_order_is_not_a_modification(self, notification_template):
+        n = self._make(notification_template, headers={"a": "1", "b": "2"})
+        n.mark_rendered()
+        n.headers = {"b": "2", "a": "1"}
+        n.save()
+        assert not n.is_modified
+
+    def test_objectchange_relates_to_event(self, notification_template, maintenance):
+        n = self._make(notification_template, event=maintenance)
+        assert n.to_objectchange("update").related_object == maintenance

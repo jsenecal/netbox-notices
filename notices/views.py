@@ -4,6 +4,8 @@ from circuits.models import Provider
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
 from django.db.models import Count
 from django.http import (
     HttpResponse,
@@ -27,12 +29,22 @@ from netbox.object_actions import (
 )
 from netbox.views import generic
 from rest_framework import exceptions
-from utilities.views import register_model_view
+from utilities.views import GetReturnURLMixin, register_model_view
 
 from . import filtersets, forms, models, tables
+from .choices import PreparedNotificationStatusChoices
+from .constants import GENERATE_NOTIFICATIONS_PERMISSIONS
 from .ical_utils import calculate_etag, feed_last_modified, generate_maintenance_ical, maintenance_window_cutoff
 from .models import NotificationTemplate, PreparedNotification, SentNotification, TemplateScope
+from .services.notification_generation import (
+    NotificationGenerator,
+    ResetError,
+    notifications_for_event,
+    require_notification_permission,
+    select_kinds,
+)
 from .timeline_utils import build_timeline_item, get_timeline_changes
+from .validators import PreparedNotificationStateMachine
 
 
 # Dashboard View
@@ -130,6 +142,7 @@ class EventDetailMixin:
         return {
             "impacts": impacts,
             "notifications": instance.notifications.all(),
+            "outgoing_notifications": notifications_for_event(instance),
             "timeline": [build_timeline_item(change, model_name) for change in object_changes],
         }
 
@@ -255,7 +268,7 @@ class MaintenanceRescheduleView(generic.ObjectEditView):
 
 
 @register_model_view(models.Maintenance, "acknowledge")
-class MaintenanceAcknowledgeView(PermissionRequiredMixin, View):
+class MaintenanceAcknowledgeView(GetReturnURLMixin, PermissionRequiredMixin, View):
     """Quick action to acknowledge a maintenance."""
 
     permission_required = "notices.change_maintenance"
@@ -271,13 +284,11 @@ class MaintenanceAcknowledgeView(PermissionRequiredMixin, View):
         maintenance.save(update_fields=["acknowledged"])
         messages.success(request, f"Maintenance {maintenance.name} acknowledged.")
 
-        # Redirect to return_url or maintenance detail
-        return_url = request.POST.get("return_url") or request.GET.get("return_url") or maintenance.get_absolute_url()
-        return redirect(return_url)
+        return redirect(self.get_return_url(request, maintenance))
 
 
 @register_model_view(models.Maintenance, "cancel")
-class MaintenanceCancelView(PermissionRequiredMixin, View):
+class MaintenanceCancelView(GetReturnURLMixin, PermissionRequiredMixin, View):
     """Quick action to cancel a maintenance."""
 
     permission_required = "notices.change_maintenance"
@@ -285,14 +296,12 @@ class MaintenanceCancelView(PermissionRequiredMixin, View):
     def get(self, request, pk):
         # Show confirmation page
         maintenance = get_object_or_404(models.Maintenance, pk=pk)
-        return_url = request.GET.get("return_url") or maintenance.get_absolute_url()
-
         return render(
             request,
             "notices/maintenance_cancel.html",
             {
                 "object": maintenance,
-                "return_url": return_url,
+                "return_url": self.get_return_url(request, maintenance),
             },
         )
 
@@ -314,13 +323,11 @@ class MaintenanceCancelView(PermissionRequiredMixin, View):
             maintenance.save(update_fields=["status"])
             messages.success(request, f"Maintenance {maintenance.name} cancelled.")
 
-        # Redirect to return_url or maintenance detail
-        return_url = request.POST.get("return_url") or request.GET.get("return_url") or maintenance.get_absolute_url()
-        return redirect(return_url)
+        return redirect(self.get_return_url(request, maintenance))
 
 
 @register_model_view(models.Maintenance, "mark_in_progress", path="mark-in-progress")
-class MaintenanceMarkInProgressView(PermissionRequiredMixin, View):
+class MaintenanceMarkInProgressView(GetReturnURLMixin, PermissionRequiredMixin, View):
     """Quick action to mark a maintenance as in-progress."""
 
     permission_required = "notices.change_maintenance"
@@ -344,13 +351,11 @@ class MaintenanceMarkInProgressView(PermissionRequiredMixin, View):
             maintenance.save(update_fields=["status"])
             messages.success(request, f"Maintenance {maintenance.name} marked as in-progress.")
 
-        # Redirect to return_url or maintenance detail
-        return_url = request.POST.get("return_url") or request.GET.get("return_url") or maintenance.get_absolute_url()
-        return redirect(return_url)
+        return redirect(self.get_return_url(request, maintenance))
 
 
 @register_model_view(models.Maintenance, "mark_completed", path="mark-completed")
-class MaintenanceMarkCompletedView(PermissionRequiredMixin, View):
+class MaintenanceMarkCompletedView(GetReturnURLMixin, PermissionRequiredMixin, View):
     """Quick action to mark a maintenance as completed."""
 
     permission_required = "notices.change_maintenance"
@@ -375,9 +380,7 @@ class MaintenanceMarkCompletedView(PermissionRequiredMixin, View):
             maintenance.save(update_fields=["status"])
             messages.success(request, f"Maintenance {maintenance.name} completed.")
 
-        # Redirect to return_url or maintenance detail
-        return_url = request.POST.get("return_url") or request.GET.get("return_url") or maintenance.get_absolute_url()
-        return redirect(return_url)
+        return redirect(self.get_return_url(request, maintenance))
 
 
 # Outage Views
@@ -800,7 +803,7 @@ class NotificationTemplateBulkDeleteView(generic.BulkDeleteView):
 # PreparedNotification Views
 @register_model_view(PreparedNotification, "list", path="", detail=False)
 class PreparedNotificationListView(generic.ObjectListView):
-    queryset = PreparedNotification.objects.select_related("template", "approved_by")
+    queryset = PreparedNotification.objects.select_related("template", "approved_by", "tenant")
     table = tables.PreparedNotificationTable
     filterset = filtersets.PreparedNotificationFilterSet
     filterset_form = forms.PreparedNotificationFilterForm
@@ -853,6 +856,83 @@ class PreparedNotificationView(generic.ObjectView):
         return {
             "contacts": contacts,
         }
+
+
+class BaseGenerateNotificationsView(PermissionRequiredMixin, View):
+    """Preview (GET) and generate (POST) outgoing notifications for one event."""
+
+    permission_required = GENERATE_NOTIFICATIONS_PERMISSIONS
+    model = None
+
+    def _generator(self, request, pk):
+        event = get_object_or_404(self.model.objects.restrict(request.user, "view"), pk=pk)
+        params = request.POST if request.method == "POST" else request.GET
+        # Ids that are not a kind for this event are ignored: the form only offers valid ones.
+        kinds, selected, _ = select_kinds(event, params.getlist("templates"))
+        return event, kinds, selected, NotificationGenerator(event, templates=selected)
+
+    def get(self, request, pk):
+        event, kinds, selected, generator = self._generator(request, pk)
+        return render(
+            request,
+            "notices/generate_notifications.html",
+            {"object": event, "kinds": kinds, "selected": selected, "plan": generator.plan()},
+        )
+
+    def post(self, request, pk):
+        event, _, _, generator = self._generator(request, pk)
+        try:
+            result = generator.generate(user=request.user)
+        except PermissionDenied as e:
+            messages.error(request, str(e))
+            return redirect(event.get_absolute_url())
+        messages.success(request, f"Notifications: {result.summary()}.")
+        return redirect(event.get_absolute_url())
+
+
+@register_model_view(models.Maintenance, "generate_notifications", path="generate-notifications")
+class MaintenanceGenerateNotificationsView(BaseGenerateNotificationsView):
+    model = models.Maintenance
+
+
+@register_model_view(models.Outage, "generate_notifications", path="generate-notifications")
+class OutageGenerateNotificationsView(BaseGenerateNotificationsView):
+    model = models.Outage
+
+
+@register_model_view(PreparedNotification, "approve")
+class PreparedNotificationApproveView(GetReturnURLMixin, PermissionRequiredMixin, View):
+    permission_required = "notices.change_preparednotification"
+
+    def post(self, request, pk):
+        notification = get_object_or_404(PreparedNotification.objects.restrict(request.user, "change"), pk=pk)
+        try:
+            # Re-check the saved state too, so a permission constrained to drafts cannot approve.
+            with transaction.atomic():
+                PreparedNotificationStateMachine(notification, user=request.user).transition_to(
+                    PreparedNotificationStatusChoices.READY
+                )
+                require_notification_permission(request.user, notification, "change")
+            messages.success(request, "Notification approved.")
+        except ValidationError as e:
+            messages.error(request, "; ".join(e.messages))
+        except PermissionDenied as e:
+            messages.error(request, str(e))
+        return redirect(self.get_return_url(request, notification))
+
+
+@register_model_view(PreparedNotification, "reset")
+class PreparedNotificationResetView(GetReturnURLMixin, PermissionRequiredMixin, View):
+    permission_required = "notices.change_preparednotification"
+
+    def post(self, request, pk):
+        notification = get_object_or_404(PreparedNotification.objects.restrict(request.user, "change"), pk=pk)
+        try:
+            NotificationGenerator(notification.event).reset(notification, user=request.user)
+            messages.success(request, "Notification content reset to its template.")
+        except (ResetError, PermissionDenied) as e:
+            messages.error(request, str(e))
+        return redirect(self.get_return_url(request, notification))
 
 
 @register_model_view(PreparedNotification, "add", detail=False)

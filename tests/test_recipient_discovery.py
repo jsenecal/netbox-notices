@@ -6,7 +6,12 @@ from django.contrib.contenttypes.models import ContentType
 
 from notices.choices import MessageEventTypeChoices, MessageGranularityChoices
 from notices.models import Impact, NotificationTemplate
-from notices.services.recipient_discovery import RecipientDiscoveryService, discover_recipients
+from notices.services.recipient_discovery import (
+    RecipientDiscoveryService,
+    contacts_for_tenants,
+    discover_recipients,
+    group_impacts,
+)
 
 
 @pytest.fixture
@@ -559,3 +564,38 @@ class TestTenantResolutionFromImpacts:
 
         # Should return empty since circuit has no tenant
         assert result == []
+
+
+@pytest.mark.django_db
+class TestGroupImpacts:
+    def test_per_event_single_group_with_all_tenants(self, maintenance_with_two_tenants):
+        event, tenant_a, tenant_b = maintenance_with_two_tenants
+        [group] = group_impacts(event, "per_event")
+        assert group.tenant is None and group.impact is None
+        assert set(group.tenants) == {tenant_a, tenant_b}
+        assert len(group.impacts) == event.impacts.count()
+
+    def test_per_tenant_one_group_per_tenant(self, maintenance_with_two_tenants):
+        event, tenant_a, tenant_b = maintenance_with_two_tenants
+        groups = group_impacts(event, "per_tenant")
+        assert {g.tenant for g in groups} == {tenant_a, tenant_b}
+        assert all(g.tenants == (g.tenant,) for g in groups)
+
+    def test_per_impact_one_group_per_impact(self, maintenance_with_two_tenants):
+        event, *_ = maintenance_with_two_tenants
+        groups = group_impacts(event, "per_impact")
+        assert {g.impact for g in groups} == set(event.impacts.all())
+
+    def test_target_without_tenant_is_not_grouped_per_tenant(self, maintenance, site):
+        Impact.objects.create(event=maintenance, target=site, impact="OUTAGE")
+        assert group_impacts(maintenance, "per_tenant") == []
+        [group] = group_impacts(maintenance, "per_event")
+        assert len(group.impacts) == 1 and group.tenants == ()
+
+
+@pytest.mark.django_db
+class TestContactsForTenants:
+    def test_contacts_are_unique_across_repeated_tenants(self, maintenance_with_two_tenants):
+        _, tenant_a, tenant_b = maintenance_with_two_tenants
+        contacts = contacts_for_tenants([tenant_b, tenant_a, tenant_b], [], [])
+        assert sorted(c.email for c in contacts) == ["c1@example.com", "c2@example.com"]

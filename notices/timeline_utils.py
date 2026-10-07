@@ -56,7 +56,7 @@ def categorize_change(changed_object_model, action, prechange_data, postchange_d
         postchange_data: Dict of field values after change (or None)
 
     Returns:
-        Category string: 'status', 'impact', 'notification', 'acknowledgment', 'time', or 'standard'
+        Category string: 'status', 'impact', 'notification', 'outgoing', 'acknowledgment', 'time', or 'standard'
     """
     # Handle related object changes
     if changed_object_model == "impact":
@@ -64,6 +64,9 @@ def categorize_change(changed_object_model, action, prechange_data, postchange_d
 
     if changed_object_model == "eventnotification":
         return "notification"
+
+    if changed_object_model == "preparednotification":
+        return "outgoing"
 
     # Handle field changes in maintenance/outage objects
     if action == "update" and prechange_data and postchange_data:
@@ -91,6 +94,7 @@ CATEGORY_ICONS = {
     "status": "check-circle",
     "impact": "alert-triangle",
     "notification": "mail",
+    "outgoing": "email-arrow-right",
     "acknowledgment": "check",
     "time": "clock",
     "standard": "circle",
@@ -100,6 +104,7 @@ CATEGORY_COLORS = {
     "status": "secondary",  # Default, actual color from status value
     "impact": "yellow",
     "notification": "blue",
+    "outgoing": "purple",
     "acknowledgment": "green",
     "time": "orange",
     "standard": "secondary",
@@ -237,6 +242,18 @@ def _build_title(category, action, model, object_repr, prechange, postchange):
             subject = postchange.get("subject", "Unknown")
             return f"Notification received: {subject}"
         return f"Notification {action}d"
+
+    elif category == "outgoing":
+        subject = (postchange or prechange).get("subject", "Unknown")
+        if action == "create":
+            return f"Notification drafted: {subject}"
+        if action == "delete":
+            return f"Notification discarded: {subject}"
+        old_status, new_status = prechange.get("status"), postchange.get("status")
+        if new_status and new_status != old_status:
+            verb = "approved" if new_status == "ready" else new_status
+            return f"Notification {verb}: {subject}"
+        return f"Notification edited: {subject}"
 
     elif category == "acknowledgment":
         new_val = postchange.get("acknowledged", False)

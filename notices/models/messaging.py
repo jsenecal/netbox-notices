@@ -1,8 +1,12 @@
+import django
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import F, Q, Value
+from django.db.models.functions import MD5, Cast, Coalesce, Concat
 from django.urls import reverse
 from netbox.models import NetBoxModel
 from tenancy.models import Contact, ContactRole
@@ -24,6 +28,27 @@ __all__ = (
     "PreparedNotification",
     "SentNotification",
 )
+
+# Separator between hashed fields so moving text across a boundary still changes the hash.
+_HASH_SEPARATOR = Value("\x1f")
+_HASHED_TEXT_FIELDS = ("subject", "body_text", "body_html", "css", "ical_content")
+
+
+def _content_hash_expression():
+    parts = [Coalesce(Cast("headers", models.TextField()), Value(""), output_field=models.TextField())]
+    for name in _HASHED_TEXT_FIELDS:
+        parts += [_HASH_SEPARATOR, Coalesce(name, Value(""), output_field=models.TextField())]
+    return MD5(Concat(*parts, output_field=models.TextField()))
+
+
+# A notification is modified when it was generated (rendered_hash set) and its content has
+# since diverged from what was rendered.
+MODIFIED_Q = ~Q(rendered_hash="") & ~Q(rendered_hash=F("content_hash"))
+
+
+class PreparedNotificationQuerySet(RestrictedQuerySet):
+    def modified(self):
+        return self.filter(MODIFIED_Q)
 
 
 class NotificationTemplate(NetBoxModel):
@@ -136,6 +161,37 @@ class NotificationTemplate(NetBoxModel):
 
     def get_absolute_url(self):
         return reverse("plugins:notices:notificationtemplate", args=[self.pk])
+
+    @property
+    def is_override(self):
+        """True when this template overrides a non-base parent for matching recipient groups."""
+        return self.extends_id is not None and not self.extends.is_base_template
+
+    @property
+    def root_kind(self):
+        """The independent notification kind this template belongs to (itself unless it is an override)."""
+        template = self
+        while template.is_override:
+            template = template.extends
+        return template
+
+    def clean(self):
+        super().clean()
+        seen = {self.pk} if self.pk else set()
+        parent = self.extends
+        while parent is not None:
+            if parent.pk in seen or parent is self:
+                raise ValidationError({"extends": "Template inheritance would form a cycle."})
+            seen.add(parent.pk)
+            parent = parent.extends
+        if self.extends is not None and not self.extends.is_base_template:
+            if self.granularity != self.extends.granularity:
+                raise ValidationError(
+                    {
+                        "granularity": "An override must use the same granularity as the template it "
+                        f"extends ({self.extends.get_granularity_display()})."
+                    }
+                )
 
 
 class TemplateScope(models.Model):
@@ -269,6 +325,33 @@ class PreparedNotification(NetBoxModel):
         blank=True,
     )
 
+    # Recipient group this notification was generated for (see NotificationGenerator).
+    tenant = models.ForeignKey(
+        to="tenancy.Tenant",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    impact = models.ForeignKey(
+        to="notices.Impact",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    # Postgres recomputes content_hash on every write; rendered_hash is the value it had right
+    # after generation. Comparing them in SQL detects hand edits without hashing in Python.
+    content_hash = models.GeneratedField(
+        expression=_content_hash_expression(),
+        output_field=models.CharField(max_length=32),
+        db_persist=True,
+    )
+    rendered_hash = models.CharField(max_length=32, blank=True, default="", editable=False)
+
+    objects = PreparedNotificationQuerySet.as_manager()
+
     # Approval tracking
     approved_by = models.ForeignKey(
         to=User,
@@ -314,8 +397,32 @@ class PreparedNotification(NetBoxModel):
             return self.event_content_type.model
         return None
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Django 6.0+ reads content_hash back from the UPDATE via RETURNING. Older releases
+        # (NetBox 4.5 ships Django 5.2) leave the pre-save value on the instance, which would
+        # make is_modified stale until the next reload.
+        if django.VERSION < (6, 0):
+            self.refresh_from_db(fields=["content_hash"])
 
-class SentNotificationManager(models.Manager.from_queryset(RestrictedQuerySet)):
+    @property
+    def is_modified(self):
+        return bool(self.rendered_hash) and self.rendered_hash != self.content_hash
+
+    def mark_rendered(self):
+        """Record the current content as the generated baseline (copied inside Postgres)."""
+        PreparedNotification.objects.filter(pk=self.pk).update(rendered_hash=F("content_hash"))
+        self.refresh_from_db(fields=["rendered_hash", "content_hash"])
+
+    def to_objectchange(self, action):
+        """File changes against the linked event so they appear on its timeline."""
+        objectchange = super().to_objectchange(action)
+        if self.event is not None:
+            objectchange.related_object = self.event
+        return objectchange
+
+
+class SentNotificationManager(models.Manager.from_queryset(PreparedNotificationQuerySet)):
     """Manager that filters to only sent/delivered notifications."""
 
     def get_queryset(self):

@@ -93,6 +93,21 @@ Any transition can carry a `message`, which creates a NetBox journal entry again
 
 No message means no journal entry. Nothing else is written, so a `failed` transition with no message leaves no record of the reason. A delivery system should always send one on failure.
 
+## Approving and resetting in the UI
+
+A draft's detail page has two actions, both requiring `notices.change_preparednotification`:
+
+- **Approve** moves a draft to `ready` through the state machine, so recipients are snapshotted and the approval is stamped exactly as for an API `PATCH`. A draft with no recipients is refused with the message shown above. Approval is the only status change the web UI offers; every later transition is still driven through the REST API.
+- **Reset to template** re-renders a draft from its template, event and recipient group and discards manual edits. It only works on drafts linked to an event. The same action is available as `POST /api/plugins/notices/prepared-notifications/{id}/reset/`, which returns the refreshed notification.
+
+### The modified flag
+
+Generated drafts carry a `modified` flag. It is set when the draft's content (subject, bodies, headers, CSS, iCal) no longer matches what the generator rendered. Regeneration keeps modified drafts and re-renders unmodified ones; see [Outgoing Notifications](../outgoing-notifications.md). A reset clears the flag.
+
+The flag is filterable: `?modified=true` on the list and the API. Notifications created by hand have no rendered baseline, so they are never flagged and never touched by generation.
+
+Limitation: only content is compared. Editing just the recipients (`contacts`) is not detected, so such a draft still counts as untouched and the next regeneration replaces its recipients with the discovered ones.
+
 ## Driving it over the API
 
 Status is changed through the REST API only. The field is deliberately absent from the web UI, and the bulk edit view for prepared notifications is unmounted, because a direct write would bypass the recipient snapshot and the approval stamps described above. See [Permissions](../permissions.md).

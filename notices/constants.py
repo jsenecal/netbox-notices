@@ -9,3 +9,10 @@ DEFAULT_ALLOWED_CONTENT_TYPES = [
     "dcim.PowerFeed",
     "dcim.Site",
 ]
+
+# Generating notifications creates, updates and deletes drafts, so it needs all three rights.
+GENERATE_NOTIFICATIONS_PERMISSIONS = (
+    "notices.add_preparednotification",
+    "notices.change_preparednotification",
+    "notices.delete_preparednotification",
+)
