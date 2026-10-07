@@ -21,6 +21,21 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 - Template matching: every non-base template is an independent notification kind; a template that extends a non-base template overrides it for the recipient groups its scopes match. Fields merge only along the `extends` chain instead of across every matching template. `{% extends "base" %}` now renders with the full context and resolves to the template's own parent.
 - An override must use the same granularity as the template it extends, and `extends` cycles are rejected on save.
+- `Maintenance` and `Outage` gain a `notifications` generic relation to
+  `EventNotification`, mirroring `impacts`. No migration is required.
+  Deleting a maintenance or outage now also deletes its event notifications,
+  as it already did its impacts, and the delete confirmation page lists them
+  among the objects that will be removed; previously they were left orphaned
+  with a dangling event reference.
+
+### Fixed
+
+- The maintenance and outage REST API responses never included the event's
+  `impacts` or `notifications`: both serializer fields pointed at reverse
+  accessors that do not exist on these models, so DRF silently dropped them.
+  Both keys now return the nested list of linked impacts and received
+  notifications, and the list endpoints prefetch them so response time does
+  not grow a query per event. (#61)
 
 ### Security
 

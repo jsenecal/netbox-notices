@@ -116,6 +116,14 @@ class Maintenance(BaseEvent):
         related_query_name="maintenance",
     )
 
+    # Reverse relation for GenericForeignKey in EventNotification model
+    notifications = GenericRelation(
+        to="notices.EventNotification",
+        content_type_field="event_content_type",
+        object_id_field="event_object_id",
+        related_query_name="maintenance",
+    )
+
     # Self-referencing FK for rescheduled maintenance tracking
     replaces = models.ForeignKey(
         to="self",
@@ -208,6 +216,14 @@ class Outage(BaseEvent):
     # Reverse relation for GenericForeignKey in Impact model
     impacts = GenericRelation(
         to="notices.Impact",
+        content_type_field="event_content_type",
+        object_id_field="event_object_id",
+        related_query_name="outage",
+    )
+
+    # Reverse relation for GenericForeignKey in EventNotification model
+    notifications = GenericRelation(
+        to="notices.EventNotification",
         content_type_field="event_content_type",
         object_id_field="event_object_id",
         related_query_name="outage",

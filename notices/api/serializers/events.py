@@ -166,10 +166,8 @@ class MaintenanceSerializer(NetBoxModelSerializer):
 
     provider = ProviderSerializer(nested=True)
     replaces = serializers.PrimaryKeyRelatedField(queryset=Maintenance.objects.all(), required=False, allow_null=True)
-    impacts = NestedImpactSerializer(required=False, many=True, read_only=True, source="impact_set")
-    notifications = NestedEventNotificationSerializer(
-        required=False, many=True, read_only=True, source="eventnotification_set"
-    )
+    impacts = NestedImpactSerializer(required=False, many=True, read_only=True)
+    notifications = NestedEventNotificationSerializer(required=False, many=True, read_only=True)
     status_color = serializers.CharField(source="get_status_color", read_only=True)
     impact_count = serializers.SerializerMethodField(read_only=True)
 
@@ -213,10 +211,8 @@ class OutageSerializer(NetBoxModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:notices-api:outage-detail")
 
     provider = ProviderSerializer(nested=True)
-    impacts = NestedImpactSerializer(required=False, many=True, read_only=True, source="impact_set")
-    notifications = NestedEventNotificationSerializer(
-        required=False, many=True, read_only=True, source="eventnotification_set"
-    )
+    impacts = NestedImpactSerializer(required=False, many=True, read_only=True)
+    notifications = NestedEventNotificationSerializer(required=False, many=True, read_only=True)
 
     class Meta:
         model = Outage
