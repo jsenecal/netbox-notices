@@ -47,7 +47,7 @@
                     {% endif %}
                     <tr>
                         <th scope="row">Group</th>
-                        <td>{% if object.impact %}{{ object.impact.target }}{% elif object.tenant %}{{ object.tenant|linkify }}{% else %}All{% endif %}</td>
+                        <td>{% include "notices/inc/recipient_group.html" with impact=object.impact tenant=object.tenant only %}</td>
                     </tr>
                     {% if object.is_modified %}
                     <tr>

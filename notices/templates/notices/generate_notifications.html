@@ -28,7 +28,7 @@
       {% for item in plan %}
         <tr>
           <td>{{ item.template|default:item.root_template|linkify }}</td>
-          <td>{% if item.impact %}{{ item.impact.target }}{% elif item.tenant %}{{ item.tenant|linkify }}{% else %}All{% endif %}</td>
+          <td>{% include "notices/inc/recipient_group.html" with impact=item.impact tenant=item.tenant only %}</td>
           <td>{% for c in item.contacts %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="text-muted">none</span>{% endfor %}</td>
           <td>{% badge item.action %}</td>
           <td>{% if item.error %}<span class="text-danger">{{ item.error }}</span>{% elif item.content.subject %}{{ item.content.subject }}{% elif item.existing %}{{ item.existing.subject }}{% endif %}</td>

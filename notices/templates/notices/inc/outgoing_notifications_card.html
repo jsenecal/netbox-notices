@@ -8,7 +8,7 @@
         {% for n in outgoing_notifications %}
           <tr>
             <td>{{ n|linkify:"subject" }}{% if n.is_modified %} <span class="badge text-bg-warning">modified</span>{% endif %}</td>
-            <td>{% if n.impact %}{{ n.impact.target }}{% elif n.tenant %}{{ n.tenant|linkify }}{% else %}All{% endif %}</td>
+            <td>{% include "notices/inc/recipient_group.html" with impact=n.impact tenant=n.tenant only %}</td>
             <td>{% badge n.get_status_display %}</td>
           </tr>
         {% endfor %}

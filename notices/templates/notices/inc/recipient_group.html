@@ -1,0 +1,1 @@
+{% load helpers %}{% if impact %}{{ impact.target|linkify }}{% elif tenant %}{{ tenant|linkify }}{% else %}All{% endif %}
