@@ -306,11 +306,19 @@ class TestEventSerializerNestedRelations:
         assert [i["id"] for i in response.data["impacts"]] == [impact.pk]
         assert [n["id"] for n in response.data["notifications"]] == [notif.pk]
 
+    @staticmethod
+    def _count_list_queries(api_client, url):
+        # Warm up first: NetBox may reload its runtime config (core_configrevision) on the
+        # first request after writes, which would skew the comparison by a fixed amount.
+        api_client.get(url)
+        with CaptureQueriesContext(connection) as ctx:
+            response = api_client.get(url)
+        return response, len(ctx.captured_queries)
+
     def test_list_query_count_does_not_grow_per_event(self, api_client, event, circuit):
         url = f"/api/plugins/notices/{event._meta.model_name}/"
         self._add_impact_and_notification(event, circuit)
-        with CaptureQueriesContext(connection) as single:
-            api_client.get(url)
+        _, single = self._count_list_queries(api_client, url)
 
         for i in range(3):
             other = type(event).objects.get(pk=event.pk)
@@ -318,11 +326,10 @@ class TestEventSerializerNestedRelations:
             other.name = f"EV{i}"
             other.save()
             self._add_impact_and_notification(other, circuit)
-        with CaptureQueriesContext(connection) as many:
-            response = api_client.get(url)
+        response, many = self._count_list_queries(api_client, url)
 
         assert response.data["count"] == 4
-        assert len(many.captured_queries) == len(single.captured_queries)
+        assert many == single
 
 
 @pytest.mark.django_db
