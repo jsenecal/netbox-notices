@@ -39,7 +39,7 @@ from .models import (
     SentNotification,
     TemplateScope,
 )
-from .utils import get_allowed_content_types
+from .utils import get_allowed_content_type_pks, has_filter_form, parent_field_for
 
 
 class GenericForeignKeyFormMixin:
@@ -61,6 +61,10 @@ class GenericForeignKeyFormMixin:
     # Override in subclasses with list of (prefix, content_type_field, object_id_field) tuples
     generic_fk_fields = []
 
+    def get_generic_choice_kwargs(self, field_prefix, model_class):
+        """DynamicModelChoiceField kwargs for the object field of `field_prefix`; override to customize."""
+        return {"label": field_prefix.replace("_", " ").title(), "required": True}
+
     def init_generic_choice(self, field_prefix, content_type_id):
         """
         Initialize a choice field based on selected content type.
@@ -77,33 +81,43 @@ class GenericForeignKeyFormMixin:
         if not content_type_id:
             return
 
-        initial = None
         try:
-            content_type = ContentType.objects.get(pk=content_type_id)
-            model_class = content_type.model_class()
+            model_class = ContentType.objects.get(pk=content_type_id).model_class()
+        except ContentType.DoesNotExist:
+            # Invalid content type - form validation will catch this
+            return
+        if model_class is None:
+            # Stale content type whose model is no longer installed
+            return
 
-            # Get initial value if editing existing object
-            object_id_field = f"{field_prefix}_object_id"
-            object_id = get_field_value(self, object_id_field)
+        # Get initial value if editing existing object
+        object_id_field = next(obj_field for prefix, _, obj_field in self.generic_fk_fields if prefix == field_prefix)
+        object_id = get_field_value(self, object_id_field)
 
-            # Handle list values from duplicate GET parameters
-            if isinstance(object_id, list):
-                object_id = object_id[0] if object_id else None
+        # Handle list values from duplicate GET parameters
+        if isinstance(object_id, list):
+            object_id = object_id[0] if object_id else None
 
-            if object_id:
+        initial = None
+        if object_id:
+            try:
                 initial = model_class.objects.get(pk=object_id)
+            except ObjectDoesNotExist:
+                # Referenced object is gone - form validation will catch this
+                return
 
-            # Create dynamic choice field with model-specific queryset
-            choice_field_name = f"{field_prefix}_choice"
-            self.fields[choice_field_name] = DynamicModelChoiceField(
-                label=field_prefix.replace("_", " ").title(),
-                queryset=model_class.objects.all(),
-                required=True,
-                initial=initial,
-            )
-        except (ContentType.DoesNotExist, ObjectDoesNotExist):
-            # Invalid content type or object - form validation will catch this
-            pass
+        # Object selector modal (filter by device, site, ...) and the parent shown next to
+        # each option ("device > Gi0/1"), see `parent_fields` in the plugin config.
+        kwargs = {"selector": has_filter_form(model_class), **self.get_generic_choice_kwargs(field_prefix, model_class)}
+        if parent := parent_field_for(model_class):
+            kwargs["context"] = {"parent": parent}
+
+        # Create dynamic choice field with model-specific queryset
+        self.fields[f"{field_prefix}_choice"] = DynamicModelChoiceField(
+            queryset=model_class.objects.all(),
+            initial=initial,
+            **kwargs,
+        )
 
     def clean(self):
         """
@@ -392,21 +406,8 @@ class ImpactForm(GenericForeignKeyFormMixin, NetBoxModelForm):
         self.fields["target_object_id"].help_text = "Select the specific object affected by this event"
         self.fields["target_object_id"].required = False
 
-        # Get allowed content types for targets from plugin configuration
-        allowed_types = get_allowed_content_types()
-        target_content_types = []
-        for type_string in allowed_types:
-            try:
-                app_label, model = type_string.lower().split(".")
-                ct = ContentType.objects.filter(app_label=app_label, model=model).first()
-                if ct:
-                    target_content_types.append(ct.pk)
-            except (ValueError, AttributeError):
-                # Skip invalid format
-                continue
-
-        # Update target_content_type queryset based on allowed types
-        self.fields["target_content_type"].queryset = ContentType.objects.filter(pk__in=target_content_types)
+        # Limit targets to the allowed content types from plugin configuration
+        self.fields["target_content_type"].queryset = ContentType.objects.filter(pk__in=get_allowed_content_type_pks())
 
         # Determine event content type from form state (instance, initial, or GET/POST)
         event_ct_id = get_field_value(self, "event_content_type")
@@ -989,19 +990,8 @@ class TemplateScopeForm(GenericForeignKeyFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Get allowed content types from plugin configuration + event types
-        allowed_types = get_allowed_content_types()
-        content_type_pks = []
-
-        # Add configured allowed types (circuits, devices, etc.)
-        for type_string in allowed_types:
-            try:
-                app_label, model = type_string.lower().split(".")
-                ct = ContentType.objects.filter(app_label=app_label, model=model).first()
-                if ct:
-                    content_type_pks.append(ct.pk)
-            except (ValueError, AttributeError):
-                continue
+        # Allowed content types from plugin configuration (circuits, devices, etc.) + event types
+        content_type_pks = get_allowed_content_type_pks()
 
         # Also add Provider content type (commonly used for scoping)
         provider_ct = ContentType.objects.filter(app_label="circuits", model="provider").first()
@@ -1027,42 +1017,13 @@ class TemplateScopeForm(GenericForeignKeyFormMixin, forms.ModelForm):
         if ct_id:
             self.init_generic_choice("scope", ct_id)
 
-    def init_generic_choice(self, field_prefix, content_type_id):
-        """Override to make the object field optional (null = all objects of type)."""
-        if isinstance(content_type_id, list):
-            content_type_id = content_type_id[0] if content_type_id else None
-
-        if not content_type_id:
-            return
-
-        initial = None
-        try:
-            content_type = ContentType.objects.get(pk=content_type_id)
-            model_class = content_type.model_class()
-
-            # Get initial value if editing existing object
-            object_id_field = "object_id"
-            object_id = get_field_value(self, object_id_field)
-
-            if isinstance(object_id, list):
-                object_id = object_id[0] if object_id else None
-
-            if object_id:
-                initial = model_class.objects.get(pk=object_id)
-
-            # Create dynamic choice field with model-specific queryset
-            choice_field_name = f"{field_prefix}_choice"
-            self.fields[choice_field_name] = DynamicModelChoiceField(
-                label=f"Specific {content_type.model.title()} (optional)",
-                queryset=model_class.objects.all(),
-                required=False,  # Optional - null means "all of this type"
-                initial=initial,
-                help_text="Leave blank to match all objects of this type",
-            )
-        except (ContentType.DoesNotExist, ObjectDoesNotExist):
-            # Content type or referenced object no longer exists; skip creating
-            # the optional dynamic choice field and leave scope matching unchanged.
-            pass
+    def get_generic_choice_kwargs(self, field_prefix, model_class):
+        """The object field is optional: no object means "all objects of this type"."""
+        return {
+            "label": f"Specific {model_class._meta.model_name.title()} (optional)",
+            "required": False,
+            "help_text": "Leave blank to match all objects of this type",
+        }
 
     def clean(self):
         """Extract ContentType and object ID from selected object."""

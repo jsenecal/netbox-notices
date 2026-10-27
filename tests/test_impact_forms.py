@@ -273,3 +273,157 @@ class TestImpactForm:
         assert "maintenance or outage event" in form.fields["event_object_id"].help_text
         assert "Type of affected object" == form.fields["target_content_type"].help_text
         assert "Select the specific object affected by this event" == form.fields["target_object_id"].help_text
+
+
+def _picker_config(settings, **notices):
+    settings.PLUGINS_CONFIG = {"notices": {"allowed_content_types": ["dcim.Interface"], **notices}}
+
+
+def _choice_attrs(form_class, model, field="target_choice", ct_field="target_content_type"):
+    from django.contrib.contenttypes.models import ContentType
+
+    form = form_class(initial={ct_field: ContentType.objects.get_for_model(model).pk})
+    return form.fields[field].widget.attrs
+
+
+def _w002_messages():
+    from notices.checks import check_parent_fields
+
+    warnings = check_parent_fields(None)
+    assert {w.id for w in warnings} <= {"notices.W002"}
+    return [w.msg for w in warnings]
+
+
+@pytest.mark.django_db
+class TestImpactFormTargetPicker:
+    """The target dropdown must give the user device context for Interface targets."""
+
+    def test_interface_target_has_selector_and_parent(self, settings):
+        from dcim.models import Interface
+
+        from notices.forms import ImpactForm
+
+        _picker_config(settings, parent_fields={"dcim.Interface": "device"})
+        attrs = _choice_attrs(ImpactForm, Interface)
+
+        assert attrs["selector"] == "dcim.interface"
+        assert attrs["ts-parent-field"] == "device"
+        assert _w002_messages() == []
+
+    def test_no_parent_without_config(self, settings):
+        from dcim.models import Interface
+
+        from notices.forms import ImpactForm
+
+        _picker_config(settings)
+        attrs = _choice_attrs(ImpactForm, Interface)
+
+        assert attrs["selector"] == "dcim.interface"
+        assert "ts-parent-field" not in attrs
+
+    def test_keys_are_case_insensitive_in_check_and_runtime(self, settings):
+        """Regression (PR 87 review): W002 resolved keys case-sensitively while the runtime did not."""
+        from dcim.models import Interface
+
+        from notices.forms import ImpactForm
+
+        _picker_config(settings, parent_fields={"DCIM.Interface": "device"})
+
+        assert _choice_attrs(ImpactForm, Interface)["ts-parent-field"] == "device"
+        assert _w002_messages() == []
+
+    @pytest.mark.parametrize(
+        "parent_fields, reported",
+        [
+            ({"dcim.Interface": "no_such_field"}, ["'dcim.Interface'"]),
+            ({"dcim.Interface": "device", "DCIM.interface": "device"}, ["'dcim.Interface'", "'DCIM.interface'"]),
+            ([("dcim.Interface", "device")], ["expected a dict, got list"]),
+        ],
+        ids=["unknown-field", "case-duplicate-keys", "not-a-dict"],
+    )
+    def test_invalid_interface_entry_is_ignored_and_reported(self, settings, parent_fields, reported):
+        from dcim.models import Interface
+
+        from notices.forms import ImpactForm
+
+        _picker_config(settings, parent_fields=parent_fields)
+
+        assert "ts-parent-field" not in _choice_attrs(ImpactForm, Interface)
+        messages = _w002_messages()
+        assert len(messages) == len(reported)
+        assert all(text in msg for text, msg in zip(reported, messages, strict=True))
+
+    def test_invalid_entries_are_reported_with_reason(self, settings):
+        _picker_config(
+            settings,
+            parent_fields={
+                "bogus.Model": "x",
+                "dcim": "y",
+                "dcim.Interface": "",
+                "notices.Impact": "target",
+                "dcim.Device": "site",
+                "auth.Permission": "content_type",
+            },
+        )
+
+        messages = _w002_messages()
+
+        assert len(messages) == 6
+        assert "not an installed" in messages[0] and "'bogus.Model'" in messages[0]
+        assert "not an installed" in messages[1]
+        assert "must be a field name" in messages[2]
+        assert "notices.Impact.target is not a ForeignKey" in messages[3]
+        assert "not in the brief REST representation" in messages[4]
+        assert "has no REST serializer" in messages[5]
+
+    def test_stale_content_type_and_malformed_allowed_type_are_skipped(self, settings):
+        from django.contrib.contenttypes.models import ContentType
+
+        from notices.forms import ImpactForm
+
+        _picker_config(settings, allowed_content_types=["dcim", "dcim.Interface"])
+        stale = ContentType.objects.create(app_label="removed_plugin", model="gone")
+
+        form = ImpactForm(initial={"target_content_type": stale.pk})
+
+        assert "target_choice" not in form.fields
+        assert [ct.model for ct in form.fields["target_content_type"].queryset] == ["interface"]
+
+    def test_model_without_filter_form_gets_no_selector(self, settings):
+        from notices.forms import ImpactForm
+        from notices.models import Impact
+        from notices.utils import has_filter_form
+
+        _picker_config(settings, allowed_content_types=["notices.Impact"])
+
+        assert has_filter_form(Impact) is False  # notices.forms has no ImpactFilterForm
+        assert "selector" not in _choice_attrs(ImpactForm, Impact)
+
+    def test_model_without_restricted_manager_gets_no_selector(self):
+        from types import SimpleNamespace
+
+        from notices.utils import has_filter_form
+
+        # dcim.forms.InterfaceFilterForm and dcim.filtersets.InterfaceFilterSet exist, but the
+        # selector modal would still fail on `objects.restrict()`.
+        plain = type("Interface", (), {"objects": object(), "_meta": SimpleNamespace(app_label="dcim")})
+
+        assert has_filter_form(plain) is False
+
+
+@pytest.mark.django_db
+class TestTemplateScopeFormPicker:
+    def test_scope_object_is_optional_and_gets_selector_and_parent(self, settings):
+        from dcim.models import Interface
+        from django.contrib.contenttypes.models import ContentType
+
+        from notices.forms import TemplateScopeForm
+
+        _picker_config(settings, parent_fields={"dcim.Interface": "device"})
+        form = TemplateScopeForm(initial={"content_type": ContentType.objects.get_for_model(Interface).pk})
+        field = form.fields["scope_choice"]
+
+        assert field.widget.attrs["selector"] == "dcim.interface"
+        assert field.widget.attrs["ts-parent-field"] == "device"
+        assert field.required is False
+        assert field.label == "Specific Interface (optional)"

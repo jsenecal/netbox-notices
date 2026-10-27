@@ -7,6 +7,7 @@ All plugin behaviour is configured through the `PLUGINS_CONFIG["notices"]` dict 
 | Key | Default | Description |
 |-----|---------|-------------|
 | `allowed_content_types` | `["circuits.Circuit", "dcim.Device", "dcim.PowerFeed", "dcim.Site"]` | Content types that may be the target of an `Impact`. Format: `app_label.ModelName`. |
+| `parent_fields` | `{}` | Parent object shown next to each option in the Impact, EventNotification and Template Scope forms' object dropdowns (`device > Gi0/1`), per model. See below. |
 | `ical_past_days_default` | `30` | How many days of past events to include in the iCal feed when the request does not specify `past_days`. |
 | `ical_cache_max_age` | `900` | `Cache-Control: max-age` (seconds) sent with the iCal subscription feed. |
 | `ical_token_placeholder` | `"changeme"` | Placeholder string shown in the calendar UI's iCal subscription URL. Cosmetic only; the user replaces it with their own API token. |
@@ -42,6 +43,36 @@ PLUGINS_CONFIG = {
         },
     },
 }
+```
+
+## parent_fields
+
+The Impact, EventNotification and Template Scope forms pick an event, target or scope object in two steps: content type, then object. The object
+dropdown is NetBox's API-backed select and shows each object's display name only, so an `Interface`
+would appear as just `Gi0/1`. `parent_fields` names a ForeignKey per model whose display is shown next
+to each option and on the selected value (`router1 > Gi0/1`). Nothing is shown unless configured.
+
+- Keys are `app_label.ModelName` (case-insensitive), values the ForeignKey name on that model.
+- The ForeignKey must also be one of the `brief_fields` of the model's REST serializer, because the
+  dropdown fetches `?brief=1` and reads the parent from that payload. `Device`, `Site` and `PowerFeed`
+  carry no parent there, so they cannot have an entry.
+- Invalid entries (unknown model, field missing, not a ForeignKey or not in the brief serializer, empty
+  value, two keys naming the same model) and a setting that is not a dict are ignored at runtime and
+  reported at startup as system check `notices.W002`, with the reason.
+
+Independently of this map, every dropdown gets NetBox's object selector button, which opens that
+model's own filter form (device, site, role, provider, ...), when the model has one.
+
+Recommended starting point:
+
+```python
+"parent_fields": {
+    "dcim.Interface": "device",
+    "virtualization.VMInterface": "virtual_machine",
+    "circuits.Circuit": "provider",
+    "notices.Maintenance": "provider",
+    "notices.Outage": "provider",
+},
 ```
 
 ## allowed_content_types

@@ -10,6 +10,7 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ### Added
 
+- `parent_fields` plugin setting: per model, the ForeignKey whose object is shown next to each option in the Impact, EventNotification and Template Scope object dropdowns (`router1 > Gi0/1`). Empty by default; keys are case-insensitive; invalid entries are ignored and reported, with the reason, by system check `notices.W002`. (#86)
 - Generate outgoing notifications from a maintenance or outage: "Generate Notifications" in the event's Operations menu (with preview), `POST /api/plugins/notices/{maintenance,outage}/{id}/generate-notifications/` (with `dry_run`), and opt-in automatic generation via `auto_generate_notifications`.
 - Regeneration re-renders untouched drafts in place and keeps hand-edited drafts and anything already approved or sent. Notifications created by hand are never touched by generation.
 - Generation enforces NetBox object-level permissions: a UI or API run that would create, update or delete a notification the user may not add, change or delete is refused and rolled back as a whole.
@@ -19,6 +20,7 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ### Changed
 
+- Every GenericForeignKey object dropdown in the Impact, EventNotification and Template Scope forms now has NetBox's object selector button (for models that have a filter form), so an Interface can be found by device, site or type instead of scrolling through every interface by name. (#86)
 - Template matching: every non-base template is an independent notification kind; a template that extends a non-base template overrides it for the recipient groups its scopes match. Fields merge only along the `extends` chain instead of across every matching template. `{% extends "base" %}` now renders with the full context and resolves to the template's own parent.
 - An override must use the same granularity as the template it extends, and `extends` cycles are rejected on save.
 - `Maintenance` and `Outage` gain a `notifications` generic relation to
