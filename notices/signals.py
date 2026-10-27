@@ -1,7 +1,7 @@
 """Signal handlers for the notices plugin."""
 
 from circuits.models import Circuit, CircuitTermination
-from dcim.models import Device, Location, PowerFeed, PowerPanel, Site
+from dcim.models import Device, Location, PowerFeed, PowerPanel, Rack, Site
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
@@ -83,11 +83,35 @@ def _site_changed(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Circuit)
 @receiver(post_save, sender=Device)
-@receiver(post_save, sender=Location)
 @receiver(post_save, sender=PowerFeed)
 def _target_changed(sender, instance, **kwargs):
     """The target's own site/location may have changed."""
     _refresh_impacts_for(instance)
+
+
+@receiver(post_save, sender=Location)
+def _location_changed(sender, instance, created, raw=False, **kwargs):
+    """
+    Refresh impacts on the location and on everything NetBox moves with it.
+
+    NetBox's own Location post_save handler (connected by dcim, before this one) cascades a site
+    change to the descendant locations, racks, devices and power panels with queryset update(),
+    which fires no signals, so those impacts are refreshed here rather than by their own handlers.
+    """
+    if created or raw:
+        return
+    location_pks = list(instance.get_descendants(include_self=True).values_list("pk", flat=True))
+    _refresh_impacts_on(Location, location_pks)
+    _refresh_impacts_on(Device, Device.objects.filter(location_id__in=location_pks).values("pk"))
+    _refresh_power_panel_impacts(PowerPanel.objects.filter(location_id__in=location_pks).values("pk"))
+
+
+@receiver(post_save, sender=Rack)
+def _rack_changed(sender, instance, created, raw=False, **kwargs):
+    """NetBox moves a rack's devices with queryset update() (no signals); refresh their impacts."""
+    if created or raw:
+        return
+    _refresh_impacts_on(Device, Device.objects.filter(rack_id=instance.pk).values("pk"))
 
 
 @receiver(post_save, sender=PowerPanel)

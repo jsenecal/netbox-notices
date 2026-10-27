@@ -37,6 +37,7 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 ### Fixed
 
 - Calendar: the page's stylesheet was never loaded (wrong template block). (#85)
+- Moving a Location or Rack to another site or location now refreshes the site/location cache of impacts on the objects NetBox moves with it (child locations, devices, power panels and their feeds). NetBox moves those with queryset updates that fire no signals, so the impacts kept matching the old site until `refresh_impact_sites` was run. (#89)
 - The maintenance and outage REST API responses never included the event's
   `impacts` or `notifications`: both serializer fields pointed at reverse
   accessors that do not exist on these models, so DRF silently dropped them.

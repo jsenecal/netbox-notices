@@ -16,6 +16,7 @@ from dcim.models import (
     Manufacturer,
     PowerFeed,
     PowerPanel,
+    Rack,
     Site,
 )
 from django.contrib.contenttypes.models import ContentType
@@ -226,15 +227,36 @@ class TestImpactRefreshAndSignals(TestCase):
         self.assertEqual(self._cached(panel_impact), ({self.site_b.pk}, {loc_b.pk}))
         self.assertEqual(self._cached(feed_impact), ({self.site_b.pk}, {loc_b.pk}))
 
-    def test_location_site_change_refreshes_cache(self):
-        location = Location.objects.create(name="L-mv", slug="l-mv", site=self.site_a)
-        impact = self._make_impact(location)
-        self.assertEqual(self._cached(impact), ({self.site_a.pk}, {location.pk}))
+    def test_location_site_change_refreshes_impacts_on_contents(self):
+        """NetBox moves a location's contents with queryset update(), which fires no signals."""
+        building = Location.objects.create(name="B-mv", slug="b-mv", site=self.site_a)
+        room = Location.objects.create(name="R-mv", slug="r-mv", site=self.site_a, parent=building)
+        device = Device.objects.create(
+            name="d-room", site=self.site_a, location=room, role=self.role, device_type=self.dt
+        )
+        panel = PowerPanel.objects.create(name="pp-room", site=self.site_a, location=room)
+        feed = PowerFeed.objects.create(name="ff-room", power_panel=panel)
+        expected_location = {building: building.pk, room: room.pk, device: room.pk, panel: room.pk, feed: room.pk}
+        impacts = {target: self._make_impact(target) for target in expected_location}
 
-        location.site = self.site_b
-        location.save()
+        building.site = self.site_b
+        building.save()
 
-        self.assertEqual(self._cached(impact), ({self.site_b.pk}, {location.pk}))
+        for target, impact in impacts.items():
+            self.assertEqual(self._cached(impact), ({self.site_b.pk}, {expected_location[target]}), target)
+
+    def test_rack_move_refreshes_impacts_on_its_devices(self):
+        """NetBox moves a rack's devices with queryset update(), which fires no signals."""
+        loc_b = Location.objects.create(name="L-rk", slug="l-rk", site=self.site_b)
+        rack = Rack.objects.create(name="rk", site=self.site_a)
+        device = Device.objects.create(name="d-rk", site=self.site_a, rack=rack, role=self.role, device_type=self.dt)
+        impact = self._make_impact(device)
+
+        rack.site = self.site_b
+        rack.location = loc_b
+        rack.save()
+
+        self.assertEqual(self._cached(impact), ({self.site_b.pk}, {loc_b.pk}))
 
     def test_circuit_termination_change_refreshes_circuit_impact(self):
         ctype = CircuitType.objects.create(name="t-sig", slug="t-sig")

@@ -114,7 +114,7 @@ Registering a resolver is half the job. The cache also has to be invalidated whe
 
 1. Any `Impact` save, via `post_save`.
 2. A change to a target object, via `post_save` handlers on `Site`, `Device`, `Location`, `PowerFeed`, `PowerPanel`, `Circuit`.
-3. A change to a model *between* the target and its site. `PowerPanel` and `CircuitTermination` both have handlers for this reason (the `PowerPanel` one also refreshes impacts on the panel itself): a panel moving to a new site changes the site of every feed on it, and that is invisible to a handler watching only `PowerFeed`.
+3. A change to a model *between* the target and its site. `PowerPanel` and `CircuitTermination` both have handlers for this reason (the `PowerPanel` one also refreshes impacts on the panel itself): a panel moving to a new site changes the site of every feed on it, and that is invisible to a handler watching only `PowerFeed`. `Location` and `Rack` have handlers too, because NetBox moves their contents (descendant locations, racks, devices and power panels; a rack's devices) with queryset `update()`, which fires no signals on the moved objects.
 4. An explicit run of `manage.py refresh_impact_sites`.
 
 So a new resolver needs matching signal handlers for every model whose change would alter the answer:
