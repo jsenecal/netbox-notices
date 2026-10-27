@@ -16,8 +16,8 @@ Two registries live here:
 - ``LOCATION_RESOLVERS`` — same shape, for ``Location`` PKs.
 
 Resolvers are registered with the :func:`register_site_resolver` and
-:func:`register_location_resolver` decorators. The four content types in
-``DEFAULT_ALLOWED_CONTENT_TYPES`` ship with built-in resolvers below.
+:func:`register_location_resolver` decorators. The built-in ones are at the
+bottom of this module.
 
 Operator extension
 ------------------
@@ -226,11 +226,13 @@ def resolve_locations_for(content_type: ContentType, target: Model | None) -> se
 
 
 # ---------------------------------------------------------------------------
-# Default resolvers for DEFAULT_ALLOWED_CONTENT_TYPES.
+# Built-in resolvers.
 #
-# These are the four content types this plugin allows out of the box. Adding
-# a new entry to ``allowed_content_types`` does NOT automatically get a
-# resolver — operators must register their own (see module docstring).
+# The four content types this plugin allows out of the box, plus dcim.location
+# and dcim.powerpanel, which are not allowed by default but have unambiguous
+# site/location FKs. Adding any other entry to ``allowed_content_types`` does
+# NOT automatically get a resolver -- operators must register their own (see
+# module docstring).
 # ---------------------------------------------------------------------------
 
 
@@ -294,3 +296,24 @@ def _circuit_locations(circuit):
         if term is not None and getattr(term, "_location_id", None):
             pks.append(term._location_id)
     return pks
+
+
+@register_site_resolver("dcim.location")
+def _location_sites(location):
+    return (location.site_id,)
+
+
+@register_location_resolver("dcim.location")
+def _location_locations(location):
+    """Exact match only: an impact on a room does not appear under its parent building."""
+    return (location.pk,)
+
+
+@register_site_resolver("dcim.powerpanel")
+def _powerpanel_sites(panel):
+    return (panel.site_id,)
+
+
+@register_location_resolver("dcim.powerpanel")
+def _powerpanel_locations(panel):
+    return (panel.location_id,) if panel.location_id else ()

@@ -117,9 +117,9 @@ The plugin populates several NetBox registries. `NoticesConfig.ready()` imports 
 
 The first is the reschedule side effect: when a `Maintenance` is created with `replaces` set, the replaced event is snapshotted and moved to `RE-SCHEDULED`. The snapshot is what makes the transition appear in the changelog.
 
-The second is impact cache maintenance. Each handler answers one question: given that this upstream object changed, which impacts need their `sites` and `locations` rebuilt? Handlers exist for `Impact` itself, `Site`, `Device`, `PowerFeed`, `PowerPanel`, `Circuit` and `CircuitTermination`. The `PowerPanel` and `CircuitTermination` handlers exist because those models sit between the target and its site, so a change there is invisible to a handler on the target itself.
+The second is impact cache maintenance. Each handler answers one question: given that this upstream object changed, which impacts need their `sites` and `locations` rebuilt? There is a handler for every target type with a built-in resolver, and for every model a site change cascades through on its way to a target; [Keeping the cache fresh](resolvers.md#keeping-the-cache-fresh) lists them and says why each exists.
 
-This handler list maps one to one onto the default resolver registry. Registering a resolver for a new content type without adding the matching signals leaves the cache to drift silently. There is no check for that case; `notices.W001` only catches a missing resolver, not missing signals.
+Registering a resolver for a new content type without adding the matching signals leaves the cache to drift silently. There is no check for that case; `notices.W001` only catches a missing resolver, not missing signals.
 
 ## Services
 
