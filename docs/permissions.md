@@ -111,7 +111,7 @@ attached to a `notices.add_maintenance` permission with `users` set to the parse
 
 ## API tokens for the iCal feed
 
-The iCal feed (`/api/plugins/notices/ical/`) accepts three authentication modes (in order):
+The iCal feed (`/plugins/notices/ical/maintenances.ics`) accepts three authentication modes (in order):
 
 1. `?token=<plaintext>` URL parameter (works with both v1 and v2 NetBox tokens; v2 tokens have the `nbt_<key>.<plaintext>` form).
 2. `Authorization: Token <plaintext>` HTTP header.

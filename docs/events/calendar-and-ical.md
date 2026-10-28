@@ -3,7 +3,7 @@
 The plugin ships two complementary calendar features:
 
 - An **interactive calendar view** in the NetBox UI (Plugins -> Notices -> Calendar) backed by FullCalendar and the REST API.
-- An **iCal feed** at `/api/plugins/notices/ical/` for subscription from any external calendar app (Google Calendar, Outlook, Apple Calendar, Thunderbird, etc).
+- An **iCal feed** at `/plugins/notices/ical/maintenances.ics` for subscription from any external calendar app (Google Calendar, Outlook, Apple Calendar, Thunderbird, etc).
 
 ## Interactive calendar
 
@@ -18,7 +18,7 @@ The calendar requires `notices.view_maintenance` and renders Maintenance events;
 The feed endpoint is:
 
 ```
-https://your-netbox/api/plugins/notices/ical/
+https://your-netbox/plugins/notices/ical/maintenances.ics
 ```
 
 It returns a `text/calendar; charset=utf-8` response containing every Maintenance event matching the query parameters.
@@ -44,6 +44,8 @@ The token's user must have `notices.view_maintenance`. Disabled tokens, expired 
 | `provider` | -- | Filter by provider slug. Mutually exclusive with `provider_id`. |
 | `provider_id` | -- | Filter by provider PK. |
 | `status` | -- | Comma-separated status list (case-insensitive). Invalid statuses are silently dropped; if all are invalid, no status filter is applied. |
+| `duration_min` | -- | Only maintenances lasting at least N hours (`end - start`), inclusive. Fractional values allowed. Invalid or negative values return `400`. |
+| `duration_max` | -- | Only maintenances lasting at most N hours, inclusive. Fractional values allowed. Invalid or negative values return `400`. |
 | `download` | `false` | If truthy (`true`/`1`/`yes`), set `Content-Disposition: attachment; filename="netbox-maintenance-YYYY-MM-DD.ics"` so browsers download instead of subscribe. |
 
 Unknown parameters are ignored.
@@ -53,13 +55,19 @@ Unknown parameters are ignored.
 Subscribe to all events in the last 30 days and beyond:
 
 ```
-https://netbox.example.com/api/plugins/notices/ical/?token=YOUR_TOKEN
+https://netbox.example.com/plugins/notices/ical/maintenances.ics?token=YOUR_TOKEN
 ```
 
 Only confirmed events from a specific provider, last 7 days:
 
 ```
-https://netbox.example.com/api/plugins/notices/ical/?token=YOUR_TOKEN&provider=zayo&status=CONFIRMED&past_days=7
+https://netbox.example.com/plugins/notices/ical/maintenances.ics?token=YOUR_TOKEN&provider=zayo&status=CONFIRMED&past_days=7
+```
+
+Skip multi-day facility work, keeping only maintenances of 24 hours or less:
+
+```
+https://netbox.example.com/plugins/notices/ical/maintenances.ics?token=YOUR_TOKEN&duration_max=24
 ```
 
 Multiple statuses:

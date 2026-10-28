@@ -183,6 +183,50 @@ class TestMaintenanceICalViewFiltering:
 
 
 @pytest.mark.django_db
+class TestMaintenanceICalViewDurationFilter:
+    """duration_min / duration_max on the feed (#85)."""
+
+    def setup_method(self):
+        self.user = User.objects.create_user(username="testuser", password="testpass", is_superuser=True)
+        self.token = Token.objects.create(user=self.user, version=1)
+        self.client = Client()
+        provider = Provider.objects.create(name="Test", slug="test")
+        start = datetime.now(UTC)
+        for name, hours in (("SHORT", 2), ("LONG", 72)):
+            Maintenance.objects.create(
+                name=name,
+                summary=name,
+                provider=provider,
+                start=start,
+                end=start + timedelta(hours=hours),
+                status="CONFIRMED",
+            )
+
+    def _get(self, extra=""):
+        return self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}{extra}")
+
+    def _body(self, extra=""):
+        return self._get(extra).content.decode("utf-8")
+
+    def test_duration_max_filters_feed(self):
+        unfiltered = self._body()
+        assert "SHORT" in unfiltered and "LONG" in unfiltered
+        content = self._body("&duration_max=24")
+        assert "SHORT" in content and "LONG" not in content
+
+    def test_duration_min_filters_feed(self):
+        content = self._body("&duration_min=24")
+        assert "LONG" in content and "SHORT" not in content
+
+    def test_invalid_duration_returns_400(self):
+        assert self._get("&duration_max=abc").status_code == 400
+        assert self._get("&duration_max=-1").status_code == 400
+
+    def test_etag_differs_with_duration_filter(self):
+        assert self._get()["ETag"] != self._get("&duration_max=24")["ETag"]
+
+
+@pytest.mark.django_db
 class TestMaintenanceICalViewCaching:
     """Test HTTP caching behavior."""
 
