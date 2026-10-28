@@ -9,7 +9,19 @@ The plugin ships two complementary calendar features:
 
 Reach it from the menu under **Notices -> Events -> Calendar**, or directly at `/plugins/notices/maintenance/calendar/`.
 
-The view uses FullCalendar with month, week, and day modes. Events are colour-coded by type and status (Maintenance: status colour from `MaintenanceTypeChoices`; Outage: status colour from `OutageStatusChoices`). Clicking an event opens a quick summary modal with status, provider, timing, and a deep link to the full detail view. The page also shows a "Subscribe" link with a URL template using `ical_token_placeholder` from the plugin settings, so users know where to paste their token.
+The view uses FullCalendar with month and week modes. Events are colour-coded by status (`MaintenanceTypeChoices`). Clicking an event opens a quick summary modal with status, provider, timing, and a deep link to the full detail view. The page also shows a "Subscribe" link with a URL template using `ical_token_placeholder` from the plugin settings, so users know where to paste their token.
+
+### Long maintenances
+
+Maintenances longer than 24 hours (facility work announced as one multi-day window, for example) are drawn as light bands behind the other events instead of solid bars, so they do not push short maintenances down the day cell:
+
+- A band is twice the height of a normal event and tinted with the maintenance's status colour. Its label sits in the bottom half.
+- A solid edge marks the day the maintenance really starts and the day it really ends. Where a band continues into the next week, the cut side has no edge.
+- One short maintenance can sit in the top half of each band. Further short maintenances on the same day go into the next band's top half, then below the bands, so a band's label is never covered.
+- Overlapping long maintenances stack one band per row.
+- Clicking a band opens the same summary modal as any other event.
+
+The 24-hour cutoff is fixed.
 
 The calendar requires `notices.view_maintenance` and renders Maintenance events; Outages are not currently represented in the FullCalendar view (they appear in the dashboard timeline and the iCal feed if you add them later -- track upstream).
 

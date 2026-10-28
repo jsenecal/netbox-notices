@@ -226,8 +226,9 @@ The plugin provides an interactive calendar view and iCal feed for integrating m
 
 Access the calendar at **Plugins -> Notices -> Calendar**. Features include:
 
-- **Interactive FullCalendar**: Month, week, and day views
-- **Color-coded events**: Different colors for maintenance vs outage, and by status
+- **Interactive FullCalendar**: Month and week views
+- **Color-coded events**: Colored by maintenance status
+- **Long maintenances as bands**: Maintenances longer than 24 hours are drawn as light bands behind short ones, so they no longer crowd them out
 - **Click-to-view**: Click any event to see details and navigate to full view
 - **Drag navigation**: Navigate between time periods
 
@@ -237,7 +238,7 @@ Subscribe to maintenance events in your preferred calendar application:
 
 **Subscription URL:**
 ```
-https://your-netbox/api/plugins/notices/ical/?token=YOUR_API_TOKEN
+https://your-netbox/plugins/notices/ical/maintenances.ics?token=YOUR_API_TOKEN
 ```
 
 **Supported Calendar Apps:**
@@ -246,16 +247,18 @@ https://your-netbox/api/plugins/notices/ical/?token=YOUR_API_TOKEN
 - **Apple Calendar**: File -> New Calendar Subscription
 
 **Query Parameters:**
-- `token`: Your NetBox API token (required)
-- `provider`: Filter by provider ID
-- `status`: Filter by status (e.g., `CONFIRMED`, `IN-PROCESS`)
-- `days_past`: Include events from N days ago (default: 30)
-- `days_future`: Include events up to N days ahead (default: 90)
+- `token`: Your NetBox API token (required by calendar apps)
+- `past_days`: Include events that started up to N days ago (default: 30, max 365)
+- `provider` / `provider_id`: Filter by provider slug / ID
+- `status`: Comma-separated statuses (e.g., `CONFIRMED,IN-PROCESS`)
+- `duration_min` / `duration_max`: Only maintenances lasting at least / at most N hours
 
-**Example filtered subscription:**
+**Example filtered subscription** (confirmed maintenances of a provider, skipping multi-day windows):
 ```
-/api/plugins/notices/ical/?token=YOUR_TOKEN&provider=1&status=CONFIRMED
+/plugins/notices/ical/maintenances.ics?token=YOUR_TOKEN&provider=zayo&status=CONFIRMED&duration_max=24
 ```
+
+See [Calendar and iCal Feed](docs/events/calendar-and-ical.md) for caching and authentication details.
 
 ### API Endpoints
 

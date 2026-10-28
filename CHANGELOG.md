@@ -21,6 +21,7 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ### Changed
 
+- Calendar: maintenances longer than 24 hours are drawn as light bands behind short events, so they no longer crowd out short windows. Short events are drawn as solid bars. (#85)
 - Every GenericForeignKey object dropdown in the Impact, EventNotification and Template Scope forms now has NetBox's object selector button (for models that have a filter form), so an Interface can be found by device, site or type instead of scrolling through every interface by name. (#86)
 - Template matching: every non-base template is an independent notification kind; a template that extends a non-base template overrides it for the recipient groups its scopes match. Fields merge only along the `extends` chain instead of across every matching template. `{% extends "base" %}` now renders with the full context and resolves to the template's own parent.
 - An override must use the same granularity as the template it extends, and `extends` cycles are rejected on save.
@@ -33,6 +34,7 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ### Fixed
 
+- Calendar: the page's stylesheet was never loaded (wrong template block). (#85)
 - The maintenance and outage REST API responses never included the event's
   `impacts` or `notifications`: both serializer fields pointed at reverse
   accessors that do not exist on these models, so DRF silently dropped them.

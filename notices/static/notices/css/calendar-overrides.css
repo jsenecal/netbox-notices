@@ -1,15 +1,63 @@
-/* Override FullCalendar's inline height to prevent layout issues with NetBox */
-.fc-view-harness,
-.fc-view-harness-active {
-    height: auto !important;
-    min-height: auto !important;
-    max-height: none !important;
+/* Event layer drawn by calendar.js (renderEventLayer). One lane is one event
+   height; a long-maintenance band is two lanes: a slot on top, its label below. */
+#calendar {
+    --notices-lane: 22px;
 }
 
-.fc-scrollgrid-sync-table {
-    height: auto !important;
+.notices-layer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 0;
+    z-index: 3;
 }
 
-.fc-scroller-liquid-absolute {
-    position: relative !important;
+.notices-layer > a {
+    position: absolute;
+    box-sizing: border-box;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.notices-band {
+    z-index: 1;
+    height: calc(2 * var(--notices-lane) - 2px);
+    padding: 0 6px 2px;
+    display: flex;
+    align-items: flex-end;
+    border-radius: 3px;
+    font-size: 0.75em;
+    background: color-mix(in srgb, var(--notices-c) 18%, transparent);
+    color: color-mix(in srgb, var(--notices-c) 70%, black);
+}
+
+[data-bs-theme="dark"] .notices-band {
+    color: color-mix(in srgb, var(--notices-c) 60%, white);
+}
+
+.notices-band--start {
+    border-left: 3px solid var(--notices-c);
+}
+
+.notices-band--end {
+    border-right: 3px solid var(--notices-c);
+}
+
+.notices-band-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.notices-short {
+    z-index: 2;
+    height: calc(var(--notices-lane) - 2px);
+    line-height: calc(var(--notices-lane) - 4px);
+    padding: 0 4px;
+    margin: 0;
+    background-color: var(--notices-c);
+    border-color: var(--notices-c);
+    color: #fff;
 }

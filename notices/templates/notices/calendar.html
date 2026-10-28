@@ -3,7 +3,7 @@
 
 {% block title %}Maintenance Calendar{% endblock %}
 
-{% block css %}
+{% block head %}
 <link href="{% static 'notices/css/calendar-overrides.css' %}" rel="stylesheet">
 {% endblock %}
 
@@ -121,5 +121,6 @@
     window.ICAL_TOKEN_PLACEHOLDER = "{{ ical_token_placeholder }}";
 </script>
 <script src="{% static 'notices/js/fullcalendar/index.global.min.js' %}"></script>
+<script src="{% static 'notices/js/calendar-lib.js' %}"></script>
 <script src="{% static 'notices/js/calendar.js' %}"></script>
 {% endblock %}
