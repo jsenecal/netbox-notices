@@ -12,6 +12,7 @@ from .choices import (
     MessageGranularityChoices,
     PreparedNotificationStatusChoices,
 )
+from .constants import MAX_DURATION_FILTER_HOURS
 from .models import (
     EventNotification,
     Impact,
@@ -45,11 +46,13 @@ class MaintenanceFilterSet(NetBoxModelFilterSet):
     duration_min = django_filters.NumberFilter(
         method="filter_duration",
         min_value=0,
+        max_value=MAX_DURATION_FILTER_HOURS,
         label="Min duration (hours)",
     )
     duration_max = django_filters.NumberFilter(
         method="filter_duration",
         min_value=0,
+        max_value=MAX_DURATION_FILTER_HOURS,
         label="Max duration (hours)",
     )
     # Site/location scoping — traverses the Impact.sites / Impact.locations

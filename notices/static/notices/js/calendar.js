@@ -18,8 +18,10 @@ document.addEventListener('DOMContentLoaded', function() {
             right: 'dayGridMonth,dayGridWeek'
         },
 
-        // Height configuration - use contentHeight to prevent excessive height
-        contentHeight: 800,
+        // Rows take their natural height. The event layer sets each row's height
+        // itself; a fixed height would give FullCalendar an inner scroller whose
+        // sizing pass runs before the layer and leaves rows and header misaligned.
+        height: 'auto',
 
         // Event data source - use function to properly handle FullCalendar v6 API
         events: function(fetchInfo, successCallback, failureCallback) {
@@ -138,9 +140,10 @@ function renderEventLayer(calendar) {
     body.querySelectorAll('.notices-layer').forEach(el => el.remove());
     body.style.position = 'relative';
 
+    const duration = event => (event.end || event.start) - event.start;
     const events = calendar.getEvents()
-        .filter(event => event.start && event.end)
-        .sort((a, b) => (a.start - b.start) || ((b.end - b.start) - (a.end - a.start)) || (a.id - b.id));
+        .filter(event => event.start)
+        .sort((a, b) => (a.start - b.start) || (duration(b) - duration(a)) || (a.id - b.id));
 
     // Pass 1: lay out each row and reserve its height, so rows below settle first.
     const rows = [];
@@ -151,13 +154,7 @@ function renderEventLayer(calendar) {
         }
         const [y, m, d] = cells[0].dataset.date.split('-').map(Number);
         const rowStart = new Date(y, m - 1, d);
-        const segs = [];
-        for (const event of events) {
-            const seg = lib.segmentForRow(event.start, event.end, rowStart, cells.length);
-            if (seg) {
-                segs.push({ ...seg, id: event.id, long: lib.isLong(event.start, event.end), event });
-            }
-        }
+        const segs = lib.segmentsForRow(events, rowStart, cells.length);
         const layout = lib.layoutRow(segs);
         cells.forEach(cell => {
             cell.querySelector('.fc-daygrid-day-events').style.minHeight = `${layout.laneCount * lanePx}px`;
@@ -206,7 +203,7 @@ function buildEventElement(seg, className) {
     const el = document.createElement('a');
     el.className = className;
     el.href = `/plugins/notices/maintenance/${event.extendedProps.eventId}/`;
-    el.title = `${event.title}\n${event.start.toLocaleString()} - ${event.end.toLocaleString()}`;
+    el.title = `${event.title}\n${event.start.toLocaleString()} - ${(event.end || event.start).toLocaleString()}`;
     el.style.setProperty('--notices-c', `var(--tblr-${event.extendedProps.statusColor})`);
     el.addEventListener('click', e => {
         e.preventDefault();
@@ -246,7 +243,7 @@ function showEventModal(event) {
     document.getElementById('eventModalStart').textContent =
         new Date(event.start).toLocaleString();
     document.getElementById('eventModalEnd').textContent =
-        new Date(event.end).toLocaleString();
+        new Date(event.end || event.start).toLocaleString();
 
     // Status badge with color from backend (using NetBox/Bootstrap 5.2 text-bg class)
     const statusBadge = document.getElementById('eventModalStatus');

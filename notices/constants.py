@@ -16,3 +16,7 @@ GENERATE_NOTIFICATIONS_PERMISSIONS = (
     "notices.change_preparednotification",
     "notices.delete_preparednotification",
 )
+
+# Upper bound for the duration_min / duration_max filters, in hours (about 11
+# years). Larger values overflow timedelta and would surface as a server error.
+MAX_DURATION_FILTER_HOURS = 100_000

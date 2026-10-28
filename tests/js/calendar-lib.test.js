@@ -12,6 +12,8 @@ const {
     segmentForRow,
     layoutRow,
     parseHours,
+    segmentsForRow,
+    MAX_HOURS,
 } = require(path.join(__dirname, '..', '..', 'notices', 'static', 'notices', 'js', 'calendar-lib.js'));
 
 // Local-time date; month is 1-based here to keep the cases readable.
@@ -157,7 +159,28 @@ test('layoutRow: a short spanning two columns needs a lane free in both', () => 
 test('parseHours accepts positive numbers only', () => {
     assert.equal(parseHours('24'), 24);
     assert.equal(parseHours('1.5'), 1.5);
-    for (const value of ['abc', '-5', '0', '', '  ', 'Infinity', null, undefined]) {
+    assert.equal(parseHours(String(MAX_HOURS)), MAX_HOURS);
+    for (const value of ['abc', '-5', '0', '', '  ', 'Infinity', String(MAX_HOURS + 1), null, undefined]) {
         assert.equal(parseHours(value), null, `parseHours(${JSON.stringify(value)})`);
     }
+});
+
+test('segmentsForRow keeps zero-length events (FullCalendar reports end as null)', () => {
+    const at = d(2026, 10, 6, 9);
+    const segs = segmentsForRow([{ id: 1, start: at, end: null }], d(2026, 10, 5), 7);
+    assert.equal(segs.length, 1);
+    assert.deepEqual(
+        { startCol: segs[0].startCol, endCol: segs[0].endCol, long: segs[0].long },
+        { startCol: 1, endCol: 1, long: false }
+    );
+});
+
+test('segmentsForRow flags long events and skips events outside the row', () => {
+    const events = [
+        { id: 1, start: d(2026, 10, 6, 9), end: d(2026, 10, 9, 9) },
+        { id: 2, start: d(2026, 10, 20, 1), end: d(2026, 10, 20, 2) },
+    ];
+    const segs = segmentsForRow(events, d(2026, 10, 5), 7);
+    assert.deepEqual(segs.map(s => [s.id, s.long]), [[1, true]]);
+    assert.equal(segs[0].event, events[0]);
 });

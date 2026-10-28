@@ -29,6 +29,7 @@ from .choices import (
     PreparedNotificationStatusChoices,
     TimeZoneChoices,
 )
+from .constants import MAX_DURATION_FILTER_HOURS
 from .models import (
     EventNotification,
     Impact,
@@ -258,11 +259,13 @@ class MaintenanceFilterForm(NetBoxModelFilterSetForm):
     duration_min = forms.DecimalField(
         required=False,
         min_value=0,
+        max_value=MAX_DURATION_FILTER_HOURS,
         label="Min duration (hours)",
     )
     duration_max = forms.DecimalField(
         required=False,
         min_value=0,
+        max_value=MAX_DURATION_FILTER_HOURS,
         label="Max duration (hours)",
     )
     tag = TagFilterField(model)

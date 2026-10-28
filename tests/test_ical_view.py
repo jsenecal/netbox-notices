@@ -221,6 +221,7 @@ class TestMaintenanceICalViewDurationFilter:
     def test_invalid_duration_returns_400(self):
         assert self._get("&duration_max=abc").status_code == 400
         assert self._get("&duration_max=-1").status_code == 400
+        assert self._get("&duration_max=99999999999").status_code == 400
 
     def test_etag_differs_with_duration_filter(self):
         assert self._get()["ETag"] != self._get("&duration_max=24")["ETag"]

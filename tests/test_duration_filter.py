@@ -53,3 +53,8 @@ class TestMaintenanceDurationFilter:
     def test_negative_duration_is_invalid(self):
         fs = MaintenanceFilterSet({"duration_max": "-1"}, queryset=Maintenance.objects.all())
         assert not fs.is_valid()
+
+    def test_huge_duration_is_invalid(self):
+        """A value too large for timedelta must be a validation error, not a 500."""
+        fs = MaintenanceFilterSet({"duration_max": "99999999999"}, queryset=Maintenance.objects.all())
+        assert not fs.is_valid()
