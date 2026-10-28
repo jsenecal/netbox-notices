@@ -10,6 +10,7 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ### Added
 
+- `duration_min` and `duration_max` maintenance filters (hours) in the REST API and the maintenance list. (#85)
 - `parent_fields` plugin setting: per model, the ForeignKey whose object is shown next to each option in the Impact, EventNotification and Template Scope object dropdowns (`router1 > Gi0/1`). Empty by default; keys are case-insensitive; invalid entries are ignored and reported, with the reason, by system check `notices.W002`. (#86)
 - Generate outgoing notifications from a maintenance or outage: "Generate Notifications" in the event's Operations menu (with preview), `POST /api/plugins/notices/{maintenance,outage}/{id}/generate-notifications/` (with `dry_run`), and opt-in automatic generation via `auto_generate_notifications`.
 - Regeneration re-renders untouched drafts in place and keeps hand-edited drafts and anything already approved or sent. Notifications created by hand are never touched by generation.

@@ -77,6 +77,8 @@ Plus relational filters:
 |---|---|
 | `replaces_id` | Maintenances replacing a given event |
 | `has_replaces` | `true` for events that have been rescheduled, `false` for those that have not |
+| `duration_min` | Maintenances lasting at least N hours (`end - start`), inclusive; fractional values allowed |
+| `duration_max` | Maintenances lasting at most N hours, inclusive, e.g. `?duration_max=24` |
 | `site_id` | Maintenances impacting anything in a site |
 | `region_id` | Same, rolled up by region |
 | `site_group_id` | Same, rolled up by site group |
