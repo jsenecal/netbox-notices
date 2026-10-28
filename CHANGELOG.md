@@ -10,6 +10,7 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ### Added
 
+- Calendar: "Hide longer than N h" switch, kept in the page URL (`?duration_max=N`) and applied to the Subscribe and Download links. (#85)
 - `duration_min` and `duration_max` maintenance filters (hours) in the REST API, the maintenance list and the iCal feed (`?duration_max=24`). (#85)
 - `parent_fields` plugin setting: per model, the ForeignKey whose object is shown next to each option in the Impact, EventNotification and Template Scope object dropdowns (`router1 > Gi0/1`). Empty by default; keys are case-insensitive; invalid entries are ignored and reported, with the reason, by system check `notices.W002`. (#86)
 - Generate outgoing notifications from a maintenance or outage: "Generate Notifications" in the event's Operations menu (with preview), `POST /api/plugins/notices/{maintenance,outage}/{id}/generate-notifications/` (with `dry_run`), and opt-in automatic generation via `auto_generate_notifications`.

@@ -6,6 +6,7 @@
 // short events sit in a band's top half while its label half stays visible.
 document.addEventListener('DOMContentLoaded', function() {
     const calendarEl = document.getElementById('calendar');
+    initHideLongSwitch();
     const scheduleRender = () => requestAnimationFrame(() => renderEventLayer(calendar));
 
     const calendar = new FullCalendar.Calendar(calendarEl, {
@@ -29,6 +30,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 start__lte: fetchInfo.endStr.split('T')[0],    // Events starting on or before range end
                 limit: 0  // No pagination, get all events in range
             });
+            if (appliedHideThreshold !== null) {
+                params.set('duration_max', appliedHideThreshold);
+            }
 
             // Fetch events from NetBox API
             fetch(`/api/plugins/notices/maintenance/?${params}`)
@@ -64,6 +68,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
     calendar.render();
 
+    const hideSwitch = document.getElementById('hideLongSwitch');
+    const hideHours = document.getElementById('hideLongHours');
+    const applyHideLong = () => {
+        const threshold = hideSwitch.checked ? window.NoticesCalendar.parseHours(hideHours.value) : null;
+        // Switched on with an unusable number: keep whatever is applied now.
+        if ((hideSwitch.checked && threshold === null) || threshold === appliedHideThreshold) {
+            return;
+        }
+        appliedHideThreshold = threshold;
+        const url = new URL(window.location.href);
+        if (threshold === null) {
+            url.searchParams.delete('duration_max');
+        } else {
+            url.searchParams.set('duration_max', threshold);
+        }
+        history.replaceState(null, '', url);
+        calendar.refetchEvents();
+    };
+    hideSwitch.addEventListener('change', applyHideLong);
+    hideHours.addEventListener('change', applyHideLong);
+
     // Positions are fractions of the row width, but heights and tops are measured;
     // redraw when the calendar's width changes (window resize, sidebar toggle).
     let lastWidth = calendarEl.offsetWidth;
@@ -74,6 +99,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }).observe(calendarEl);
 });
+
+// "Hide longer than N h": the threshold currently applied to the calendar fetch and
+// the iCal links, or null when the switch is off. Kept in the page URL as
+// ?duration_max=N so a filtered view can be bookmarked. It does not change which
+// maintenances are drawn as bands; that cutoff is fixed in calendar-lib.js.
+let appliedHideThreshold = null;
+
+function initHideLongSwitch() {
+    const threshold = window.NoticesCalendar.parseHours(
+        new URLSearchParams(window.location.search).get('duration_max')
+    );
+    if (threshold !== null) {
+        document.getElementById('hideLongSwitch').checked = true;
+        document.getElementById('hideLongHours').value = threshold;
+        appliedHideThreshold = threshold;
+    }
+}
+
+function hideLongQuery() {
+    return appliedHideThreshold === null ? '' : `&duration_max=${appliedHideThreshold}`;
+}
 
 const SHORT_GUTTER_PX = 2;
 const SHORT_INSET_PX = 5;  // band edge (3px) + gutter
@@ -296,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const baseUrl = window.location.origin;
             const icalPath = '/plugins/notices/ical/maintenances.ics';
             const tokenPlaceholder = window.ICAL_TOKEN_PLACEHOLDER || 'changeme';
-            const subscribeUrl = `${baseUrl}${icalPath}?token=${tokenPlaceholder}`;
+            const subscribeUrl = `${baseUrl}${icalPath}?token=${tokenPlaceholder}${hideLongQuery()}`;
 
             // Populate the modal input field
             document.getElementById('icalSubscribeUrl').value = subscribeUrl;
@@ -350,7 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
         downloadBtn.addEventListener('click', function() {
             // Generate download URL with download=true parameter
             const icalPath = '/plugins/notices/ical/maintenances.ics';
-            const downloadUrl = `${icalPath}?download=true`;
+            const downloadUrl = `${icalPath}?download=true${hideLongQuery()}`;
 
             // Navigate to download URL (will use session auth)
             window.location.href = downloadUrl;

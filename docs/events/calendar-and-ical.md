@@ -23,6 +23,10 @@ Maintenances longer than 24 hours (facility work announced as one multi-day wind
 
 The 24-hour cutoff is fixed.
 
+### Hiding long maintenances
+
+The header has a **Hide longer than [N] h** switch (off by default, N = 24). When it is on, maintenances lasting more than N hours are not loaded at all, and the page URL carries `?duration_max=N`, so the filtered view can be bookmarked or shared; opening such a URL starts with the switch on. The Subscribe and Download links pick up the same `duration_max`, so the feed you copy matches what you see. The switch does not move the band cutoff: with N = 72, maintenances between 24 and 72 hours are still drawn as bands.
+
 The calendar requires `notices.view_maintenance` and renders Maintenance events; Outages are not currently represented in the FullCalendar view (they appear in the dashboard timeline and the iCal feed if you add them later -- track upstream).
 
 ## iCal feed
