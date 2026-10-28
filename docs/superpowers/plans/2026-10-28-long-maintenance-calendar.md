@@ -240,17 +240,17 @@ test('parseHours', () => {
 
 - [ ] **Step 2: Run them to verify they fail**
 
-Run: `TZ=America/Toronto node --test tests/js/`
+Run: `TZ=America/Toronto node --test tests/js/*.test.js`
 Expected: FAIL with "Cannot find module .../calendar-lib.js".
 
 - [ ] **Step 3: Implement** `calendar-lib.js` with the signatures above (UMD wrapper: `module.exports` when `module` exists, else `window.NoticesCalendar`). Plain ES2020, no dependencies, no DOM.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `TZ=America/Toronto node --test tests/js/` and `TZ=UTC node --test tests/js/`
+Run: `TZ=America/Toronto node --test tests/js/*.test.js` and `TZ=UTC node --test tests/js/*.test.js`
 Expected: all pass in both time zones.
 
-- [ ] **Step 5: Add the Makefile target** `test-js` (with a `## Run calendar JS unit tests` help comment and `.PHONY`) running `TZ=America/Toronto node --test tests/js/`.
+- [ ] **Step 5: Add the Makefile target** `test-js` (with a `## Run calendar JS unit tests` help comment and `.PHONY`) running `TZ=America/Toronto node --test tests/js/*.test.js`.
 
 - [ ] **Step 6: Commit**
 
