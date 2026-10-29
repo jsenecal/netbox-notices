@@ -8,6 +8,8 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-29
+
 ### Added
 
 - `POST /api/plugins/notices/prepared-notifications/{id}/viewed/` records when a sent notification was first opened, for delivery systems that track opens or clicks. The earliest reported view is kept, and the prepared and sent notification lists and APIs gain a `viewed` filter and an optional `viewed_at` column. (#62)
