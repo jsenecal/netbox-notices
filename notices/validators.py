@@ -22,7 +22,11 @@ class PreparedNotificationStateMachine:
     """
     State machine for PreparedNotification status transitions.
 
-    Validates transitions and performs side effects.
+    Validates transitions and performs side effects. Every ValidationError it
+    raises carries a code naming what was wrong -- "status" (not allowed from
+    the current status), "timestamp" (in the future or out of order) or
+    "recipients" (approval with nobody to send to) -- so API callers can report
+    it against that field.
     """
 
     def __init__(self, notification, user=None):
@@ -59,15 +63,11 @@ class PreparedNotificationStateMachine:
         if not self.can_transition_to(new_status):
             raise ValidationError(
                 f"Cannot transition from '{self.notification.status}' to '{new_status}'. "
-                f"Valid transitions: {', '.join(self.get_valid_transitions()) or 'none'}"
+                f"Valid transitions: {', '.join(self.get_valid_transitions()) or 'none'}",
+                code="status",
             )
 
-        now = timezone.now()
-        ts = timestamp or now
-
-        # Validate timestamp is not in the future
-        if ts > now:
-            raise ValidationError("timestamp cannot be in the future")
+        ts = self._resolve_timestamp(timestamp)
 
         # Validate timestamp ordering between states
         self._validate_timestamp_order(new_status, ts)
@@ -92,17 +92,53 @@ class PreparedNotificationStateMachine:
 
         return self.notification
 
+    @transaction.atomic
+    def mark_viewed(self, timestamp=None):
+        """
+        Record that a recipient viewed the notification, keeping the earliest view.
+
+        Viewing is not a status: it changes nothing else, and it can only follow
+        sending. A delivery system may report every open or click it sees, in
+        any order; viewed_at only ever moves earlier.
+
+        Raises:
+            ValidationError: If the notification has not been sent, or the
+                timestamp is in the future or before sent_at
+        """
+        status = self.notification.status
+        if status not in (PreparedNotificationStatusChoices.SENT, PreparedNotificationStatusChoices.DELIVERED):
+            raise ValidationError(
+                f"Cannot mark a '{status}' notification as viewed: it has not been sent.", code="status"
+            )
+
+        ts = self._resolve_timestamp(timestamp)
+        if self.notification.sent_at and ts < self.notification.sent_at:
+            raise ValidationError("viewed_at cannot be before sent_at", code="timestamp")
+
+        if self.notification.viewed_at is None or ts < self.notification.viewed_at:
+            self.notification.viewed_at = ts
+            self.notification.save()
+        return self.notification
+
+    @staticmethod
+    def _resolve_timestamp(timestamp):
+        """The supplied timestamp, or now; never in the future."""
+        now = timezone.now()
+        if timestamp and timestamp > now:
+            raise ValidationError("timestamp cannot be in the future", code="timestamp")
+        return timestamp or now
+
     def _validate_timestamp_order(self, new_status, timestamp):
         """Validate that timestamps are logically ordered between states."""
         if new_status == PreparedNotificationStatusChoices.SENT:
             # sent_at must be >= approved_at
             if self.notification.approved_at and timestamp < self.notification.approved_at:
-                raise ValidationError("sent_at cannot be before approved_at")
+                raise ValidationError("sent_at cannot be before approved_at", code="timestamp")
 
         elif new_status == PreparedNotificationStatusChoices.DELIVERED:
             # delivered_at must be >= sent_at
             if self.notification.sent_at and timestamp < self.notification.sent_at:
-                raise ValidationError("delivered_at cannot be before sent_at")
+                raise ValidationError("delivered_at cannot be before sent_at", code="timestamp")
 
     def _handle_ready_transition(self):
         """Handle draft -> ready transition."""
@@ -111,7 +147,9 @@ class PreparedNotificationStateMachine:
 
         # Validate recipients not empty
         if not self.notification.recipients:
-            raise ValidationError("Cannot approve notification with no recipients. Add contacts first.")
+            raise ValidationError(
+                "Cannot approve notification with no recipients. Add contacts first.", code="recipients"
+            )
 
         # Set approval tracking
         self.notification.approved_by = self.user

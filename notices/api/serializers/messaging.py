@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 import yaml
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -19,7 +21,17 @@ __all__ = (
     "SentNotificationSerializer",
     "GenerateNotificationsSerializer",
     "PlannedNotificationSerializer",
+    "PreparedNotificationViewedSerializer",
 )
+
+
+@contextmanager
+def _state_machine_errors():
+    """Report a state machine refusal as a DRF error against the field its code names."""
+    try:
+        yield
+    except DjangoValidationError as e:
+        raise serializers.ValidationError({e.code or "detail": e.message})
 
 
 class TemplateScopeSerializer(serializers.ModelSerializer):
@@ -270,10 +282,8 @@ class PreparedNotificationSerializer(NetBoxModelSerializer):
             user = request.user if request else None
 
             sm = PreparedNotificationStateMachine(instance, user=user)
-            try:
+            with _state_machine_errors():
                 sm.transition_to(new_status, message_text=message_text, timestamp=timestamp)
-            except DjangoValidationError as e:
-                raise serializers.ValidationError({"timestamp": e.message})
 
             # Remove status from validated_data since state machine handled it
             validated_data.pop("status", None)
@@ -338,6 +348,21 @@ class GenerateNotificationsSerializer(serializers.Serializer):
         if unknown:
             raise serializers.ValidationError(f"Not a notification kind for this event: {unknown}")
         return selected
+
+
+class PreparedNotificationViewedSerializer(serializers.Serializer):
+    """Request body of the prepared notification `viewed` action; saving records the view."""
+
+    timestamp = serializers.DateTimeField(
+        required=False,
+        help_text="When the recipient viewed the notification (default: now). The earliest reported view is kept.",
+    )
+
+    def update(self, instance, validated_data):
+        request = self.context.get("request")
+        sm = PreparedNotificationStateMachine(instance, user=request.user if request else None)
+        with _state_machine_errors():
+            return sm.mark_viewed(timestamp=validated_data.get("timestamp"))
 
 
 class PlannedNotificationSerializer(serializers.Serializer):

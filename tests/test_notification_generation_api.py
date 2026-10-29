@@ -16,17 +16,6 @@ def kind(make_template):
     return make_template("noc", name="NOC")
 
 
-def _client(user):
-    client = APIClient()
-    client.force_authenticate(user=user)
-    return client
-
-
-@pytest.fixture
-def admin_api():
-    return _client(User.objects.create_superuser(username="api-admin", password="x", email="x@example.com"))
-
-
 def _url(event):
     return f"/api/plugins/notices/maintenance/{event.pk}/generate-notifications/"
 
@@ -60,15 +49,17 @@ class TestGenerateAction:
         response = admin_api.post(_url(event), {"templates": [outage_kind.pk]}, format="json")
         assert response.status_code == 400
 
-    def test_needs_notification_permissions_not_event_add(self, maintenance_with_two_tenants, kind, grant_permission):
+    def test_needs_notification_permissions_not_event_add(
+        self, maintenance_with_two_tenants, kind, grant_permission, api_client_for
+    ):
         event, *_ = maintenance_with_two_tenants
         user = User.objects.create_user(username="gen", password="x")
         grant_permission(user, ["view", "add", "change", "delete"], "preparednotification")
         grant_permission(user, ["view"], "maintenance")
-        assert _client(user).post(_url(event), {"dry_run": True}, format="json").status_code == 200
+        assert api_client_for(user).post(_url(event), {"dry_run": True}, format="json").status_code == 200
 
     def test_permissions_constrained_to_other_tenant_are_forbidden(
-        self, maintenance_with_two_tenants, kind, grant_permission
+        self, maintenance_with_two_tenants, kind, grant_permission, api_client_for
     ):
         event, _, tenant_b = maintenance_with_two_tenants
         kind.granularity = "per_tenant"
@@ -76,14 +67,16 @@ class TestGenerateAction:
         user = User.objects.create_user(username="scoped", password="x")
         grant_permission(user, ["view"], "maintenance")
         grant_permission(user, ["add", "change", "delete"], "preparednotification", constraints={"tenant": tenant_b.pk})
-        assert _client(user).post(_url(event), {}, format="json").status_code == 403
+        assert api_client_for(user).post(_url(event), {}, format="json").status_code == 403
         assert PreparedNotification.objects.count() == 0
 
-    def test_without_notification_permissions_is_forbidden(self, maintenance_with_two_tenants, kind, grant_permission):
+    def test_without_notification_permissions_is_forbidden(
+        self, maintenance_with_two_tenants, kind, grant_permission, api_client_for
+    ):
         event, *_ = maintenance_with_two_tenants
         user = User.objects.create_user(username="viewer", password="x")
         grant_permission(user, ["view"], "maintenance")
-        assert _client(user).post(_url(event), {"dry_run": True}, format="json").status_code == 403
+        assert api_client_for(user).post(_url(event), {"dry_run": True}, format="json").status_code == 403
 
     @pytest.mark.parametrize(("write_enabled", "status"), [(False, 403), (True, 200)])
     def test_token_write_ability_is_enforced(self, maintenance_with_two_tenants, kind, write_enabled, status):
@@ -108,14 +101,16 @@ class TestResetAction:
         assert response.data["modified"] is False and response.data["body_text"] == "B"
 
     def test_reset_without_change_permission_is_forbidden(
-        self, admin_api, maintenance_with_two_tenants, kind, grant_permission
+        self, admin_api, maintenance_with_two_tenants, kind, grant_permission, api_client_for
     ):
         event, *_ = maintenance_with_two_tenants
         admin_api.post(_url(event), {}, format="json")
         n = PreparedNotification.objects.get()
         user = User.objects.create_user(username="reader", password="x")
         grant_permission(user, ["view"], "preparednotification")
-        assert _client(user).post(f"/api/plugins/notices/prepared-notifications/{n.pk}/reset/").status_code == 403
+        assert (
+            api_client_for(user).post(f"/api/plugins/notices/prepared-notifications/{n.pk}/reset/").status_code == 403
+        )
 
     def test_reset_non_draft_is_400(self, admin_api, maintenance_with_two_tenants, kind):
         event, *_ = maintenance_with_two_tenants

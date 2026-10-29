@@ -8,6 +8,7 @@ from notices.api.permissions import TokenWriteOnlyPermission
 from notices.api.serializers import (
     NotificationTemplateSerializer,
     PreparedNotificationSerializer,
+    PreparedNotificationViewedSerializer,
     SentNotificationSerializer,
 )
 from notices.filtersets import NotificationTemplateFilterSet, PreparedNotificationFilterSet
@@ -46,16 +47,29 @@ class PreparedNotificationViewSet(NetBoxModelViewSet):
     serializer_class = PreparedNotificationSerializer
     filterset_class = PreparedNotificationFilterSet
 
+    def _changeable(self, request, pk):
+        """The notification `pk`, if the user may change it (403 without the permission, 404 outside its constraints)."""
+        if not request.user.has_perm("notices.change_preparednotification"):
+            raise PermissionDenied()
+        return get_object_or_404(PreparedNotification.objects.restrict(request.user, "change"), pk=pk)
+
     @action(detail=True, methods=["post"], permission_classes=[TokenWriteOnlyPermission])
     def reset(self, request, pk=None):
         """Re-render a draft from its template, discarding manual edits."""
-        if not request.user.has_perm("notices.change_preparednotification"):
-            raise PermissionDenied()
-        notification = get_object_or_404(PreparedNotification.objects.restrict(request.user, "change"), pk=pk)
+        notification = self._changeable(request, pk)
         try:
             NotificationGenerator(notification.event).reset(notification, user=request.user)
         except ResetError as e:
             raise ValidationError({"detail": str(e)})
+        return Response(self.get_serializer(notification).data)
+
+    @action(detail=True, methods=["post"], permission_classes=[TokenWriteOnlyPermission])
+    def viewed(self, request, pk=None):
+        """Record that a sent notification was viewed, for delivery systems that track opens or clicks."""
+        notification = self._changeable(request, pk)
+        params = PreparedNotificationViewedSerializer(notification, data=request.data, context={"request": request})
+        params.is_valid(raise_exception=True)
+        params.save()
         return Response(self.get_serializer(notification).data)
 
 

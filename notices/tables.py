@@ -232,6 +232,7 @@ class PreparedNotificationTable(NetBoxTable):
     approved_by = tables.Column(linkify=True)
     sent_at = columns.DateTimeColumn()
     delivered_at = columns.DateTimeColumn()
+    viewed_at = columns.DateTimeColumn()
     actions = columns.ActionsColumn()
 
     class Meta(NetBoxTable.Meta):
@@ -249,6 +250,7 @@ class PreparedNotificationTable(NetBoxTable):
             "approved_at",
             "sent_at",
             "delivered_at",
+            "viewed_at",
             "created",
             "actions",
         )
@@ -270,6 +272,7 @@ class SentNotificationTable(NetBoxTable):
     approved_by = tables.Column(linkify=True)
     sent_at = columns.DateTimeColumn()
     delivered_at = columns.DateTimeColumn()
+    viewed_at = columns.DateTimeColumn()
     # Keep this explicit. ActionsColumn defaults to edit/delete/changelog and reverses eagerly,
     # but the proxy has no per-object edit or delete URL -- so the default raises NoReverseMatch
     # and 500s the list as soon as it has one row (an empty list renders fine, which is how that
@@ -288,6 +291,7 @@ class SentNotificationTable(NetBoxTable):
             "approved_at",
             "sent_at",
             "delivered_at",
+            "viewed_at",
             "created",
             "actions",
         )

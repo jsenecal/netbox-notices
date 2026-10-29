@@ -1,5 +1,7 @@
 """Tests for NotificationTemplate and PreparedNotification API endpoints."""
 
+from datetime import timedelta
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -215,8 +217,6 @@ class TestPreparedNotificationAPI:
         )
 
         # Try to use a future timestamp
-        from datetime import timedelta
-
         future_time = (timezone.now() + timedelta(hours=1)).isoformat()
         response = api_client.patch(
             f"/api/plugins/notices/prepared-notifications/{prepared_notification.pk}/",
@@ -313,3 +313,36 @@ class TestPreparedNotificationFullWorkflow:
         response = api_client.patch(url, {"status": "ready", "message": "Retrying delivery"}, format="json")
         assert response.status_code == 200
         assert response.data["status"] == "ready"
+
+
+@pytest.mark.django_db
+def test_approval_without_recipients_is_reported_on_recipients(admin_api, make_notification):
+    """A refused approval names the missing recipients, not the transition timestamp."""
+    n = make_notification(PreparedNotificationStatusChoices.DRAFT)
+    response = admin_api.patch(
+        f"/api/plugins/notices/prepared-notifications/{n.pk}/", {"status": "ready"}, format="json"
+    )
+    assert response.status_code == 400
+    assert "timestamp" not in response.data
+    assert "no recipients" in str(response.data["recipients"])
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "status,target,field",
+    [
+        (PreparedNotificationStatusChoices.READY, "sent", "approved_at"),
+        (PreparedNotificationStatusChoices.SENT, "delivered", "sent_at"),
+    ],
+)
+def test_out_of_order_timestamp_is_reported_on_timestamp(admin_api, make_notification, status, target, field):
+    """A transition stamped before the previous step is refused against `timestamp`."""
+    n = make_notification(status, approved_at=timezone.now() - timedelta(hours=1))
+    earlier = getattr(n, field) - timedelta(minutes=1)
+    response = admin_api.patch(
+        f"/api/plugins/notices/prepared-notifications/{n.pk}/",
+        {"status": target, "timestamp": earlier.isoformat()},
+        format="json",
+    )
+    assert response.status_code == 400
+    assert f"{target}_at cannot be before {field}" in str(response.data["timestamp"])

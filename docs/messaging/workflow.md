@@ -171,6 +171,7 @@ The plugin is the queue; the delivery system is the worker. A polling loop looks
 2. Send each notification using its `subject`, `body_text`, `body_html`, `headers`, `css` and `ical_content`, addressed to the entries in `recipients`.
 3. `PATCH` each to `sent` with the send time.
 4. `PATCH` to `delivered` on confirmation, or to `failed` with a message.
+5. If the delivery system tracks opens or clicks, report them with `POST .../viewed/` (see below).
 
 Read `recipients`, not `contacts`. The snapshot is the frozen list of addresses taken at approval; the M2M is the live set of contact records and may have moved since. See [Recipient Discovery](recipient-discovery.md).
 
@@ -182,9 +183,27 @@ GET /api/plugins/notices/sent-notifications/
 
 That endpoint is a proxy over the same table, filtered to `sent` and `delivered` and restricted to `GET`, `HEAD` and `OPTIONS`.
 
-## Fields the state machine does not set
+## Recording views
 
-`viewed_at` exists on the model and appears on the detail page, but no code path writes it. It is read-only in both serializers and has no transition attached, so it stays empty. Treat it as reserved.
+`viewed_at` records when the notification was first opened. The plugin does not deliver mail, so it cannot see an open itself; the delivery system reports one when its tracking (an SES open or click event, for example) sees it:
+
+```http
+POST /api/plugins/notices/prepared-notifications/57/viewed/
+```
+
+```json
+{"timestamp": "2026-08-31T15:02:11Z"}
+```
+
+The body is optional; without a `timestamp` the current time is used. The response is the notification.
+
+Viewing is not a status. It changes nothing else about the notification and writes no journal entry, and the rules are:
+
+- Only a `sent` or `delivered` notification can be marked viewed. Anything else returns `400`.
+- The timestamp cannot be in the future or before `sent_at`. A violation is returned against the `timestamp` field.
+- The earliest view wins. A later report is accepted and ignored; an earlier one moves `viewed_at` back. A delivery system can forward every open and click event, duplicates and out-of-order ones included.
+
+`viewed_at` is one timestamp per notification: the first open by any recipient, not a per-recipient record. It is read-only in the serializers; this action is the only way to set it. It needs `notices.change_preparednotification` on the notification. The `viewed` filter (`?viewed=true` or `false`) selects notifications that have or have not been opened.
 
 ## See also
 

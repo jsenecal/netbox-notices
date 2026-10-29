@@ -910,7 +910,7 @@ class PreparedNotificationFilterForm(NetBoxModelFilterSetForm):
 
     fieldsets = (
         FieldSet("q", "filter_id", "tag"),
-        FieldSet("status", "template_id", "tenant_id", "modified", name="Attributes"),
+        FieldSet("status", "template_id", "tenant_id", "modified", "viewed", name="Attributes"),
     )
     selector_fields = ("filter_id", "q", "status", "template_id")
 
@@ -925,6 +925,7 @@ class PreparedNotificationFilterForm(NetBoxModelFilterSetForm):
     )
     tenant_id = DynamicModelMultipleChoiceField(queryset=Tenant.objects.all(), required=False, label="Tenant")
     modified = forms.NullBooleanField(required=False, widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES))
+    viewed = forms.NullBooleanField(required=False, widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES))
     tag = TagFilterField(model)
 
 
@@ -935,7 +936,7 @@ class SentNotificationFilterForm(NetBoxModelFilterSetForm):
 
     fieldsets = (
         FieldSet("q", "filter_id", "tag"),
-        FieldSet("status", "template_id", name="Attributes"),
+        FieldSet("status", "template_id", "viewed", name="Attributes"),
     )
     selector_fields = ("filter_id", "q", "status", "template_id")
 
@@ -952,6 +953,7 @@ class SentNotificationFilterForm(NetBoxModelFilterSetForm):
         required=False,
         label="Template",
     )
+    viewed = forms.NullBooleanField(required=False, widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES))
     tag = TagFilterField(PreparedNotification)  # Use parent model for tags
 
 
