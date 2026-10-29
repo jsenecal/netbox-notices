@@ -265,70 +265,37 @@ function showEventModal(event) {
     // Link to full detail page (UI, not API)
     document.getElementById('eventModalViewLink').href = maintenanceUrl(event.extendedProps.eventId);
 
-    // Show modal manually (Bootstrap 5 compatible)
-    const modalEl = document.getElementById('eventModal');
+    openModal('eventModal');
+}
+
+// The page's modals are shown and hidden by hand (Bootstrap 5 compatible markup).
+// Each open modal gets a backdrop with the id `<modal id>Backdrop`; clicking the
+// backdrop or a [data-bs-dismiss="modal"] button closes it.
+function openModal(id) {
+    const modalEl = document.getElementById(id);
     modalEl.classList.add('show');
     modalEl.style.display = 'block';
     document.body.classList.add('modal-open');
 
-    // Create backdrop
     const backdrop = document.createElement('div');
     backdrop.className = 'modal-backdrop fade show';
-    backdrop.id = 'eventModalBackdrop';
+    backdrop.id = `${id}Backdrop`;
+    backdrop.addEventListener('click', () => closeModal(id));
     document.body.appendChild(backdrop);
 }
 
-// Close modal function
-function closeEventModal() {
-    const modalEl = document.getElementById('eventModal');
+function closeModal(id) {
+    const modalEl = document.getElementById(id);
     modalEl.classList.remove('show');
     modalEl.style.display = 'none';
     document.body.classList.remove('modal-open');
-
-    // Remove backdrop
-    const backdrop = document.getElementById('eventModalBackdrop');
-    if (backdrop) {
-        backdrop.remove();
-    }
+    document.getElementById(`${id}Backdrop`)?.remove();
 }
 
-// Close subscribe modal function
-function closeSubscribeModal() {
-    const modalEl = document.getElementById('icalSubscribeModal');
-    modalEl.classList.remove('show');
-    modalEl.style.display = 'none';
-    document.body.classList.remove('modal-open');
-
-    // Remove backdrop
-    const backdrop = document.getElementById('icalSubscribeModalBackdrop');
-    if (backdrop) {
-        backdrop.remove();
-    }
-}
-
-// Add event listeners for modal close buttons and backdrop
 document.addEventListener('DOMContentLoaded', function() {
-    // Close button handlers - detect which modal and call appropriate close function
     document.querySelectorAll('[data-bs-dismiss="modal"]').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            // Find which modal this button belongs to
-            const modal = btn.closest('.modal');
-            if (modal && modal.id === 'eventModal') {
-                closeEventModal();
-            } else if (modal && modal.id === 'icalSubscribeModal') {
-                closeSubscribeModal();
-            }
-        });
+        btn.addEventListener('click', () => closeModal(btn.closest('.modal').id));
     });
-});
-
-// Close modal when clicking backdrop
-document.addEventListener('click', function(e) {
-    if (e.target && e.target.id === 'eventModalBackdrop') {
-        closeEventModal();
-    } else if (e.target && e.target.id === 'icalSubscribeModalBackdrop') {
-        closeSubscribeModal();
-    }
 });
 
 // iCal Subscribe and Download button handlers
@@ -345,17 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Populate the modal input field
             document.getElementById('icalSubscribeUrl').value = subscribeUrl;
 
-            // Show the subscribe modal manually
-            const modalEl = document.getElementById('icalSubscribeModal');
-            modalEl.classList.add('show');
-            modalEl.style.display = 'block';
-            document.body.classList.add('modal-open');
-
-            // Create backdrop
-            const backdrop = document.createElement('div');
-            backdrop.className = 'modal-backdrop fade show';
-            backdrop.id = 'icalSubscribeModalBackdrop';
-            document.body.appendChild(backdrop);
+            openModal('icalSubscribeModal');
         });
     }
 
