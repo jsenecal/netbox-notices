@@ -51,14 +51,18 @@ Long maintenances are drawn as a **band behind the normal events** (agreed
 mockups "D with start and end edges" and "Bands 2x, label half never
 covered"):
 
-- Height **2x** a normal event bar (mockup: 36px band), always, including
-  when bands overlap.
+- Height is decided **per week row**: **1x** a normal event bar when no short
+  event sits on the band in that row, **2x** (mockup: 36px band) when one
+  does. A maintenance crossing a week break can be 1x in one row and 2x in
+  the next. (Revised after the first draft of the PR, which drew every band
+  2x.)
 - Very light tint of the maintenance's existing status color
   (`var(--tblr-<status_color>)`), roughly 18% opacity. Text in a darker shade
   of the same color.
-- Each band has two halves. The **top half** is a slot where one short event
-  may sit. The **bottom half** holds the label (same title text as today:
-  `name - provider (N Impacted)`) and is **never covered** by anything.
+- A 2x band has two halves. The **top half** is a slot holding the short
+  event that sits on it. The **bottom half** holds the label (same title text
+  as today: `name - provider (N Impacted)`) and is **never covered** by
+  anything. A 1x band is its label alone, and nothing is drawn over it.
 - A **solid 3px vertical edge** in the full status color at the segment that
   contains the real start, and at the segment that contains the real end.
   Where a band is cut by a week boundary (FullCalendar splits multi-week
@@ -67,12 +71,14 @@ covered"):
   the slot on the band's first day is inset so the start edge stays visible.
 - Short maintenances (24 h or less) look exactly as today and sit on top of
   (z-order above) the band whose slot they occupy.
-- When several long maintenances share a day, their bands stack one per row
-  (each still 2x), like normal multi-day events do.
+- When several long maintenances share a day, their bands stack one per row,
+  each 1x or 2x by the rule above, like normal multi-day events do.
 - Placement of short events on a day that has bands: they fill the top-half
   slots of that day's bands in order (first band, second band, ...), one per
   slot. Once every slot is taken, the remaining short events go below the
-  last band, as normal rows. So a long maintenance's label is never hidden,
+  last band, as normal rows. A short that ends up in a free lane instead (for
+  example above a band, on a day an earlier band has already ended) does not
+  make any band 2x. So a long maintenance's label is never hidden,
   whatever the number of short events (mockup "Bands 2x, label half never
   covered": one band + three short events puts one in the slot and two
   below; three bands + three short events fills the three slots).

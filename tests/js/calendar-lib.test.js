@@ -81,13 +81,13 @@ test('layoutRow: one band plus three shorts on its first day', () => {
         { id: 'S2', startCol: 1, endCol: 1, long: false },
         { id: 'S3', startCol: 1, endCol: 1, long: false },
     ]);
-    // S1 takes the band's slot; lane 1 is the band's label; S2 and S3 go below.
+    // S1 takes the band's slot, so the band is 2x; lane 1 is its label; S2 and S3 go below.
     expect(result).toEqual({
         placements: [
-            { id: 'B', lane: 0 },
-            { id: 'S1', lane: 0 },
-            { id: 'S2', lane: 2 },
-            { id: 'S3', lane: 3 },
+            { id: 'B', lane: 0, lanes: 2 },
+            { id: 'S1', lane: 0, lanes: 1 },
+            { id: 'S2', lane: 2, lanes: 1 },
+            { id: 'S3', lane: 3, lanes: 1 },
         ],
         laneCount: 4,
     });
@@ -104,28 +104,77 @@ test('layoutRow: three stacked bands fill their slots', () => {
     ]);
     expect(result).toEqual({
         placements: [
-            { id: 'B1', lane: 0 },
-            { id: 'B2', lane: 2 },
-            { id: 'B3', lane: 4 },
-            { id: 'S1', lane: 0 },
-            { id: 'S2', lane: 2 },
-            { id: 'S3', lane: 4 },
+            { id: 'B1', lane: 0, lanes: 2 },
+            { id: 'B2', lane: 2, lanes: 2 },
+            { id: 'B3', lane: 4, lanes: 2 },
+            { id: 'S1', lane: 0, lanes: 1 },
+            { id: 'S2', lane: 2, lanes: 1 },
+            { id: 'S3', lane: 4, lanes: 1 },
         ],
         laneCount: 6,
     });
 });
 
-test('layoutRow: bands that do not overlap share a row', () => {
+test('layoutRow: bands with nothing on them are 1x and share a row when apart', () => {
     const result = layoutRow([
         { id: 'B1', startCol: 0, endCol: 1, long: true },
         { id: 'B2', startCol: 3, endCol: 5, long: true },
     ]);
     expect(result).toEqual({
         placements: [
-            { id: 'B1', lane: 0 },
-            { id: 'B2', lane: 0 },
+            { id: 'B1', lane: 0, lanes: 1 },
+            { id: 'B2', lane: 0, lanes: 1 },
+        ],
+        laneCount: 1,
+    });
+});
+
+test('layoutRow: overlapping 1x bands stack one lane each', () => {
+    const result = layoutRow([
+        { id: 'B1', startCol: 0, endCol: 4, long: true },
+        { id: 'B2', startCol: 2, endCol: 6, long: true },
+        { id: 'S', startCol: 6, endCol: 6, long: false },
+    ]);
+    // S is on B2's last day, but B1 has ended there: S fits in lane 0 above B2,
+    // so nothing sits on either band and both stay one lane.
+    expect(result).toEqual({
+        placements: [
+            { id: 'B1', lane: 0, lanes: 1 },
+            { id: 'B2', lane: 1, lanes: 1 },
+            { id: 'S', lane: 0, lanes: 1 },
         ],
         laneCount: 2,
+    });
+});
+
+test('layoutRow: only the stacked band a short sits on grows', () => {
+    const result = layoutRow([
+        { id: 'B1', startCol: 0, endCol: 4, long: true },
+        { id: 'B2', startCol: 2, endCol: 6, long: true },
+        { id: 'S1', startCol: 3, endCol: 3, long: false },
+    ]);
+    // S1 takes B1's slot; B2 below it has nothing on it and stays one lane.
+    expect(result).toEqual({
+        placements: [
+            { id: 'B1', lane: 0, lanes: 2 },
+            { id: 'B2', lane: 2, lanes: 1 },
+            { id: 'S1', lane: 0, lanes: 1 },
+        ],
+        laneCount: 3,
+    });
+});
+
+test('layoutRow: a short on another day leaves the band 1x', () => {
+    const result = layoutRow([
+        { id: 'B', startCol: 0, endCol: 2, long: true },
+        { id: 'S', startCol: 4, endCol: 4, long: false },
+    ]);
+    expect(result).toEqual({
+        placements: [
+            { id: 'B', lane: 0, lanes: 1 },
+            { id: 'S', lane: 0, lanes: 1 },
+        ],
+        laneCount: 1,
     });
 });
 
@@ -135,14 +184,15 @@ test('layoutRow: a short spanning two columns needs a lane free in both', () => 
         { id: 'A', startCol: 1, endCol: 1, long: false },
         { id: 'C', startCol: 1, endCol: 2, long: false },
     ]);
-    // C: lane 0 is taken by A on col 1, lane 1 is B's label on col 2.
+    // C cannot use B's slot (A holds lane 0 on col 1), so nothing sits on B: B
+    // is 1x, and C takes lane 1, free on both columns once B is one lane.
     expect(result).toEqual({
         placements: [
-            { id: 'B', lane: 0 },
-            { id: 'A', lane: 0 },
-            { id: 'C', lane: 2 },
+            { id: 'B', lane: 0, lanes: 1 },
+            { id: 'A', lane: 0, lanes: 1 },
+            { id: 'C', lane: 1, lanes: 1 },
         ],
-        laneCount: 3,
+        laneCount: 2,
     });
 });
 

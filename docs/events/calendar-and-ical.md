@@ -15,9 +15,9 @@ The view uses FullCalendar with month and week modes. Events are colour-coded by
 
 Maintenances longer than 24 hours (facility work announced as one multi-day window, for example) are drawn as light bands behind the other events instead of solid bars, so they do not push short maintenances down the day cell:
 
-- A band is twice the height of a normal event and tinted with the maintenance's status colour. Its label sits in the bottom half.
+- A band is tinted with the maintenance's status colour. It is the height of a normal event, or twice that in a week where a short maintenance sits on it, with the short in the top half and the band's label in the bottom half.
 - A solid edge marks the day the maintenance really starts and the day it really ends. Where a band continues into the next week, the cut side has no edge.
-- One short maintenance can sit in the top half of each band. Further short maintenances on the same day go into the next band's top half, then below the bands, so a band's label is never covered.
+- One short maintenance can sit on each band. Further short maintenances on the same day go into the next band's top half, then below the bands, so a band's label is never covered.
 - Overlapping long maintenances stack one band per row.
 - Clicking a band opens the same summary modal as any other event.
 

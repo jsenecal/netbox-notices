@@ -47,48 +47,75 @@
         };
     }
 
-    // Packs one week row into lanes of one event height. A band takes two lanes:
-    // its top lane is a slot one short event may sit in, its bottom lane holds the
-    // label and is never given to anything else. Input order breaks ties.
+    const overlaps = (a, b) => a.startCol <= b.endCol && b.startCol <= a.endCol;
+
+    // Packs one week row into lanes of one event height. A band is one lane tall
+    // unless a short event sits on it in this row; then it is two: its top lane
+    // is a slot holding that short, its bottom lane holds the label and is never
+    // given to anything else. Input order breaks ties. Each placement gives the
+    // event's top lane and its height in lanes.
     function layoutRow(segs) {
-        const bandRows = []; // bandRows[k] = list of [startCol, endCol] already placed
-        const labelBlocked = new Set(); // "lane:col"
-        const shortTaken = new Set(); // "lane:col"
-        const laneOf = new Map();
-        let maxLane = -1;
-
-        const overlaps = (a, b) => a.startCol <= b[1] && b[0] <= a.endCol;
-
-        for (const seg of segs) {
-            if (!seg.long) continue;
-            let k = 0;
-            while (bandRows[k] && bandRows[k].some((span) => overlaps(seg, span))) k++;
-            (bandRows[k] = bandRows[k] || []).push([seg.startCol, seg.endCol]);
-            for (let col = seg.startCol; col <= seg.endCol; col++) labelBlocked.add(`${2 * k + 1}:${col}`);
-            laneOf.set(seg.id, 2 * k);
-            maxLane = Math.max(maxLane, 2 * k + 1);
+        // Start with every band that a short overlaps as 2x, then shrink the ones
+        // whose slot stayed empty and pack again. Bands only shrink, so this
+        // ends, and once it does every 2x band holds a short.
+        let tall = new Set(
+            segs.filter((band) => band.long && segs.some((seg) => !seg.long && overlaps(band, seg))).map((b) => b.id)
+        );
+        for (;;) {
+            const { placements, laneCount, hosts } = packRow(segs, tall);
+            if (hosts.size === tall.size) return { placements, laneCount };
+            tall = hosts;
         }
+    }
 
-        for (const seg of segs) {
-            if (seg.long) continue;
-            const free = (lane) => {
-                for (let col = seg.startCol; col <= seg.endCol; col++) {
-                    const key = `${lane}:${col}`;
-                    if (labelBlocked.has(key) || shortTaken.has(key)) return false;
-                }
-                return true;
-            };
-            let lane = 0;
-            while (!free(lane)) lane++;
-            for (let col = seg.startCol; col <= seg.endCol; col++) shortTaken.add(`${lane}:${col}`);
-            laneOf.set(seg.id, lane);
-            maxLane = Math.max(maxLane, lane);
-        }
-
-        return {
-            placements: segs.map((seg) => ({ id: seg.id, lane: laneOf.get(seg.id) })),
-            laneCount: maxLane + 1,
+    // One packing pass with the given set of 2x bands. Bands go first, each in
+    // the lowest lanes free on all its columns; then each short takes the lowest
+    // lane that is free or a band's slot on all its columns. Returns the bands
+    // whose slot a short took.
+    function packRow(segs, tall) {
+        const cells = new Map(); // "lane:col" -> 'band' | 'slot' | 'short'
+        const fill = (seg, lane, kind) => {
+            for (let col = seg.startCol; col <= seg.endCol; col++) cells.set(`${lane}:${col}`, kind);
         };
+        const fits = (seg, lane, allowed) => {
+            for (let col = seg.startCol; col <= seg.endCol; col++) {
+                if (!allowed.includes(cells.get(`${lane}:${col}`))) return false;
+            }
+            return true;
+        };
+        const placed = new Map();
+        const slots = []; // [lane, band] for each 2x band
+        const hosts = new Set();
+        let laneCount = 0;
+
+        for (const band of segs.filter((seg) => seg.long)) {
+            const lanes = tall.has(band.id) ? 2 : 1;
+            let lane = 0;
+            while (!fits(band, lane, [undefined]) || (lanes === 2 && !fits(band, lane + 1, [undefined]))) lane++;
+            if (lanes === 2) {
+                fill(band, lane, 'slot');
+                fill(band, lane + 1, 'band');
+                slots.push([lane, band]);
+            } else {
+                fill(band, lane, 'band');
+            }
+            placed.set(band.id, { lane, lanes });
+            laneCount = Math.max(laneCount, lane + lanes);
+        }
+
+        for (const seg of segs.filter((seg) => !seg.long)) {
+            let lane = 0;
+            while (!fits(seg, lane, [undefined, 'slot'])) lane++;
+            fill(seg, lane, 'short');
+            for (const [slotLane, band] of slots) {
+                if (slotLane === lane && overlaps(band, seg)) hosts.add(band.id);
+            }
+            placed.set(seg.id, { lane, lanes: 1 });
+            laneCount = Math.max(laneCount, lane + 1);
+        }
+
+        const placements = segs.map((seg) => ({ id: seg.id, ...placed.get(seg.id) }));
+        return { placements, laneCount, hosts };
     }
 
     // Segments of FullCalendar events ({id, start, end}) that touch one row, with

@@ -171,17 +171,17 @@ function renderEventLayer(calendar) {
         layer.className = 'notices-layer';
         layer.style.top = `${eventsTop - bodyTop}px`;
 
-        const laneById = new Map(layout.placements.map(p => [p.id, p.lane]));
+        const placementById = new Map(layout.placements.map(p => [p.id, p]));
         const bandStarts = new Set(
-            segs.filter(seg => seg.long && seg.startsHere).map(seg => `${laneById.get(seg.id)}:${seg.startCol}`)
+            segs.filter(seg => seg.long && seg.startsHere).map(seg => `${placementById.get(seg.id).lane}:${seg.startCol}`)
         );
         for (const seg of segs) {
-            const lane = laneById.get(seg.id);
+            const { lane, lanes } = placementById.get(seg.id);
             const left = (seg.startCol / cells.length) * 100;
             const width = ((seg.endCol - seg.startCol + 1) / cells.length) * 100;
             let el;
             if (seg.long) {
-                el = buildBand(seg);
+                el = buildBand(seg, lanes);
                 el.style.left = `${left}%`;
                 el.style.width = `${width}%`;
             } else {
@@ -215,8 +215,9 @@ function buildEventElement(seg, className) {
     return el;
 }
 
-function buildBand(seg) {
+function buildBand(seg, lanes) {
     let className = 'notices-band';
+    if (lanes === 2) className += ' notices-band--tall';
     if (seg.startsHere) className += ' notices-band--start';
     if (seg.endsHere) className += ' notices-band--end';
     const el = buildEventElement(seg, className);

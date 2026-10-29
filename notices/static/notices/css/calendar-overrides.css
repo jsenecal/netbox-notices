@@ -1,5 +1,6 @@
 /* Event layer drawn by calendar.js (renderEventLayer). One lane is one event
-   height; a long-maintenance band is two lanes: a slot on top, its label below.
+   height. A long-maintenance band is one lane, or two when a short event sits
+   on it: a slot on top holding that short, its label below.
    calendar.js positions events with these properties, so sizes live only here. */
 #calendar {
     --notices-lane: 22px;
@@ -29,14 +30,20 @@
 
 .notices-band {
     z-index: 1;
-    height: calc(2 * var(--notices-lane) - var(--notices-gutter));
-    padding: 0 6px 2px;
+    height: calc(var(--notices-lane) - var(--notices-gutter));
+    padding: 0 6px;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     border-radius: 3px;
     font-size: 0.75em;
     background: color-mix(in srgb, var(--notices-c) 18%, transparent);
     color: color-mix(in srgb, var(--notices-c) 70%, black);
+}
+
+.notices-band--tall {
+    height: calc(2 * var(--notices-lane) - var(--notices-gutter));
+    padding-bottom: 2px;
+    align-items: flex-end;
 }
 
 [data-bs-theme="dark"] .notices-band {
