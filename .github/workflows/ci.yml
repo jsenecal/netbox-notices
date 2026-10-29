@@ -44,6 +44,17 @@ jobs:
       - run: uv run ruff check notices tests
       - run: uv run ruff format --check notices tests
 
+  test-js:
+    name: Test JavaScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - run: npm ci
+      - run: npx vitest run
+
   test:
     name: Test (Python ${{ matrix.python }}, NetBox ${{ matrix.netbox }})
     runs-on: ubuntu-latest

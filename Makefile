@@ -55,8 +55,9 @@ test-verbose: setup ## Run plugin tests with verbose output
 	${VENV_PY_PATH} -m pytest ${REPO_PATH}/tests/ -vv
 
 .PHONY: test-js
-test-js: ## Run calendar JS unit tests with Node
-	TZ=America/Toronto node --test tests/js/*.test.js
+test-js: ## Run calendar JS unit tests with vitest
+	npm install --no-audit --no-fund
+	npx vitest run
 
 .PHONY: test-quick
 test-quick: ## Run plugin tests without migration check (faster)
