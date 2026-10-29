@@ -190,23 +190,38 @@ def contact():
 
 
 @pytest.fixture
-def maintenance(provider):
-    """Create a test maintenance event."""
+def make_maintenance(provider):
+    """Factory for saved Maintenances: `make_maintenance(name, hours=2, **overrides)`.
+
+    A CONFIRMED maintenance of the `provider` fixture, summarised by its name,
+    starting now unless `start` is given and lasting `hours`.
+    """
     from datetime import timedelta
 
     from django.utils import timezone
 
     from notices.models import Maintenance
 
-    now = timezone.now()
-    return Maintenance.objects.create(
-        name="MAINT-001",
-        summary="Test maintenance event",
-        provider=provider,
-        status="CONFIRMED",
-        start=now,
-        end=now + timedelta(hours=4),
-    )
+    def make(name, hours=2, start=None, **overrides):
+        start = start or timezone.now()
+        fields = {
+            "name": name,
+            "summary": name,
+            "provider": provider,
+            "status": "CONFIRMED",
+            "start": start,
+            "end": start + timedelta(hours=hours),
+            **overrides,
+        }
+        return Maintenance.objects.create(**fields)
+
+    return make
+
+
+@pytest.fixture
+def maintenance(make_maintenance):
+    """Create a test maintenance event."""
+    return make_maintenance("MAINT-001", hours=4, summary="Test maintenance event")
 
 
 @pytest.fixture
