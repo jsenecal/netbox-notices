@@ -261,7 +261,8 @@ This endpoint is the outbound queue, and status changes here are the only way to
 | `contact_ids` | list of integers | Write-only. |
 | `recipients` | JSON | Read-only. Snapshot taken at approval. |
 | `subject`, `body_text`, `body_html`, `headers`, `css`, `ical_content` | | Rendered content. |
-| `approved_by`, `approved_at`, `sent_at`, `delivered_at`, `viewed_at` | | Read-only. Set by the state machine. |
+| `approved_by`, `approved_at`, `sent_at`, `delivered_at` | | Read-only. Set by the state machine. |
+| `viewed_at` | datetime | Read-only. Set by the `viewed/` action below. |
 | `message` | string | Write-only. Creates a journal entry for the transition. |
 | `timestamp` | datetime | Write-only. Real time of the transition. |
 
@@ -283,7 +284,7 @@ The `timestamp` field lets a batching delivery system record when something actu
 
 Read `recipients`, not `contacts`, when delivering. The full rationale, side effects and a polling loop are in [Approval Workflow](../messaging/workflow.md).
 
-Filters: `id`, `status`, `template_id`, `event_type`, `event_id`, `tenant_id`, `modified`. `status` accepts multiple values. `modified` selects generated drafts whose content was edited since rendering (`?modified=true`). `q` searches subject and body text.
+Filters: `id`, `status`, `template_id`, `event_type`, `event_id`, `tenant_id`, `modified`, `viewed`. `status` accepts multiple values. `modified` selects generated drafts whose content was edited since rendering (`?modified=true`). `viewed` selects notifications with or without a recorded view (`?viewed=false`). `q` searches subject and body text.
 
 The read-only `tenant` and `impact` fields name the recipient group a generated notification belongs to, and `modified` is true for a hand-edited generated draft.
 
@@ -339,6 +340,20 @@ curl -X POST -H "Authorization: Token $API_TOKEN" \
 ```
 
 Re-renders a draft from its template and discards manual edits, returning the notification. Requires change on the notification. A notification that is not a draft, is not linked to an event, or fails to render returns `400`.
+
+### Record a view
+
+```
+POST /api/plugins/notices/prepared-notifications/{id}/viewed/
+```
+
+```bash
+curl -X POST -H "Authorization: Token $API_TOKEN" -H "Content-Type: application/json" \
+  -d '{"timestamp": "2026-08-31T15:02:11Z"}' \
+  https://netbox.example.com/api/plugins/notices/prepared-notifications/91/viewed/
+```
+
+Sets `viewed_at` for a delivery system that tracks opens or clicks, returning the notification. `timestamp` is optional (default: now) and the earliest reported view is kept, so repeated reports are harmless. Requires change on the notification. A notification that is not `sent` or `delivered` returns `400`, as does a timestamp in the future or before `sent_at` (against `timestamp`). See [Recording views](../messaging/workflow.md#recording-views).
 
 ## Sent notifications
 

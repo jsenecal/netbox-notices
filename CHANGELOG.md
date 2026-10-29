@@ -10,6 +10,7 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ### Added
 
+- `POST /api/plugins/notices/prepared-notifications/{id}/viewed/` records when a sent notification was first opened, for delivery systems that track opens or clicks. The earliest reported view is kept, and the prepared and sent notification lists and APIs gain a `viewed` filter and an optional `viewed_at` column. (#62)
 - Calendar: "Hide longer than N h" switch, kept in the page URL (`?duration_max=N`) and applied to the Subscribe and Download links. (#85)
 - `duration_min` and `duration_max` maintenance filters (hours) in the REST API, the maintenance list and the iCal feed (`?duration_max=24`). (#85)
 - `parent_fields` plugin setting: per model, the ForeignKey whose object is shown next to each option in the Impact, EventNotification and Template Scope object dropdowns (`router1 > Gi0/1`). Empty by default; keys are case-insensitive; invalid entries are ignored and reported, with the reason, by system check `notices.W002`. (#86)
@@ -35,6 +36,8 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ### Fixed
 
+- `PreparedNotification.viewed_at` was shown on the detail page and in the API but nothing could ever set it; the new `viewed/` action does. (#62)
+- Approving a prepared notification with no recipients through the API (`PATCH` to `ready`) reported the refusal against the `timestamp` field; it is now reported against `recipients`, and a refused transition against `status`.
 - Calendar: the page's stylesheet was never loaded (wrong template block). (#85)
 - The maintenance and outage REST API responses never included the event's
   `impacts` or `notifications`: both serializer fields pointed at reverse

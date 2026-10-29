@@ -266,6 +266,53 @@ def make_template(db):
 
 
 @pytest.fixture
+def make_notification(make_template):
+    """Factory for saved PreparedNotifications: `make_notification(status="sent", **fields)`.
+
+    A sent or delivered notification defaults to having been sent an hour ago.
+    """
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from notices.choices import PreparedNotificationStatusChoices as Status
+    from notices.models import PreparedNotification
+
+    template = make_template("notification-kind")
+
+    def make(status=Status.SENT, **fields):
+        if status in (Status.SENT, Status.DELIVERED):
+            fields.setdefault("sent_at", timezone.now() - timedelta(hours=1))
+        return PreparedNotification.objects.create(
+            template=template, subject="S", body_text="B", status=status, **fields
+        )
+
+    return make
+
+
+@pytest.fixture
+def api_client_for(db):
+    """Factory: `api_client_for(user)` is a REST API client authenticated as `user`."""
+    from rest_framework.test import APIClient
+
+    def make(user):
+        client = APIClient()
+        client.force_authenticate(user=user)
+        return client
+
+    return make
+
+
+@pytest.fixture
+def admin_api(api_client_for):
+    """A REST API client authenticated as a superuser."""
+    from django.contrib.auth import get_user_model
+
+    user = get_user_model().objects.create_superuser(username="api-admin", password="x", email="api-admin@example.com")
+    return api_client_for(user)
+
+
+@pytest.fixture
 def notification_template(make_template):
     """Create a test notification template."""
     return make_template(

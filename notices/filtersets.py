@@ -316,6 +316,7 @@ class PreparedNotificationFilterSet(NetBoxModelFilterSet):
     event_id = django_filters.NumberFilter()
     tenant_id = django_filters.ModelMultipleChoiceFilter(queryset=Tenant.objects.all(), field_name="tenant")
     modified = django_filters.BooleanFilter(method="filter_modified")
+    viewed = django_filters.BooleanFilter(field_name="viewed_at", lookup_expr="isnull", exclude=True)
     q = django_filters.CharFilter(
         method="search",
         label="Search",
@@ -323,7 +324,7 @@ class PreparedNotificationFilterSet(NetBoxModelFilterSet):
 
     class Meta:
         model = PreparedNotification
-        fields = ["id", "status", "template_id", "event_type", "event_id", "tenant_id", "modified"]
+        fields = ["id", "status", "template_id", "event_type", "event_id", "tenant_id", "modified", "viewed"]
 
     def filter_modified(self, queryset, name, value):
         return queryset.filter(MODIFIED_Q) if value else queryset.exclude(MODIFIED_Q)

@@ -41,6 +41,7 @@ Granting `notices.view_sentnotification` or `notices.delete_sentnotification` ha
 | Generate notifications (UI **Generate Notifications**, API `generate-notifications/`) | `notices.add_preparednotification`, `notices.change_preparednotification` and `notices.delete_preparednotification`, plus view on the event (`notices.view_maintenance` or `notices.view_outage`) |
 | Approve (UI) | `notices.change_preparednotification` |
 | Reset to template (UI, API `reset/`) | `notices.change_preparednotification` |
+| Record a view (API `viewed/`) | `notices.change_preparednotification` |
 
 Generation needs all three notification rights because a run can create, re-render and delete drafts. Object-level constraints are enforced per notification: the run checks each notification it creates, updates or deletes against the user's add, change or delete permissions, and one violation rolls the whole run back (`403` from the API, an error message in the UI). Missing add, change or delete on prepared notifications is refused with `403`; an event the user cannot view is not found (`404`). A dry run or preview writes nothing. Automatic generation (`auto_generate_notifications`) runs as the system and applies no user checks.
 
