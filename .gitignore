@@ -108,6 +108,9 @@ docs/site/
 # MacOS FS
 .DS_Store
 
+# Node (calendar JS tests)
+node_modules/
+
 # Git worktrees
 .worktrees/
 

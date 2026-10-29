@@ -1,6 +1,8 @@
+from datetime import timedelta
+
 import django_filters
 from dcim.models import Location, Region, Site, SiteGroup
-from django.db.models import Q
+from django.db.models import DurationField, ExpressionWrapper, F, Q
 from netbox.filtersets import NetBoxModelFilterSet
 from tenancy.models import Tenant
 from utilities.filters import ContentTypeFilter
@@ -10,6 +12,7 @@ from .choices import (
     MessageGranularityChoices,
     PreparedNotificationStatusChoices,
 )
+from .constants import MAX_DURATION_FILTER_HOURS
 from .models import (
     EventNotification,
     Impact,
@@ -39,6 +42,18 @@ class MaintenanceFilterSet(NetBoxModelFilterSet):
     has_replaces = django_filters.BooleanFilter(
         method="filter_has_replaces",
         label="Has replacement",
+    )
+    duration_min = django_filters.NumberFilter(
+        method="filter_duration",
+        min_value=0,
+        max_value=MAX_DURATION_FILTER_HOURS,
+        label="Min duration (hours)",
+    )
+    duration_max = django_filters.NumberFilter(
+        method="filter_duration",
+        min_value=0,
+        max_value=MAX_DURATION_FILTER_HOURS,
+        label="Max duration (hours)",
     )
     # Site/location scoping — traverses the Impact.sites / Impact.locations
     # cache populated by notices.resolvers, so any allowed target type whose
@@ -100,6 +115,16 @@ class MaintenanceFilterSet(NetBoxModelFilterSet):
         if value:
             return queryset.exclude(replaced_by_maintenance=None)
         return queryset.filter(replaced_by_maintenance=None)
+
+    def filter_duration(self, queryset, name, value):
+        """Filter on ``end - start`` in hours, inclusive at both bounds."""
+        # Annotated rather than stored: a generated column would not be refreshed
+        # on UPDATE under Django 5.2, which the supported NetBox range still runs.
+        lookup = "gte" if name == "duration_min" else "lte"
+        queryset = queryset.annotate(
+            event_duration=ExpressionWrapper(F("end") - F("start"), output_field=DurationField())
+        )
+        return queryset.filter(**{f"event_duration__{lookup}": timedelta(hours=float(value))})
 
 
 class OutageFilterSet(NetBoxModelFilterSet):

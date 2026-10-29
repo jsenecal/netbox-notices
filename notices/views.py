@@ -33,7 +33,7 @@ from utilities.views import GetReturnURLMixin, register_model_view
 
 from . import filtersets, forms, models, tables
 from .choices import PreparedNotificationStatusChoices
-from .constants import GENERATE_NOTIFICATIONS_PERMISSIONS
+from .constants import GENERATE_NOTIFICATIONS_PERMISSIONS, MAX_DURATION_FILTER_HOURS
 from .ical_utils import calculate_etag, feed_last_modified, generate_maintenance_ical, maintenance_window_cutoff
 from .models import NotificationTemplate, PreparedNotification, SentNotification, TemplateScope
 from .services.notification_generation import (
@@ -505,6 +505,7 @@ class MaintenanceCalendarView(PermissionRequiredMixin, View):
             {
                 "title": "Maintenance Calendar",
                 "ical_token_placeholder": token_placeholder,
+                "max_duration_hours": MAX_DURATION_FILTER_HOURS,
             },
         )
 
@@ -524,7 +525,10 @@ class MaintenanceICalView(View):
     - provider: Provider slug to filter by
     - provider_id: Provider ID to filter by
     - status: Comma-separated status list
+    - duration_min / duration_max: Only maintenances lasting at least / at most N hours
     """
+
+    DURATION_PARAMS = ("duration_min", "duration_max")
 
     def get(self, request):
         # Authenticate user
@@ -701,6 +705,11 @@ class MaintenanceICalView(View):
         if "status" in request.GET:
             params["status"] = request.GET["status"]
 
+        # Kept as the raw strings: validated in _build_queryset, and part of the ETag.
+        for name in self.DURATION_PARAMS:
+            if name in request.GET:
+                params[name] = request.GET[name]
+
         return params
 
     def _build_queryset(self, params):
@@ -737,6 +746,15 @@ class MaintenanceICalView(View):
 
             if filtered_statuses:
                 queryset = queryset.filter(status__in=filtered_statuses)
+
+        # The API filterset owns the duration semantics and validation; reuse it.
+        duration_data = {name: params[name] for name in self.DURATION_PARAMS if name in params}
+        if duration_data:
+            filterset = filtersets.MaintenanceFilterSet(duration_data, queryset=queryset)
+            if not filterset.is_valid():
+                errors = "; ".join(f"{field}: {' '.join(msgs)}" for field, msgs in filterset.errors.items())
+                raise ValueError(f"Invalid duration filter: {errors}")
+            queryset = filterset.qs
 
         return queryset
 

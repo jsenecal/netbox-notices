@@ -9,66 +9,58 @@ from users.models import Token, User
 
 from notices.models import Maintenance
 
+ICAL_URL = "/plugins/notices/ical/maintenances.ics"
+
+
+@pytest.fixture
+def ical_get(db):
+    """GET the feed as a superuser authenticated by URL token: `ical_get(query="", **headers)`.
+
+    `query` is appended after the token, so it starts with "&".
+    """
+    user = User.objects.create_user(username="ical-user", password="pass", is_superuser=True)
+    token = Token.objects.create(user=user, version=1)
+    client = Client()
+
+    def get(query="", **headers):
+        return client.get(f"{ICAL_URL}?token={token.plaintext}{query}", **headers)
+
+    return get
+
+
+def _body(response):
+    return response.content.decode("utf-8")
+
 
 @pytest.mark.django_db
 class TestMaintenanceICalViewAuthentication:
     """Test authentication methods for iCal endpoint."""
 
-    def test_token_in_url_authenticates(self):
-        # Create user and v1 token (plaintext stored, suitable for URL auth)
-        user = User.objects.create_user(username="testuser", password="testpass", is_superuser=True)
-        token = Token.objects.create(user=user, version=1)
+    def test_token_in_url_authenticates(self, ical_get, make_maintenance):
+        make_maintenance("M1")
 
-        # Create test maintenance
-        provider = Provider.objects.create(name="Test", slug="test")
-        Maintenance.objects.create(
-            name="M1",
-            summary="Test",
-            provider=provider,
-            start=datetime.now(UTC),
-            end=datetime.now(UTC) + timedelta(hours=2),
-            status="CONFIRMED",
-        )
-
-        # Request with token in URL
-        client = Client()
-        response = client.get(f"/plugins/notices/ical/maintenances.ics?token={token.plaintext}")
+        response = ical_get()
 
         assert response.status_code == 200
         assert response["Content-Type"] == "text/calendar; charset=utf-8"
 
     def test_invalid_token_returns_403(self):
-        client = Client()
-        response = client.get("/plugins/notices/ical/maintenances.ics?token=invalid")
+        response = Client().get(f"{ICAL_URL}?token=invalid")
 
         assert response.status_code == 403
 
     def test_no_authentication_returns_403_when_login_required(self):
-        client = Client()
-        response = client.get("/plugins/notices/ical/maintenances.ics")
+        response = Client().get(ICAL_URL)
 
         # Will be 403 if LOGIN_REQUIRED=True (default in tests)
         assert response.status_code in [200, 403]
 
-    def test_authorization_header_authenticates(self):
+    def test_authorization_header_authenticates(self, make_maintenance):
         user = User.objects.create_user(username="apiuser", password="testpass", is_superuser=True)
         token = Token.objects.create(user=user, version=1)
+        make_maintenance("M1")
 
-        provider = Provider.objects.create(name="Test", slug="test")
-        Maintenance.objects.create(
-            name="M1",
-            summary="Test",
-            provider=provider,
-            start=datetime.now(UTC),
-            end=datetime.now(UTC) + timedelta(hours=2),
-            status="CONFIRMED",
-        )
-
-        client = Client()
-        response = client.get(
-            "/plugins/notices/ical/maintenances.ics",
-            HTTP_AUTHORIZATION=f"Token {token.plaintext}",
-        )
+        response = Client().get(ICAL_URL, HTTP_AUTHORIZATION=f"Token {token.plaintext}")
 
         assert response.status_code == 200
 
@@ -77,202 +69,135 @@ class TestMaintenanceICalViewAuthentication:
 class TestMaintenanceICalViewFiltering:
     """Test query parameter filtering."""
 
-    def setup_method(self):
-        """Create test user and token."""
-        self.user = User.objects.create_user(username="testuser", password="testpass", is_superuser=True)
-        self.token = Token.objects.create(user=self.user, version=1)
-        self.client = Client()
-
-    def test_past_days_filter(self):
-        provider = Provider.objects.create(name="Test", slug="test")
-
-        # Create old maintenance (60 days ago)
-        old_start = datetime.now(UTC) - timedelta(days=60)
-        Maintenance.objects.create(
-            name="OLD",
-            summary="Old",
-            provider=provider,
-            start=old_start,
-            end=old_start + timedelta(hours=2),
-            status="COMPLETED",
-        )
-
-        # Create recent maintenance (10 days ago)
-        recent_start = datetime.now(UTC) - timedelta(days=10)
-        Maintenance.objects.create(
-            name="RECENT",
-            summary="Recent",
-            provider=provider,
-            start=recent_start,
-            end=recent_start + timedelta(hours=2),
-            status="CONFIRMED",
-        )
+    def test_past_days_filter(self, ical_get, make_maintenance):
+        now = datetime.now(UTC)
+        make_maintenance("OLD", start=now - timedelta(days=60), status="COMPLETED")
+        make_maintenance("RECENT", start=now - timedelta(days=10))
 
         # Default (30 days) should exclude old
-        response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
-        content = response.content.decode("utf-8")
+        content = _body(ical_get())
         assert "RECENT" in content
         assert "OLD" not in content
 
         # past_days=90 should include both
-        response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&past_days=90")
-        content = response.content.decode("utf-8")
+        content = _body(ical_get("&past_days=90"))
         assert "RECENT" in content
         assert "OLD" in content
 
-    def test_provider_filter_by_slug(self):
-        provider1 = Provider.objects.create(name="AWS", slug="aws")
-        provider2 = Provider.objects.create(name="Azure", slug="azure")
+    def test_provider_filter_by_slug(self, ical_get, make_maintenance):
+        make_maintenance("AWS-1", provider=Provider.objects.create(name="AWS", slug="aws"))
+        make_maintenance("AZURE-1", provider=Provider.objects.create(name="Azure", slug="azure"))
 
-        now = datetime.now(UTC)
-        Maintenance.objects.create(
-            name="AWS-1",
-            summary="AWS",
-            provider=provider1,
-            start=now,
-            end=now + timedelta(hours=2),
-            status="CONFIRMED",
-        )
-        Maintenance.objects.create(
-            name="AZURE-1",
-            summary="Azure",
-            provider=provider2,
-            start=now,
-            end=now + timedelta(hours=2),
-            status="CONFIRMED",
-        )
-
-        response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&provider=aws")
-        content = response.content.decode("utf-8")
+        content = _body(ical_get("&provider=aws"))
         assert "AWS-1" in content
         assert "AZURE-1" not in content
 
-    def test_status_filter(self):
-        provider = Provider.objects.create(name="Test", slug="test")
-        now = datetime.now(UTC)
+    def test_status_filter(self, ical_get, make_maintenance):
+        make_maintenance("CONF")
+        make_maintenance("TENT", status="TENTATIVE")
 
-        Maintenance.objects.create(
-            name="CONF",
-            summary="Confirmed",
-            provider=provider,
-            start=now,
-            end=now + timedelta(hours=2),
-            status="CONFIRMED",
-        )
-        Maintenance.objects.create(
-            name="TENT",
-            summary="Tentative",
-            provider=provider,
-            start=now,
-            end=now + timedelta(hours=2),
-            status="TENTATIVE",
-        )
-
-        response = self.client.get(
-            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&status=CONFIRMED"
-        )
-        content = response.content.decode("utf-8")
+        content = _body(ical_get("&status=CONFIRMED"))
         assert "CONF" in content
         assert "TENT" not in content
 
-    def test_invalid_provider_returns_400(self):
-        response = self.client.get(
-            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&provider=nonexistent"
-        )
-        assert response.status_code == 400
+    def test_invalid_provider_returns_400(self, ical_get):
+        assert ical_get("&provider=nonexistent").status_code == 400
+
+
+@pytest.mark.django_db
+class TestMaintenanceICalViewDurationFilter:
+    """duration_min / duration_max on the feed (#85)."""
+
+    @pytest.fixture(autouse=True)
+    def _maintenances(self, make_maintenance):
+        make_maintenance("SHORT", hours=2)
+        make_maintenance("LONG", hours=72)
+
+    def test_duration_max_filters_feed(self, ical_get):
+        unfiltered = _body(ical_get())
+        assert "SHORT" in unfiltered and "LONG" in unfiltered
+        content = _body(ical_get("&duration_max=24"))
+        assert "SHORT" in content and "LONG" not in content
+
+    def test_duration_min_filters_feed(self, ical_get):
+        content = _body(ical_get("&duration_min=24"))
+        assert "LONG" in content and "SHORT" not in content
+
+    def test_invalid_duration_returns_400(self, ical_get):
+        assert ical_get("&duration_max=abc").status_code == 400
+        assert ical_get("&duration_max=-1").status_code == 400
+        assert ical_get("&duration_max=99999999999").status_code == 400
+
+    def test_etag_differs_with_duration_filter(self, ical_get):
+        assert ical_get()["ETag"] != ical_get("&duration_max=24")["ETag"]
 
 
 @pytest.mark.django_db
 class TestMaintenanceICalViewCaching:
     """Test HTTP caching behavior."""
 
-    def setup_method(self):
-        self.user = User.objects.create_user(username="testuser", password="testpass", is_superuser=True)
-        self.token = Token.objects.create(user=self.user, version=1)
-        self.client = Client()
-
-    def test_response_includes_cache_headers(self, maintenance):
-        response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+    def test_response_includes_cache_headers(self, ical_get, maintenance):
+        response = ical_get()
 
         assert "Cache-Control" in response
         assert "public" in response["Cache-Control"]
         assert "max-age" in response["Cache-Control"]
         assert "ETag" in response
 
-    def test_stale_if_modified_since_returns_200(self, maintenance):
+    def test_stale_if_modified_since_returns_200(self, ical_get, maintenance):
         """An old If-Modified-Since date must not be treated as proof of freshness."""
-        response = self.client.get(
-            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
+        response = ical_get(
             # Not the epoch: timestamp 0 is falsy, and Django would treat the
             # header as absent instead of exercising the date comparison.
             HTTP_IF_MODIFIED_SINCE="Sat, 01 Jan 2000 00:00:00 GMT",
         )
 
         assert response.status_code == 200
-        assert "BEGIN:VCALENDAR" in response.content.decode("utf-8")
+        assert "BEGIN:VCALENDAR" in _body(response)
 
-    def test_current_if_modified_since_returns_304(self, maintenance):
+    def test_current_if_modified_since_returns_304(self, ical_get, maintenance):
         """Echoing back the Last-Modified we sent revalidates as unchanged."""
-        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
-        last_modified = response1["Last-Modified"]
+        last_modified = ical_get()["Last-Modified"]
 
-        response2 = self.client.get(
-            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
-            HTTP_IF_MODIFIED_SINCE=last_modified,
-        )
+        response2 = ical_get(HTTP_IF_MODIFIED_SINCE=last_modified)
 
         assert response2.status_code == 304
         assert response2["Last-Modified"] == last_modified
 
-    def test_if_modified_since_returns_200_after_change(self, maintenance):
+    def test_if_modified_since_returns_200_after_change(self, ical_get, maintenance):
         """A feed modified after the client's copy must be resent in full."""
-        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
-        last_modified = response1["Last-Modified"]
+        last_modified = ical_get()["Last-Modified"]
 
         # last_updated is auto_now. update() bypasses auto_now, which is how we
         # place last_updated past the Last-Modified header above.
         maintenance.last_updated = datetime.now(UTC) + timedelta(minutes=5)
         Maintenance.objects.filter(pk=maintenance.pk).update(last_updated=maintenance.last_updated)
 
-        response2 = self.client.get(
-            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
-            HTTP_IF_MODIFIED_SINCE=last_modified,
-        )
+        response2 = ical_get(HTTP_IF_MODIFIED_SINCE=last_modified)
 
         assert response2.status_code == 200
 
-    def test_malformed_if_modified_since_returns_200(self, maintenance):
+    def test_malformed_if_modified_since_returns_200(self, ical_get, maintenance):
         """An unparseable date is ignored rather than honoured as a validator."""
-        response = self.client.get(
-            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
-            HTTP_IF_MODIFIED_SINCE="not a date",
-        )
+        response = ical_get(HTTP_IF_MODIFIED_SINCE="not a date")
 
         assert response.status_code == 200
 
-    def test_if_none_match_takes_precedence_over_if_modified_since(self, maintenance):
+    def test_if_none_match_takes_precedence_over_if_modified_since(self, ical_get, maintenance):
         """RFC 9110: If-Modified-Since is ignored when If-None-Match is present."""
-        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
-        last_modified = response1["Last-Modified"]
+        last_modified = ical_get()["Last-Modified"]
 
         # Fresh by date, stale by ETag -> the ETag decides, so send the full feed.
         # The stale tag must be quoted: parse_etags() discards an unquoted one,
         # which would leave no ETag to take precedence and fall through to the date.
-        response2 = self.client.get(
-            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
-            HTTP_IF_NONE_MATCH='"stale-etag"',
-            HTTP_IF_MODIFIED_SINCE=last_modified,
-        )
+        response2 = ical_get(HTTP_IF_NONE_MATCH='"stale-etag"', HTTP_IF_MODIFIED_SINCE=last_modified)
 
         assert response2.status_code == 200
 
-    def test_304_includes_etag_and_last_modified(self, maintenance):
-        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+    def test_304_includes_etag_and_last_modified(self, ical_get, maintenance):
+        response1 = ical_get()
 
-        response2 = self.client.get(
-            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
-            HTTP_IF_NONE_MATCH=response1["ETag"],
-        )
+        response2 = ical_get(HTTP_IF_NONE_MATCH=response1["ETag"])
 
         assert response2.status_code == 304
         assert response2["ETag"] == response1["ETag"]
@@ -280,33 +205,30 @@ class TestMaintenanceICalViewCaching:
         # A 304 has to keep telling the client how long the copy stays fresh.
         assert response2["Cache-Control"] == response1["Cache-Control"]
 
-    def test_etag_is_quoted(self, maintenance):
+    def test_etag_is_quoted(self, ical_get, maintenance):
         """An unquoted tag is unparseable to every client, so it could never match."""
-        response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+        response = ical_get()
 
         assert response["ETag"].startswith('"')
         assert response["ETag"].endswith('"')
 
-    def test_added_impact_invalidates_revalidation(self, maintenance):
+    def test_added_impact_invalidates_revalidation(self, ical_get, maintenance):
         """An impact is rendered into the feed, so adding one must break the 304 (issue #73)."""
         from notices.models import Impact
 
-        response1 = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+        response1 = ical_get()
 
         Impact.objects.create(event=maintenance, target=maintenance.provider, impact="OUTAGE")
 
-        response2 = self.client.get(
-            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}",
-            HTTP_IF_NONE_MATCH=response1["ETag"],
-        )
+        response2 = ical_get(HTTP_IF_NONE_MATCH=response1["ETag"])
 
         assert response2.status_code == 200
 
-    def test_empty_queryset_returns_valid_calendar(self):
-        response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}")
+    def test_empty_queryset_returns_valid_calendar(self, ical_get):
+        response = ical_get()
 
         assert response.status_code == 200
-        content = response.content.decode("utf-8")
+        content = _body(response)
         assert "BEGIN:VCALENDAR" in content
         assert "END:VCALENDAR" in content
 
@@ -319,9 +241,7 @@ class TestMaintenanceICalViewTokenValidation:
         user = User.objects.create_user(username="disabled-tok", password="pass", is_superuser=True)
         token = Token.objects.create(user=user, version=1, enabled=False)
 
-        client = Client()
-        response = client.get(f"/plugins/notices/ical/maintenances.ics?token={token.plaintext}")
-        assert response.status_code == 403
+        assert Client().get(f"{ICAL_URL}?token={token.plaintext}").status_code == 403
 
     def test_expired_token_returns_403(self):
         user = User.objects.create_user(username="expired-tok", password="pass", is_superuser=True)
@@ -331,19 +251,15 @@ class TestMaintenanceICalViewTokenValidation:
             expires=datetime.now(UTC) - timedelta(days=1),
         )
 
-        client = Client()
-        response = client.get(f"/plugins/notices/ical/maintenances.ics?token={token.plaintext}")
-        assert response.status_code == 403
+        assert Client().get(f"{ICAL_URL}?token={token.plaintext}").status_code == 403
 
     def test_inactive_user_returns_403(self):
         user = User.objects.create_user(username="inactive-tok", password="pass", is_superuser=True, is_active=False)
         token = Token.objects.create(user=user, version=1)
 
-        client = Client()
-        response = client.get(f"/plugins/notices/ical/maintenances.ics?token={token.plaintext}")
-        assert response.status_code == 403
+        assert Client().get(f"{ICAL_URL}?token={token.plaintext}").status_code == 403
 
-    def test_v2_token_authenticates(self):
+    def test_v2_token_authenticates(self, make_maintenance):
         from users.constants import TOKEN_PREFIX
 
         user = User.objects.create_user(username="v2-tok", password="pass", is_superuser=True)
@@ -355,146 +271,63 @@ class TestMaintenanceICalViewTokenValidation:
         # v2 token format: nbt_<key>.<plaintext>
         token_value = f"{TOKEN_PREFIX}{token.key}.{plaintext_value}"
 
-        provider = Provider.objects.create(name="V2Test", slug="v2test")
-        Maintenance.objects.create(
-            name="M1",
-            summary="Test",
-            provider=provider,
-            start=datetime.now(UTC),
-            end=datetime.now(UTC) + timedelta(hours=2),
-            status="CONFIRMED",
-        )
+        make_maintenance("M1")
 
-        client = Client()
-        response = client.get(f"/plugins/notices/ical/maintenances.ics?token={token_value}")
-        assert response.status_code == 200
+        assert Client().get(f"{ICAL_URL}?token={token_value}").status_code == 200
 
     def test_v2_token_invalid_format(self):
         from users.constants import TOKEN_PREFIX
 
-        client = Client()
         # Missing dot separator
-        response = client.get(f"/plugins/notices/ical/maintenances.ics?token={TOKEN_PREFIX}nodot")
-        assert response.status_code == 403
+        assert Client().get(f"{ICAL_URL}?token={TOKEN_PREFIX}nodot").status_code == 403
 
 
 @pytest.mark.django_db
 class TestMaintenanceICalViewParseQueryParams:
     """Test _parse_query_params edge cases."""
 
-    def setup_method(self):
-        self.user = User.objects.create_user(username="param-user", password="pass", is_superuser=True)
-        self.token = Token.objects.create(user=self.user, version=1)
-        self.client = Client()
+    def test_negative_past_days_uses_default(self, ical_get, make_maintenance):
+        make_maintenance("M1")
 
-    def test_negative_past_days_uses_default(self):
-        provider = Provider.objects.create(name="Test", slug="test")
-        now = datetime.now(UTC)
-        Maintenance.objects.create(
-            name="M1",
-            summary="Test",
-            provider=provider,
-            start=now,
-            end=now + timedelta(hours=2),
-            status="CONFIRMED",
-        )
+        assert ical_get("&past_days=-5").status_code == 200
 
-        response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&past_days=-5")
-        assert response.status_code == 200
-
-    def test_past_days_exceeds_365_uses_default(self):
-        response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&past_days=999")
+    def test_past_days_exceeds_365_uses_default(self, ical_get):
         # past_days > 365 raises ValueError which is caught and defaults
-        assert response.status_code == 200
+        assert ical_get("&past_days=999").status_code == 200
 
-    def test_non_integer_past_days_uses_default(self):
-        response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&past_days=abc")
-        assert response.status_code == 200
+    def test_non_integer_past_days_uses_default(self, ical_get):
+        assert ical_get("&past_days=abc").status_code == 200
 
 
 @pytest.mark.django_db
 class TestMaintenanceICalViewBuildQueryset:
     """Test _build_queryset edge cases."""
 
-    def setup_method(self):
-        self.user = User.objects.create_user(username="qs-user", password="pass", is_superuser=True)
-        self.token = Token.objects.create(user=self.user, version=1)
-        self.client = Client()
+    def test_provider_id_filter(self, ical_get, make_maintenance, provider):
+        make_maintenance("BY-ID-1")
 
-    def test_provider_id_filter(self):
-        provider = Provider.objects.create(name="ByID", slug="byid")
-        now = datetime.now(UTC)
-        Maintenance.objects.create(
-            name="BY-ID-1",
-            summary="Test",
-            provider=provider,
-            start=now,
-            end=now + timedelta(hours=2),
-            status="CONFIRMED",
-        )
-
-        response = self.client.get(
-            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&provider_id={provider.pk}"
-        )
+        response = ical_get(f"&provider_id={provider.pk}")
         assert response.status_code == 200
-        content = response.content.decode("utf-8")
-        assert "BY-ID-1" in content
+        assert "BY-ID-1" in _body(response)
 
-    def test_invalid_provider_id_returns_400(self):
-        response = self.client.get(
-            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&provider_id=notanumber"
-        )
-        assert response.status_code == 400
+    def test_invalid_provider_id_returns_400(self, ical_get):
+        assert ical_get("&provider_id=notanumber").status_code == 400
 
-    def test_comma_separated_status_filter(self):
-        provider = Provider.objects.create(name="Multi", slug="multi")
-        now = datetime.now(UTC)
-        Maintenance.objects.create(
-            name="CONF1",
-            summary="T",
-            provider=provider,
-            start=now,
-            end=now + timedelta(hours=2),
-            status="CONFIRMED",
-        )
-        Maintenance.objects.create(
-            name="TENT1",
-            summary="T",
-            provider=provider,
-            start=now,
-            end=now + timedelta(hours=2),
-            status="TENTATIVE",
-        )
-        Maintenance.objects.create(
-            name="COMP1",
-            summary="T",
-            provider=provider,
-            start=now,
-            end=now + timedelta(hours=2),
-            status="COMPLETED",
-        )
+    def test_comma_separated_status_filter(self, ical_get, make_maintenance):
+        make_maintenance("CONF1")
+        make_maintenance("TENT1", status="TENTATIVE")
+        make_maintenance("COMP1", status="COMPLETED")
 
-        response = self.client.get(
-            f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&status=CONFIRMED,TENTATIVE"
-        )
+        response = ical_get("&status=CONFIRMED,TENTATIVE")
         assert response.status_code == 200
-        content = response.content.decode("utf-8")
+        content = _body(response)
         assert "CONF1" in content
         assert "TENT1" in content
         assert "COMP1" not in content
 
-    def test_download_mode(self):
-        provider = Provider.objects.create(name="DL", slug="dl")
-        now = datetime.now(UTC)
-        Maintenance.objects.create(
-            name="DL1",
-            summary="T",
-            provider=provider,
-            start=now,
-            end=now + timedelta(hours=2),
-            status="CONFIRMED",
-        )
+    def test_download_mode(self, ical_get, make_maintenance):
+        make_maintenance("DL1")
 
-        response = self.client.get(f"/plugins/notices/ical/maintenances.ics?token={self.token.plaintext}&download=true")
+        response = ical_get("&download=true")
         assert response.status_code == 200
         assert "attachment" in response["Content-Disposition"]

@@ -3,13 +3,29 @@
 The plugin ships two complementary calendar features:
 
 - An **interactive calendar view** in the NetBox UI (Plugins -> Notices -> Calendar) backed by FullCalendar and the REST API.
-- An **iCal feed** at `/api/plugins/notices/ical/` for subscription from any external calendar app (Google Calendar, Outlook, Apple Calendar, Thunderbird, etc).
+- An **iCal feed** at `/plugins/notices/ical/maintenances.ics` for subscription from any external calendar app (Google Calendar, Outlook, Apple Calendar, Thunderbird, etc).
 
 ## Interactive calendar
 
 Reach it from the menu under **Notices -> Events -> Calendar**, or directly at `/plugins/notices/maintenance/calendar/`.
 
-The view uses FullCalendar with month, week, and day modes. Events are colour-coded by type and status (Maintenance: status colour from `MaintenanceTypeChoices`; Outage: status colour from `OutageStatusChoices`). Clicking an event opens a quick summary modal with status, provider, timing, and a deep link to the full detail view. The page also shows a "Subscribe" link with a URL template using `ical_token_placeholder` from the plugin settings, so users know where to paste their token.
+The view uses FullCalendar with month and week modes. Events are colour-coded by status (`MaintenanceTypeChoices`). Clicking an event opens a quick summary modal with status, provider, timing, and a deep link to the full detail view. The page also shows a "Subscribe" link with a URL template using `ical_token_placeholder` from the plugin settings, so users know where to paste their token.
+
+### Long maintenances
+
+Maintenances longer than 24 hours (facility work announced as one multi-day window, for example) are drawn as light bands behind the other events instead of solid bars, so they do not push short maintenances down the day cell:
+
+- A band is tinted with the maintenance's status colour. It is the height of a normal event, or twice that in a week where a short maintenance sits on it, with the short in the top half and the band's label in the bottom half.
+- A solid edge marks the day the maintenance really starts and the day it really ends. Where a band continues into the next week, the cut side has no edge.
+- One short maintenance can sit on each band. Further short maintenances on the same day go into the next band's top half, then below the bands, so a band's label is never covered.
+- Overlapping long maintenances stack one band per row.
+- Clicking a band opens the same summary modal as any other event.
+
+The 24-hour cutoff is fixed.
+
+### Hiding long maintenances
+
+The header has a **Hide longer than [N] h** switch (off by default, N = 24). When it is on, maintenances lasting more than N hours are not loaded at all, and the page URL carries `?duration_max=N`, so the filtered view can be bookmarked or shared; opening such a URL starts with the switch on. The Subscribe and Download links pick up the same `duration_max`, so the feed you copy matches what you see. The switch does not move the band cutoff: with N = 72, maintenances between 24 and 72 hours are still drawn as bands.
 
 The calendar requires `notices.view_maintenance` and renders Maintenance events; Outages are not currently represented in the FullCalendar view (they appear in the dashboard timeline and the iCal feed if you add them later -- track upstream).
 
@@ -18,7 +34,7 @@ The calendar requires `notices.view_maintenance` and renders Maintenance events;
 The feed endpoint is:
 
 ```
-https://your-netbox/api/plugins/notices/ical/
+https://your-netbox/plugins/notices/ical/maintenances.ics
 ```
 
 It returns a `text/calendar; charset=utf-8` response containing every Maintenance event matching the query parameters.
@@ -44,6 +60,8 @@ The token's user must have `notices.view_maintenance`. Disabled tokens, expired 
 | `provider` | -- | Filter by provider slug. Mutually exclusive with `provider_id`. |
 | `provider_id` | -- | Filter by provider PK. |
 | `status` | -- | Comma-separated status list (case-insensitive). Invalid statuses are silently dropped; if all are invalid, no status filter is applied. |
+| `duration_min` | -- | Only maintenances lasting at least N hours (`end - start`), inclusive. Fractional values allowed. Invalid or negative values return `400`. |
+| `duration_max` | -- | Only maintenances lasting at most N hours, inclusive. Fractional values allowed. Invalid or negative values return `400`. |
 | `download` | `false` | If truthy (`true`/`1`/`yes`), set `Content-Disposition: attachment; filename="netbox-maintenance-YYYY-MM-DD.ics"` so browsers download instead of subscribe. |
 
 Unknown parameters are ignored.
@@ -53,13 +71,19 @@ Unknown parameters are ignored.
 Subscribe to all events in the last 30 days and beyond:
 
 ```
-https://netbox.example.com/api/plugins/notices/ical/?token=YOUR_TOKEN
+https://netbox.example.com/plugins/notices/ical/maintenances.ics?token=YOUR_TOKEN
 ```
 
 Only confirmed events from a specific provider, last 7 days:
 
 ```
-https://netbox.example.com/api/plugins/notices/ical/?token=YOUR_TOKEN&provider=zayo&status=CONFIRMED&past_days=7
+https://netbox.example.com/plugins/notices/ical/maintenances.ics?token=YOUR_TOKEN&provider=zayo&status=CONFIRMED&past_days=7
+```
+
+Skip multi-day facility work, keeping only maintenances of 24 hours or less:
+
+```
+https://netbox.example.com/plugins/notices/ical/maintenances.ics?token=YOUR_TOKEN&duration_max=24
 ```
 
 Multiple statuses:

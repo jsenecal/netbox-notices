@@ -1,6 +1,36 @@
-// Initialize FullCalendar when page loads
+// Initialize FullCalendar when page loads.
+//
+// FullCalendar provides the grid, toolbar, navigation and data loading. Events are
+// loaded with display 'none' and drawn by renderEventLayer() instead, because the
+// long-maintenance bands need a layout FullCalendar's own row stacking cannot do:
+// short events sit in a band's top half while its label half stays visible.
+
+// Query parameter of the "Hide longer than N h" switch, on this page and on the
+// API and iCal URLs it filters.
+const HIDE_PARAM = 'duration_max';
+const ICAL_PATH = '/plugins/notices/ical/maintenances.ics';
+const maintenanceUrl = id => `/plugins/notices/maintenance/${id}/`;
+
+// The hide threshold currently applied to the calendar fetch and the iCal links,
+// or null when the switch is off. Kept in the page URL so a filtered view can be
+// bookmarked. It does not change which maintenances are drawn as bands; that
+// cutoff is fixed in calendar-lib.js.
+let appliedHideThreshold = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     const calendarEl = document.getElementById('calendar');
+    const hideSwitch = document.getElementById('hideLongSwitch');
+    const hideHours = document.getElementById('hideLongHours');
+    // The box's max is the server's cap on the duration filters.
+    const readHours = value => window.NoticesCalendar.parseHours(value, Number(hideHours.max));
+
+    appliedHideThreshold = readHours(new URLSearchParams(window.location.search).get(HIDE_PARAM));
+    if (appliedHideThreshold !== null) {
+        hideSwitch.checked = true;
+        hideHours.value = appliedHideThreshold;
+    }
+
+    const scheduleRender = () => requestAnimationFrame(() => renderEventLayer(calendar));
 
     const calendar = new FullCalendar.Calendar(calendarEl, {
         // Basic settings
@@ -11,8 +41,10 @@ document.addEventListener('DOMContentLoaded', function() {
             right: 'dayGridMonth,dayGridWeek'
         },
 
-        // Height configuration - use contentHeight to prevent excessive height
-        contentHeight: 800,
+        // Rows take their natural height. The event layer sets each row's height
+        // itself; a fixed height would give FullCalendar an inner scroller whose
+        // sizing pass runs before the layer and leaves rows and header misaligned.
+        height: 'auto',
 
         // Event data source - use function to properly handle FullCalendar v6 API
         events: function(fetchInfo, successCallback, failureCallback) {
@@ -23,6 +55,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 start__lte: fetchInfo.endStr.split('T')[0],    // Events starting on or before range end
                 limit: 0  // No pagination, get all events in range
             });
+            if (appliedHideThreshold !== null) {
+                params.set(HIDE_PARAM, appliedHideThreshold);
+            }
 
             // Fetch events from NetBox API
             fetch(`/api/plugins/notices/maintenance/?${params}`)
@@ -34,8 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         title: `${event.name} - ${event.provider.display} (${event.impact_count} Impacted)`,
                         start: event.start,
                         end: event.end,
-                        backgroundColor: `var(--tblr-${event.status_color})`,  // Use Tabler CSS variables
-                        borderColor: `var(--tblr-${event.status_color})`,
+                        display: 'none',  // drawn by renderEventLayer()
                         extendedProps: {
                             status: event.status,
                             statusColor: event.status_color,
@@ -53,19 +87,154 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         },
 
-        // Click handler - opens modal instead of navigating
-        eventClick: function(info) {
-            info.jsEvent.preventDefault(); // Don't follow URL
-            showEventModal(info.event);
-        },
-
-        // Display multi-day events properly
-        displayEventTime: true,
-        displayEventEnd: true
+        eventsSet: scheduleRender,
+        datesSet: scheduleRender,
     });
 
     calendar.render();
+
+    const applyHideLong = () => {
+        const threshold = hideSwitch.checked ? readHours(hideHours.value) : null;
+        // Switched on with an unusable number: keep whatever is applied now.
+        if ((hideSwitch.checked && threshold === null) || threshold === appliedHideThreshold) {
+            return;
+        }
+        appliedHideThreshold = threshold;
+        const url = new URL(window.location.href);
+        if (threshold === null) {
+            url.searchParams.delete(HIDE_PARAM);
+        } else {
+            url.searchParams.set(HIDE_PARAM, threshold);
+        }
+        history.replaceState(null, '', url);
+        calendar.refetchEvents();
+    };
+    hideSwitch.addEventListener('change', applyHideLong);
+    hideHours.addEventListener('change', applyHideLong);
+
+    // Positions are fractions of the row width, but heights and tops are measured;
+    // redraw when the calendar's width changes (window resize, sidebar toggle).
+    let lastWidth = calendarEl.offsetWidth;
+    new ResizeObserver(() => {
+        if (calendarEl.offsetWidth !== lastWidth) {
+            lastWidth = calendarEl.offsetWidth;
+            scheduleRender();
+        }
+    }).observe(calendarEl);
 });
+
+function hideLongQuery() {
+    return appliedHideThreshold === null ? '' : `&${HIDE_PARAM}=${appliedHideThreshold}`;
+}
+
+// Draw every event of the current day-grid view as an absolutely positioned layer,
+// one per week row, using the lane layout from calendar-lib.js.
+function renderEventLayer(calendar) {
+    const lib = window.NoticesCalendar;
+    const calendarEl = calendar.el;
+    const body = calendarEl.querySelector('.fc-daygrid-body');
+    if (!body) {
+        return;
+    }
+    const lanePx = parseFloat(getComputedStyle(calendarEl).getPropertyValue('--notices-lane'));
+
+    body.querySelectorAll('.notices-layer').forEach(el => el.remove());
+    body.style.position = 'relative';
+
+    const duration = event => (event.end || event.start) - event.start;
+    const events = calendar.getEvents()
+        .filter(event => event.start)
+        .sort((a, b) => (a.start - b.start) || (duration(b) - duration(a)) || (a.id - b.id));
+
+    // Pass 1: lay out each row and reserve its height, so rows below settle first.
+    const rows = [];
+    body.querySelectorAll('tr').forEach(tr => {
+        const cells = tr.querySelectorAll('td.fc-daygrid-day');
+        if (!cells.length) {
+            return;
+        }
+        const [y, m, d] = cells[0].dataset.date.split('-').map(Number);
+        const rowStart = new Date(y, m - 1, d);
+        const segs = lib.segmentsForRow(events, rowStart, cells.length);
+        const layout = lib.layoutRow(segs);
+        cells.forEach(cell => {
+            cell.querySelector('.fc-daygrid-day-events').style.minHeight = `${layout.laneCount * lanePx}px`;
+        });
+        rows.push({ cells, segs, layout });
+    });
+
+    // Pass 2: measure where each row's event area starts and draw into it.
+    const bodyTop = body.getBoundingClientRect().top;
+    for (const { cells, segs, layout } of rows) {
+        const eventsTop = cells[0].querySelector('.fc-daygrid-day-events').getBoundingClientRect().top;
+        const layer = document.createElement('div');
+        layer.className = 'notices-layer';
+        layer.style.top = `${eventsTop - bodyTop}px`;
+
+        const placementById = new Map(layout.placements.map(p => [p.id, p]));
+        const bandStarts = new Set(
+            segs.filter(seg => seg.long && seg.startsHere).map(seg => `${placementById.get(seg.id).lane}:${seg.startCol}`)
+        );
+        for (const seg of segs) {
+            const { lane, lanes } = placementById.get(seg.id);
+            const left = (seg.startCol / cells.length) * 100;
+            const width = ((seg.endCol - seg.startCol + 1) / cells.length) * 100;
+            let el;
+            if (seg.long) {
+                el = buildBand(seg, lanes);
+                el.style.left = `${left}%`;
+                el.style.width = `${width}%`;
+            } else {
+                // Gutters inside the columns; wider on the left when the short sits
+                // in a band's slot on the band's first day, to keep its edge visible.
+                const inset = bandStarts.has(`${lane}:${seg.startCol}`)
+                    ? 'var(--notices-short-inset)'
+                    : 'var(--notices-gutter)';
+                el = buildShort(seg);
+                el.style.left = `calc(${left}% + ${inset})`;
+                el.style.width = `calc(${width}% - ${inset} - var(--notices-gutter))`;
+            }
+            el.style.top = `${lane * lanePx}px`;
+            layer.appendChild(el);
+        }
+        body.appendChild(layer);
+    }
+}
+
+function buildEventElement(seg, className) {
+    const event = seg.event;
+    const el = document.createElement('a');
+    el.className = className;
+    el.href = maintenanceUrl(event.extendedProps.eventId);
+    el.title = `${event.title}\n${event.start.toLocaleString()} - ${(event.end || event.start).toLocaleString()}`;
+    el.style.setProperty('--notices-c', `var(--tblr-${event.extendedProps.statusColor})`);
+    el.addEventListener('click', e => {
+        e.preventDefault();
+        showEventModal(event);
+    });
+    return el;
+}
+
+function buildBand(seg, lanes) {
+    let className = 'notices-band';
+    if (lanes === 2) className += ' notices-band--tall';
+    if (seg.startsHere) className += ' notices-band--start';
+    if (seg.endsHere) className += ' notices-band--end';
+    const el = buildEventElement(seg, className);
+    const label = document.createElement('span');
+    label.className = 'notices-band-label';
+    label.textContent = seg.event.title;
+    el.appendChild(label);
+    return el;
+}
+
+function buildShort(seg) {
+    const el = buildEventElement(seg, 'fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event notices-short');
+    const event = seg.event;
+    const time = event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    el.textContent = seg.startsHere ? `${time} ${event.title}` : event.title;
+    return el;
+}
 
 // Show event details in modal
 function showEventModal(event) {
@@ -78,7 +247,7 @@ function showEventModal(event) {
     document.getElementById('eventModalStart').textContent =
         new Date(event.start).toLocaleString();
     document.getElementById('eventModalEnd').textContent =
-        new Date(event.end).toLocaleString();
+        new Date(event.end || event.start).toLocaleString();
 
     // Status badge with color from backend (using NetBox/Bootstrap 5.2 text-bg class)
     const statusBadge = document.getElementById('eventModalStatus');
@@ -95,73 +264,39 @@ function showEventModal(event) {
     }
 
     // Link to full detail page (UI, not API)
-    document.getElementById('eventModalViewLink').href =
-        `/plugins/notices/maintenance/${event.extendedProps.eventId}/`;
+    document.getElementById('eventModalViewLink').href = maintenanceUrl(event.extendedProps.eventId);
 
-    // Show modal manually (Bootstrap 5 compatible)
-    const modalEl = document.getElementById('eventModal');
+    openModal('eventModal');
+}
+
+// The page's modals are shown and hidden by hand (Bootstrap 5 compatible markup).
+// Each open modal gets a backdrop with the id `<modal id>Backdrop`; clicking the
+// backdrop or a [data-bs-dismiss="modal"] button closes it.
+function openModal(id) {
+    const modalEl = document.getElementById(id);
     modalEl.classList.add('show');
     modalEl.style.display = 'block';
     document.body.classList.add('modal-open');
 
-    // Create backdrop
     const backdrop = document.createElement('div');
     backdrop.className = 'modal-backdrop fade show';
-    backdrop.id = 'eventModalBackdrop';
+    backdrop.id = `${id}Backdrop`;
+    backdrop.addEventListener('click', () => closeModal(id));
     document.body.appendChild(backdrop);
 }
 
-// Close modal function
-function closeEventModal() {
-    const modalEl = document.getElementById('eventModal');
+function closeModal(id) {
+    const modalEl = document.getElementById(id);
     modalEl.classList.remove('show');
     modalEl.style.display = 'none';
     document.body.classList.remove('modal-open');
-
-    // Remove backdrop
-    const backdrop = document.getElementById('eventModalBackdrop');
-    if (backdrop) {
-        backdrop.remove();
-    }
+    document.getElementById(`${id}Backdrop`)?.remove();
 }
 
-// Close subscribe modal function
-function closeSubscribeModal() {
-    const modalEl = document.getElementById('icalSubscribeModal');
-    modalEl.classList.remove('show');
-    modalEl.style.display = 'none';
-    document.body.classList.remove('modal-open');
-
-    // Remove backdrop
-    const backdrop = document.getElementById('icalSubscribeModalBackdrop');
-    if (backdrop) {
-        backdrop.remove();
-    }
-}
-
-// Add event listeners for modal close buttons and backdrop
 document.addEventListener('DOMContentLoaded', function() {
-    // Close button handlers - detect which modal and call appropriate close function
     document.querySelectorAll('[data-bs-dismiss="modal"]').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            // Find which modal this button belongs to
-            const modal = btn.closest('.modal');
-            if (modal && modal.id === 'eventModal') {
-                closeEventModal();
-            } else if (modal && modal.id === 'icalSubscribeModal') {
-                closeSubscribeModal();
-            }
-        });
+        btn.addEventListener('click', () => closeModal(btn.closest('.modal').id));
     });
-});
-
-// Close modal when clicking backdrop
-document.addEventListener('click', function(e) {
-    if (e.target && e.target.id === 'eventModalBackdrop') {
-        closeEventModal();
-    } else if (e.target && e.target.id === 'icalSubscribeModalBackdrop') {
-        closeSubscribeModal();
-    }
 });
 
 // iCal Subscribe and Download button handlers
@@ -172,24 +307,13 @@ document.addEventListener('DOMContentLoaded', function() {
         subscribeBtn.addEventListener('click', function() {
             // Generate the iCal feed URL with token placeholder
             const baseUrl = window.location.origin;
-            const icalPath = '/plugins/notices/ical/maintenances.ics';
             const tokenPlaceholder = window.ICAL_TOKEN_PLACEHOLDER || 'changeme';
-            const subscribeUrl = `${baseUrl}${icalPath}?token=${tokenPlaceholder}`;
+            const subscribeUrl = `${baseUrl}${ICAL_PATH}?token=${tokenPlaceholder}${hideLongQuery()}`;
 
             // Populate the modal input field
             document.getElementById('icalSubscribeUrl').value = subscribeUrl;
 
-            // Show the subscribe modal manually
-            const modalEl = document.getElementById('icalSubscribeModal');
-            modalEl.classList.add('show');
-            modalEl.style.display = 'block';
-            document.body.classList.add('modal-open');
-
-            // Create backdrop
-            const backdrop = document.createElement('div');
-            backdrop.className = 'modal-backdrop fade show';
-            backdrop.id = 'icalSubscribeModalBackdrop';
-            document.body.appendChild(backdrop);
+            openModal('icalSubscribeModal');
         });
     }
 
@@ -227,8 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (downloadBtn) {
         downloadBtn.addEventListener('click', function() {
             // Generate download URL with download=true parameter
-            const icalPath = '/plugins/notices/ical/maintenances.ics';
-            const downloadUrl = `${icalPath}?download=true`;
+            const downloadUrl = `${ICAL_PATH}?download=true${hideLongQuery()}`;
 
             // Navigate to download URL (will use session auth)
             window.location.href = downloadUrl;

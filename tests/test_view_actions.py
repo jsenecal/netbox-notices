@@ -357,6 +357,12 @@ class TestMaintenanceCalendarView:
         assert "title" in response.context
         assert response.context["title"] == "Maintenance Calendar"
 
+    def test_hide_long_box_uses_server_cap(self, admin_client, monkeypatch):
+        """The hours box's max is the filter's own cap, not a copy of it (#85)."""
+        monkeypatch.setattr("notices.views.MAX_DURATION_FILTER_HOURS", 1234)
+        response = admin_client.get(reverse("plugins:notices:maintenance_calendar"))
+        assert 'max="1234"' in response.content.decode()
+
 
 @pytest.mark.django_db
 class TestMaintenanceRescheduleView:

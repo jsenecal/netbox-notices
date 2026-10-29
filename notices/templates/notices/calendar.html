@@ -3,11 +3,20 @@
 
 {% block title %}Maintenance Calendar{% endblock %}
 
-{% block css %}
+{% block head %}
 <link href="{% static 'notices/css/calendar-overrides.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block control-buttons %}
+<div class="d-flex align-items-center gap-2 me-2">
+    <label class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" id="hideLongSwitch">
+        <span class="form-check-label">Hide longer than</span>
+    </label>
+    <input type="number" class="form-control form-control-sm" id="hideLongHours"
+           min="0" max="{{ max_duration_hours }}" step="any" value="24" style="width: 5rem;" aria-label="Hours">
+    <span>h</span>
+</div>
 <button type="button" class="btn btn-primary" id="icalSubscribeBtn">
     <i class="mdi mdi-calendar-sync"></i> Subscribe
 </button>
@@ -121,5 +130,6 @@
     window.ICAL_TOKEN_PLACEHOLDER = "{{ ical_token_placeholder }}";
 </script>
 <script src="{% static 'notices/js/fullcalendar/index.global.min.js' %}"></script>
+<script src="{% static 'notices/js/calendar-lib.js' %}"></script>
 <script src="{% static 'notices/js/calendar.js' %}"></script>
 {% endblock %}

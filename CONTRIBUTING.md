@@ -79,6 +79,14 @@ Ready to contribute? Here's how to set up `netbox-notices` for local development
     $ ./venv/bin/ruff check --fix notices/ tests/
     ```
 
+   If you changed the calendar JavaScript, also run its unit tests
+   (Node 22.12 or later):
+
+    ```
+    $ npm install
+    $ npx vitest run
+    ```
+
 6. Commit your changes and push your branch to GitHub:
 
     ```
