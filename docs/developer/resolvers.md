@@ -42,13 +42,15 @@ The check covers site resolvers only. A missing location resolver is silent, whi
 
 ## Built-in resolvers
 
-The four types in `DEFAULT_ALLOWED_CONTENT_TYPES` ship with resolvers.
+The four types in `DEFAULT_ALLOWED_CONTENT_TYPES` ship with resolvers, and so do `dcim.location` and `dcim.powerpanel`, which operators opt into by adding them to `allowed_content_types`.
 
 | Content type | Sites | Locations |
 |---|---|---|
 | `dcim.site` | The site itself | None. Locations live underneath sites. |
 | `dcim.device` | `device.site_id` | `device.location_id` if set |
+| `dcim.location` | `location.site_id` | The location itself. Matching is exact: an impact on a room does not appear under its parent building. |
 | `dcim.powerfeed` | `feed.power_panel.site_id` | The panel's `location_id` if set |
+| `dcim.powerpanel` | `panel.site_id` | `panel.location_id` if set |
 | `circuits.circuit` | `_site_id` of each termination | `_location_id` of each termination |
 
 The circuit resolver is the one worth reading. A circuit can span two sites, one per termination, and a termination may resolve to a Site, Location, Region, SiteGroup or ProviderNetwork. NetBox 4.5 and later denormalise the result onto `CircuitTermination._site_id` and `._location_id`, so the resolver reads those rather than walking the generic termination FK itself.
@@ -111,8 +113,8 @@ Registering a resolver is half the job. The cache also has to be invalidated whe
 `Impact.refresh_sites()` runs on:
 
 1. Any `Impact` save, via `post_save`.
-2. A change to a target object, via `post_save` handlers on `Site`, `Device`, `PowerFeed`, `Circuit`.
-3. A change to a model *between* the target and its site. `PowerPanel` and `CircuitTermination` both have handlers for this reason: a panel moving to a new site changes the site of every feed on it, and that is invisible to a handler watching only `PowerFeed`.
+2. A change to a target object, via `post_save` handlers on `Site`, `Device`, `Location`, `PowerFeed`, `PowerPanel`, `Circuit`.
+3. A change to a model *between* the target and its site. `PowerPanel` and `CircuitTermination` both have handlers for this reason (the `PowerPanel` one also refreshes impacts on the panel itself): a panel moving to a new site changes the site of every feed on it, and that is invisible to a handler watching only `PowerFeed`. `Location` and `Rack` have handlers too, because NetBox moves their contents (descendant locations, racks, devices and power panels; a rack's devices) with queryset `update()`, which fires no signals on the moved objects.
 4. An explicit run of `manage.py refresh_impact_sites`.
 
 So a new resolver needs matching signal handlers for every model whose change would alter the answer:

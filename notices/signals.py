@@ -1,7 +1,7 @@
 """Signal handlers for the notices plugin."""
 
 from circuits.models import Circuit, CircuitTermination
-from dcim.models import Device, PowerFeed, PowerPanel, Site
+from dcim.models import Device, Location, PowerFeed, PowerPanel, Rack, Site
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
@@ -37,11 +37,12 @@ def update_replaced_maintenance_status(sender, instance, created, **kwargs):
 # object changed, which impacts need their cache rebuilt?" and calls
 # refresh_sites() on each.
 #
-# IMPORTANT: this list of handlers maps 1:1 to the default resolver registry.
+# IMPORTANT: the handlers must cover every model whose change alters a
+# resolver's answer: the targets themselves and the models a site change
+# cascades through (docs/developer/resolvers.md, "Keeping the cache fresh").
 # Anyone registering a resolver for a new content type via
-# notices.resolvers.register_site_resolver MUST also wire equivalent signals
-# for any upstream model whose change would affect that target's site, or the
-# cache will silently drift.
+# notices.resolvers.register_site_resolver MUST also wire equivalent signals,
+# or the cache will silently drift.
 # ---------------------------------------------------------------------------
 
 
@@ -51,13 +52,24 @@ def _impact_refresh_on_save(sender, instance, **kwargs):
     instance.refresh_sites()
 
 
+def _refresh_impacts_on(model, pks):
+    """Refresh every Impact targeting a ``model`` instance whose pk is in ``pks`` (an iterable or a pk queryset)."""
+    ct = ContentType.objects.get_for_model(model)
+    for impact in Impact.objects.filter(target_content_type=ct, target_object_id__in=pks):
+        impact.refresh_sites()
+
+
 def _refresh_impacts_for(target):
     """Refresh every Impact pointing at ``target`` (by content type + pk)."""
     if target is None or target.pk is None:
         return
-    ct = ContentType.objects.get_for_model(type(target))
-    for impact in Impact.objects.filter(target_content_type=ct, target_object_id=target.pk):
-        impact.refresh_sites()
+    _refresh_impacts_on(type(target), [target.pk])
+
+
+def _refresh_power_panel_impacts(panel_pks):
+    """Refresh impacts on the given panels and on every PowerFeed they carry."""
+    _refresh_impacts_on(PowerPanel, panel_pks)
+    _refresh_impacts_on(PowerFeed, PowerFeed.objects.filter(power_panel_id__in=panel_pks).values("pk"))
 
 
 @receiver(post_save, sender=Site)
@@ -69,32 +81,45 @@ def _site_changed(sender, instance, **kwargs):
     _refresh_impacts_for(instance)
 
 
+@receiver(post_save, sender=Circuit)
 @receiver(post_save, sender=Device)
-def _device_changed(sender, instance, **kwargs):
-    _refresh_impacts_for(instance)
-
-
 @receiver(post_save, sender=PowerFeed)
-def _powerfeed_changed(sender, instance, **kwargs):
+def _target_changed(sender, instance, **kwargs):
+    """The target's own site/location may have changed."""
     _refresh_impacts_for(instance)
+
+
+@receiver(post_save, sender=Location)
+def _location_changed(sender, instance, created, raw=False, **kwargs):
+    """
+    Refresh impacts on the location and on everything NetBox moves with it.
+
+    NetBox's own Location post_save handler (connected by dcim, before this one) cascades a site
+    change to the descendant locations, racks, devices and power panels with queryset update(),
+    which fires no signals, so those impacts are refreshed here rather than by their own handlers.
+    """
+    if created or raw:
+        return
+    location_pks = list(instance.get_descendants(include_self=True).values_list("pk", flat=True))
+    _refresh_impacts_on(Location, location_pks)
+    _refresh_impacts_on(Device, Device.objects.filter(location_id__in=location_pks).values("pk"))
+    _refresh_power_panel_impacts(PowerPanel.objects.filter(location_id__in=location_pks).values("pk"))
+
+
+@receiver(post_save, sender=Rack)
+def _rack_changed(sender, instance, created, raw=False, **kwargs):
+    """NetBox moves a rack's devices with queryset update() (no signals); refresh their impacts."""
+    if created or raw:
+        return
+    _refresh_impacts_on(Device, Device.objects.filter(rack_id=instance.pk).values("pk"))
 
 
 @receiver(post_save, sender=PowerPanel)
 def _powerpanel_changed(sender, instance, **kwargs):
-    """A PowerPanel's site/location change cascades to every PowerFeed on it."""
+    """A PowerPanel's site/location change refreshes its own impacts and cascades to every PowerFeed on it."""
     if instance.pk is None:
         return
-    feed_ct = ContentType.objects.get_for_model(PowerFeed)
-    feed_ids = list(PowerFeed.objects.filter(power_panel_id=instance.pk).values_list("pk", flat=True))
-    if not feed_ids:
-        return
-    for impact in Impact.objects.filter(target_content_type=feed_ct, target_object_id__in=feed_ids):
-        impact.refresh_sites()
-
-
-@receiver(post_save, sender=Circuit)
-def _circuit_changed(sender, instance, **kwargs):
-    _refresh_impacts_for(instance)
+    _refresh_power_panel_impacts([instance.pk])
 
 
 @receiver(post_save, sender=CircuitTermination)
@@ -104,9 +129,7 @@ def _circuit_termination_changed(sender, instance, **kwargs):
     circuit_id = getattr(instance, "circuit_id", None)
     if not circuit_id:
         return
-    circuit_ct = ContentType.objects.get_for_model(Circuit)
-    for impact in Impact.objects.filter(target_content_type=circuit_ct, target_object_id=circuit_id):
-        impact.refresh_sites()
+    _refresh_impacts_on(Circuit, [circuit_id])
 
 
 @receiver(post_save, sender=Maintenance)

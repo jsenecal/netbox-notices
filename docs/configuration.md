@@ -95,12 +95,16 @@ When you add a new content type to the list:
 
 ### Common content types
 
+What each built-in resolver returns is described under [Built-in resolvers](developer/resolvers.md#built-in-resolvers).
+
 | Content type | Notes |
 |--------------|-------|
-| `circuits.Circuit` | Built-in resolver maps to the circuit's terminations -> sites. |
-| `dcim.Device` | Built-in resolver returns the device's site (and location, if set). |
-| `dcim.PowerFeed` | Built-in resolver walks `PowerPanel.site` / `PowerPanel.location`. |
-| `dcim.Site` | Built-in resolver returns the site itself. |
+| `circuits.Circuit` | Built-in resolver. |
+| `dcim.Device` | Built-in resolver. |
+| `dcim.Location` | Built-in resolver. |
+| `dcim.PowerFeed` | Built-in resolver. |
+| `dcim.PowerPanel` | Built-in resolver. |
+| `dcim.Site` | Built-in resolver. |
 | `dcim.Interface` | Needs a custom resolver (resolves through `Interface.device`). |
 | `dcim.Rack` | Needs a custom resolver (resolves through `Rack.site` / `Rack.location`). |
 | `virtualization.VirtualMachine` | Needs a custom resolver (resolves through `VM.site` or `VM.cluster.site`). |

@@ -166,6 +166,7 @@ PLUGINS_CONFIG = {
 - The API will reject attempts to create impacts for non-allowed object types
 - Changing the configuration requires a NetBox restart
 - This setting controls which objects can be linked via the `Impact` model to maintenance and outage events
+- `circuits.Circuit`, `dcim.Device`, `dcim.Location`, `dcim.PowerFeed`, `dcim.PowerPanel` and `dcim.Site` have built-in site/location resolvers. Any other type needs one registered, or its impacts will not match the site/location filters (startup reports system check `notices.W001`); see the [resolver docs](https://jsenecal.github.io/netbox-notices/developer/resolvers/)
 
 ##### Common NetBox Object Types
 
@@ -175,6 +176,7 @@ PLUGINS_CONFIG = {
 | `circuits.Provider`             | Service providers         |
 | `dcim.Device`                   | Physical network devices  |
 | `dcim.Interface`                | Device network interfaces |
+| `dcim.Location`                 | Buildings, floors, rooms  |
 | `dcim.PowerFeed`                | Power supply connections  |
 | `dcim.PowerPanel`               | Power distribution panels |
 | `dcim.Rack`                     | Equipment racks           |

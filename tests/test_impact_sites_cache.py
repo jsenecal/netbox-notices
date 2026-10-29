@@ -16,6 +16,7 @@ from dcim.models import (
     Manufacturer,
     PowerFeed,
     PowerPanel,
+    Rack,
     Site,
 )
 from django.contrib.contenttypes.models import ContentType
@@ -42,7 +43,14 @@ class TestResolverRegistry(TestCase):
     """The registry itself: registration, lookup, dedupe, double-register guard."""
 
     def test_default_resolvers_registered(self):
-        for ct in ("dcim.site", "dcim.device", "dcim.powerfeed", "circuits.circuit"):
+        for ct in (
+            "circuits.circuit",
+            "dcim.device",
+            "dcim.location",
+            "dcim.powerfeed",
+            "dcim.powerpanel",
+            "dcim.site",
+        ):
             self.assertIn(ct, SITE_RESOLVERS, f"missing default site resolver for {ct}")
 
     def test_double_registration_raises(self):
@@ -72,10 +80,16 @@ class TestResolverRegistry(TestCase):
         ct = ContentType.objects.get(app_label="dcim", model="device")
         self.assertEqual(resolve_sites_for(ct, None), set())
 
+    def test_location_and_powerpanel_have_no_w001(self):
+        from notices.checks import check_resolver_coverage
+
+        with self.settings(PLUGINS_CONFIG={"notices": {"allowed_content_types": ["dcim.Location", "dcim.PowerPanel"]}}):
+            self.assertEqual(check_resolver_coverage(None), [])
+
 
 @pytest.mark.django_db
 class TestDefaultResolvers(TestCase):
-    """The four built-in resolvers, each tested against real NetBox objects."""
+    """The built-in resolvers, each tested against real NetBox objects."""
 
     @classmethod
     def setUpTestData(cls):
@@ -111,6 +125,23 @@ class TestDefaultResolvers(TestCase):
         ct = ContentType.objects.get_for_model(PowerFeed)
         self.assertEqual(resolve_sites_for(ct, feed), {self.site_a.pk})
         self.assertEqual(resolve_locations_for(ct, feed), {self.location_a.pk})
+
+    def test_location_resolver(self):
+        ct = ContentType.objects.get_for_model(Location)
+        self.assertEqual(resolve_sites_for(ct, self.location_a), {self.site_a.pk})
+        self.assertEqual(resolve_locations_for(ct, self.location_a), {self.location_a.pk})
+
+    def test_powerpanel_resolver(self):
+        ct = ContentType.objects.get_for_model(PowerPanel)
+        panel = PowerPanel.objects.create(name="p-loc", site=self.site_a, location=self.location_a)
+        self.assertEqual(resolve_sites_for(ct, panel), {self.site_a.pk})
+        self.assertEqual(resolve_locations_for(ct, panel), {self.location_a.pk})
+
+    def test_powerpanel_resolver_no_location(self):
+        ct = ContentType.objects.get_for_model(PowerPanel)
+        panel = PowerPanel.objects.create(name="p-noloc", site=self.site_a)
+        self.assertEqual(resolve_sites_for(ct, panel), {self.site_a.pk})
+        self.assertEqual(resolve_locations_for(ct, panel), set())
 
     def test_circuit_resolver_two_sites(self):
         provider = Provider.objects.create(name="P", slug="p")
@@ -160,33 +191,72 @@ class TestImpactRefreshAndSignals(TestCase):
     def _make_impact(self, target):
         return Impact.objects.create(event=self.maintenance, target=target, impact="OUTAGE")
 
+    def _cached(self, impact):
+        """The impact's cached (site pks, location pks), re-read from the database."""
+        impact.refresh_from_db()
+        return set(impact.sites.values_list("pk", flat=True)), set(impact.locations.values_list("pk", flat=True))
+
     def test_save_populates_sites(self):
         device = Device.objects.create(name="d-s", site=self.site_a, role=self.role, device_type=self.dt)
         impact = self._make_impact(device)
-        self.assertEqual(set(impact.sites.values_list("pk", flat=True)), {self.site_a.pk})
+        self.assertEqual(self._cached(impact), ({self.site_a.pk}, set()))
 
     def test_device_site_change_refreshes_cache(self):
         device = Device.objects.create(name="d-mv", site=self.site_a, role=self.role, device_type=self.dt)
         impact = self._make_impact(device)
-        self.assertEqual(set(impact.sites.values_list("pk", flat=True)), {self.site_a.pk})
+        self.assertEqual(self._cached(impact), ({self.site_a.pk}, set()))
 
         device.site = self.site_b
         device.save()
 
-        impact.refresh_from_db()
-        self.assertEqual(set(impact.sites.values_list("pk", flat=True)), {self.site_b.pk})
+        self.assertEqual(self._cached(impact), ({self.site_b.pk}, set()))
 
-    def test_powerpanel_site_change_cascades_to_feed_impacts(self):
-        panel = PowerPanel.objects.create(name="pp", site=self.site_a)
-        feed = PowerFeed.objects.create(name="ff", power_panel=panel)
-        impact = self._make_impact(feed)
-        self.assertEqual(set(impact.sites.values_list("pk", flat=True)), {self.site_a.pk})
+    def test_powerpanel_move_refreshes_panel_and_feed_impacts(self):
+        loc_a = Location.objects.create(name="L-pa", slug="l-pa", site=self.site_a)
+        loc_b = Location.objects.create(name="L-pb", slug="l-pb", site=self.site_b)
+        panel = PowerPanel.objects.create(name="pp-mv", site=self.site_a, location=loc_a)
+        feed = PowerFeed.objects.create(name="ff-mv", power_panel=panel)
+        panel_impact = self._make_impact(panel)
+        feed_impact = self._make_impact(feed)
+        self.assertEqual(self._cached(panel_impact), ({self.site_a.pk}, {loc_a.pk}))
 
         panel.site = self.site_b
+        panel.location = loc_b
         panel.save()
 
-        impact.refresh_from_db()
-        self.assertEqual(set(impact.sites.values_list("pk", flat=True)), {self.site_b.pk})
+        self.assertEqual(self._cached(panel_impact), ({self.site_b.pk}, {loc_b.pk}))
+        self.assertEqual(self._cached(feed_impact), ({self.site_b.pk}, {loc_b.pk}))
+
+    def test_location_site_change_refreshes_impacts_on_contents(self):
+        """NetBox moves a location's contents with queryset update(), which fires no signals."""
+        building = Location.objects.create(name="B-mv", slug="b-mv", site=self.site_a)
+        room = Location.objects.create(name="R-mv", slug="r-mv", site=self.site_a, parent=building)
+        device = Device.objects.create(
+            name="d-room", site=self.site_a, location=room, role=self.role, device_type=self.dt
+        )
+        panel = PowerPanel.objects.create(name="pp-room", site=self.site_a, location=room)
+        feed = PowerFeed.objects.create(name="ff-room", power_panel=panel)
+        expected_location = {building: building.pk, room: room.pk, device: room.pk, panel: room.pk, feed: room.pk}
+        impacts = {target: self._make_impact(target) for target in expected_location}
+
+        building.site = self.site_b
+        building.save()
+
+        for target, impact in impacts.items():
+            self.assertEqual(self._cached(impact), ({self.site_b.pk}, {expected_location[target]}), target)
+
+    def test_rack_move_refreshes_impacts_on_its_devices(self):
+        """NetBox moves a rack's devices with queryset update(), which fires no signals."""
+        loc_b = Location.objects.create(name="L-rk", slug="l-rk", site=self.site_b)
+        rack = Rack.objects.create(name="rk", site=self.site_a)
+        device = Device.objects.create(name="d-rk", site=self.site_a, rack=rack, role=self.role, device_type=self.dt)
+        impact = self._make_impact(device)
+
+        rack.site = self.site_b
+        rack.location = loc_b
+        rack.save()
+
+        self.assertEqual(self._cached(impact), ({self.site_b.pk}, {loc_b.pk}))
 
     def test_circuit_termination_change_refreshes_circuit_impact(self):
         ctype = CircuitType.objects.create(name="t-sig", slug="t-sig")
@@ -197,15 +267,12 @@ class TestImpactRefreshAndSignals(TestCase):
         )
         circuit.refresh_from_db()
         impact = self._make_impact(circuit)
-        self.assertEqual(set(impact.sites.values_list("pk", flat=True)), {self.site_a.pk})
+        self.assertEqual(self._cached(impact), ({self.site_a.pk}, set()))
 
         term.termination_id = self.site_b.pk
         term.save()
-        # Force the denormalized _site_id to follow termination.
-        term.refresh_from_db()
 
-        impact.refresh_from_db()
-        self.assertEqual(set(impact.sites.values_list("pk", flat=True)), {self.site_b.pk})
+        self.assertEqual(self._cached(impact), ({self.site_b.pk}, set()))
 
     def test_refresh_sites_noop_on_unsaved_instance(self):
         # Should not raise — just silently no-op.
