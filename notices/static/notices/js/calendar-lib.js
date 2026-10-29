@@ -11,10 +11,8 @@
 
     // Maintenances longer than this are drawn as bands. Fixed on purpose: it is
     // independent of the "hide longer than" threshold.
-    const LONG_THRESHOLD_MS = 24 * 3600 * 1000;
     const DAY_MS = 24 * 3600 * 1000;
-    // Same cap as the server's MAX_DURATION_FILTER_HOURS (notices/constants.py).
-    const MAX_HOURS = 100000;
+    const LONG_THRESHOLD_MS = DAY_MS;
 
     function isLong(start, end) {
         return end - start > LONG_THRESHOLD_MS;
@@ -108,12 +106,12 @@
         return segs;
     }
 
-    // A positive number of hours up to MAX_HOURS, or null.
-    function parseHours(value) {
+    // A positive number of hours up to maxHours, or null.
+    function parseHours(value, maxHours) {
         if (value === null || value === undefined || String(value).trim() === '') return null;
         const hours = Number(value);
-        return Number.isFinite(hours) && hours > 0 && hours <= MAX_HOURS ? hours : null;
+        return Number.isFinite(hours) && hours > 0 && hours <= maxHours ? hours : null;
     }
 
-    return { LONG_THRESHOLD_MS, MAX_HOURS, isLong, segmentForRow, segmentsForRow, layoutRow, parseHours };
+    return { LONG_THRESHOLD_MS, isLong, segmentForRow, segmentsForRow, layoutRow, parseHours };
 });

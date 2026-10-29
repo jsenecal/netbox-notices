@@ -4,9 +4,32 @@
 // loaded with display 'none' and drawn by renderEventLayer() instead, because the
 // long-maintenance bands need a layout FullCalendar's own row stacking cannot do:
 // short events sit in a band's top half while its label half stays visible.
+
+// Query parameter of the "Hide longer than N h" switch, on this page and on the
+// API and iCal URLs it filters.
+const HIDE_PARAM = 'duration_max';
+const ICAL_PATH = '/plugins/notices/ical/maintenances.ics';
+const maintenanceUrl = id => `/plugins/notices/maintenance/${id}/`;
+
+// The hide threshold currently applied to the calendar fetch and the iCal links,
+// or null when the switch is off. Kept in the page URL so a filtered view can be
+// bookmarked. It does not change which maintenances are drawn as bands; that
+// cutoff is fixed in calendar-lib.js.
+let appliedHideThreshold = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     const calendarEl = document.getElementById('calendar');
-    initHideLongSwitch();
+    const hideSwitch = document.getElementById('hideLongSwitch');
+    const hideHours = document.getElementById('hideLongHours');
+    // The box's max is the server's cap on the duration filters.
+    const readHours = value => window.NoticesCalendar.parseHours(value, Number(hideHours.max));
+
+    appliedHideThreshold = readHours(new URLSearchParams(window.location.search).get(HIDE_PARAM));
+    if (appliedHideThreshold !== null) {
+        hideSwitch.checked = true;
+        hideHours.value = appliedHideThreshold;
+    }
+
     const scheduleRender = () => requestAnimationFrame(() => renderEventLayer(calendar));
 
     const calendar = new FullCalendar.Calendar(calendarEl, {
@@ -33,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 limit: 0  // No pagination, get all events in range
             });
             if (appliedHideThreshold !== null) {
-                params.set('duration_max', appliedHideThreshold);
+                params.set(HIDE_PARAM, appliedHideThreshold);
             }
 
             // Fetch events from NetBox API
@@ -70,10 +93,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     calendar.render();
 
-    const hideSwitch = document.getElementById('hideLongSwitch');
-    const hideHours = document.getElementById('hideLongHours');
     const applyHideLong = () => {
-        const threshold = hideSwitch.checked ? window.NoticesCalendar.parseHours(hideHours.value) : null;
+        const threshold = hideSwitch.checked ? readHours(hideHours.value) : null;
         // Switched on with an unusable number: keep whatever is applied now.
         if ((hideSwitch.checked && threshold === null) || threshold === appliedHideThreshold) {
             return;
@@ -81,9 +102,9 @@ document.addEventListener('DOMContentLoaded', function() {
         appliedHideThreshold = threshold;
         const url = new URL(window.location.href);
         if (threshold === null) {
-            url.searchParams.delete('duration_max');
+            url.searchParams.delete(HIDE_PARAM);
         } else {
-            url.searchParams.set('duration_max', threshold);
+            url.searchParams.set(HIDE_PARAM, threshold);
         }
         history.replaceState(null, '', url);
         calendar.refetchEvents();
@@ -102,29 +123,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }).observe(calendarEl);
 });
 
-// "Hide longer than N h": the threshold currently applied to the calendar fetch and
-// the iCal links, or null when the switch is off. Kept in the page URL as
-// ?duration_max=N so a filtered view can be bookmarked. It does not change which
-// maintenances are drawn as bands; that cutoff is fixed in calendar-lib.js.
-let appliedHideThreshold = null;
-
-function initHideLongSwitch() {
-    const threshold = window.NoticesCalendar.parseHours(
-        new URLSearchParams(window.location.search).get('duration_max')
-    );
-    if (threshold !== null) {
-        document.getElementById('hideLongSwitch').checked = true;
-        document.getElementById('hideLongHours').value = threshold;
-        appliedHideThreshold = threshold;
-    }
-}
-
 function hideLongQuery() {
-    return appliedHideThreshold === null ? '' : `&duration_max=${appliedHideThreshold}`;
+    return appliedHideThreshold === null ? '' : `&${HIDE_PARAM}=${appliedHideThreshold}`;
 }
-
-const SHORT_GUTTER_PX = 2;
-const SHORT_INSET_PX = 5;  // band edge (3px) + gutter
 
 // Draw every event of the current day-grid view as an absolutely positioned layer,
 // one per week row, using the lane layout from calendar-lib.js.
@@ -135,7 +136,7 @@ function renderEventLayer(calendar) {
     if (!body) {
         return;
     }
-    const lanePx = parseFloat(getComputedStyle(calendarEl).getPropertyValue('--notices-lane')) || 22;
+    const lanePx = parseFloat(getComputedStyle(calendarEl).getPropertyValue('--notices-lane'));
 
     body.querySelectorAll('.notices-layer').forEach(el => el.remove());
     body.style.position = 'relative';
@@ -186,10 +187,12 @@ function renderEventLayer(calendar) {
             } else {
                 // Gutters inside the columns; wider on the left when the short sits
                 // in a band's slot on the band's first day, to keep its edge visible.
-                const inset = bandStarts.has(`${lane}:${seg.startCol}`) ? SHORT_INSET_PX : SHORT_GUTTER_PX;
+                const inset = bandStarts.has(`${lane}:${seg.startCol}`)
+                    ? 'var(--notices-short-inset)'
+                    : 'var(--notices-gutter)';
                 el = buildShort(seg);
-                el.style.left = `calc(${left}% + ${inset}px)`;
-                el.style.width = `calc(${width}% - ${inset + SHORT_GUTTER_PX}px)`;
+                el.style.left = `calc(${left}% + ${inset})`;
+                el.style.width = `calc(${width}% - ${inset} - var(--notices-gutter))`;
             }
             el.style.top = `${lane * lanePx}px`;
             layer.appendChild(el);
@@ -202,7 +205,7 @@ function buildEventElement(seg, className) {
     const event = seg.event;
     const el = document.createElement('a');
     el.className = className;
-    el.href = `/plugins/notices/maintenance/${event.extendedProps.eventId}/`;
+    el.href = maintenanceUrl(event.extendedProps.eventId);
     el.title = `${event.title}\n${event.start.toLocaleString()} - ${(event.end || event.start).toLocaleString()}`;
     el.style.setProperty('--notices-c', `var(--tblr-${event.extendedProps.statusColor})`);
     el.addEventListener('click', e => {
@@ -260,8 +263,7 @@ function showEventModal(event) {
     }
 
     // Link to full detail page (UI, not API)
-    document.getElementById('eventModalViewLink').href =
-        `/plugins/notices/maintenance/${event.extendedProps.eventId}/`;
+    document.getElementById('eventModalViewLink').href = maintenanceUrl(event.extendedProps.eventId);
 
     // Show modal manually (Bootstrap 5 compatible)
     const modalEl = document.getElementById('eventModal');
@@ -337,9 +339,8 @@ document.addEventListener('DOMContentLoaded', function() {
         subscribeBtn.addEventListener('click', function() {
             // Generate the iCal feed URL with token placeholder
             const baseUrl = window.location.origin;
-            const icalPath = '/plugins/notices/ical/maintenances.ics';
             const tokenPlaceholder = window.ICAL_TOKEN_PLACEHOLDER || 'changeme';
-            const subscribeUrl = `${baseUrl}${icalPath}?token=${tokenPlaceholder}${hideLongQuery()}`;
+            const subscribeUrl = `${baseUrl}${ICAL_PATH}?token=${tokenPlaceholder}${hideLongQuery()}`;
 
             // Populate the modal input field
             document.getElementById('icalSubscribeUrl').value = subscribeUrl;
@@ -392,8 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (downloadBtn) {
         downloadBtn.addEventListener('click', function() {
             // Generate download URL with download=true parameter
-            const icalPath = '/plugins/notices/ical/maintenances.ics';
-            const downloadUrl = `${icalPath}?download=true${hideLongQuery()}`;
+            const downloadUrl = `${ICAL_PATH}?download=true${hideLongQuery()}`;
 
             // Navigate to download URL (will use session auth)
             window.location.href = downloadUrl;

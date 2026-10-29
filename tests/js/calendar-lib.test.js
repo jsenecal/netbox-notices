@@ -4,7 +4,7 @@ import { expect, test } from 'vitest';
 
 import calendarLib from '../../notices/static/notices/js/calendar-lib.js';
 
-const { LONG_THRESHOLD_MS, isLong, segmentForRow, layoutRow, parseHours, segmentsForRow, MAX_HOURS } = calendarLib;
+const { LONG_THRESHOLD_MS, isLong, segmentForRow, layoutRow, parseHours, segmentsForRow } = calendarLib;
 
 // Local-time date; month is 1-based here to keep the cases readable.
 function d(y, m, day, h = 0, min = 0) {
@@ -146,12 +146,12 @@ test('layoutRow: a short spanning two columns needs a lane free in both', () => 
     });
 });
 
-test('parseHours accepts positive numbers only', () => {
-    expect(parseHours('24')).toBe(24);
-    expect(parseHours('1.5')).toBe(1.5);
-    expect(parseHours(String(MAX_HOURS))).toBe(MAX_HOURS);
-    for (const value of ['abc', '-5', '0', '', '  ', 'Infinity', String(MAX_HOURS + 1), null, undefined]) {
-        expect(parseHours(value), `parseHours(${JSON.stringify(value)})`).toBe(null);
+test('parseHours accepts positive numbers up to the given maximum', () => {
+    expect(parseHours('24', 100)).toBe(24);
+    expect(parseHours('1.5', 100)).toBe(1.5);
+    expect(parseHours('100', 100)).toBe(100);
+    for (const value of ['abc', '-5', '0', '', '  ', 'Infinity', '101', null, undefined]) {
+        expect(parseHours(value, 100), `parseHours(${JSON.stringify(value)})`).toBe(null);
     }
 });
 

@@ -1,7 +1,12 @@
 /* Event layer drawn by calendar.js (renderEventLayer). One lane is one event
-   height; a long-maintenance band is two lanes: a slot on top, its label below. */
+   height; a long-maintenance band is two lanes: a slot on top, its label below.
+   calendar.js positions events with these properties, so sizes live only here. */
 #calendar {
     --notices-lane: 22px;
+    --notices-edge: 3px; /* band start/end marker */
+    --notices-gutter: 2px; /* space between events, and between a short and its column edges */
+    /* left gutter of a short sitting on a band's first day, clear of its edge */
+    --notices-short-inset: calc(var(--notices-edge) + var(--notices-gutter));
 }
 
 .notices-layer {
@@ -24,7 +29,7 @@
 
 .notices-band {
     z-index: 1;
-    height: calc(2 * var(--notices-lane) - 2px);
+    height: calc(2 * var(--notices-lane) - var(--notices-gutter));
     padding: 0 6px 2px;
     display: flex;
     align-items: flex-end;
@@ -39,11 +44,11 @@
 }
 
 .notices-band--start {
-    border-left: 3px solid var(--notices-c);
+    border-left: var(--notices-edge) solid var(--notices-c);
 }
 
 .notices-band--end {
-    border-right: 3px solid var(--notices-c);
+    border-right: var(--notices-edge) solid var(--notices-c);
 }
 
 .notices-band-label {
@@ -53,7 +58,7 @@
 
 .notices-short {
     z-index: 2;
-    height: calc(var(--notices-lane) - 2px);
+    height: calc(var(--notices-lane) - var(--notices-gutter));
     line-height: calc(var(--notices-lane) - 4px);
     padding: 0 4px;
     margin: 0;

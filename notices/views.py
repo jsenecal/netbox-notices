@@ -33,7 +33,7 @@ from utilities.views import GetReturnURLMixin, register_model_view
 
 from . import filtersets, forms, models, tables
 from .choices import PreparedNotificationStatusChoices
-from .constants import GENERATE_NOTIFICATIONS_PERMISSIONS
+from .constants import GENERATE_NOTIFICATIONS_PERMISSIONS, MAX_DURATION_FILTER_HOURS
 from .ical_utils import calculate_etag, feed_last_modified, generate_maintenance_ical, maintenance_window_cutoff
 from .models import NotificationTemplate, PreparedNotification, SentNotification, TemplateScope
 from .services.notification_generation import (
@@ -505,6 +505,7 @@ class MaintenanceCalendarView(PermissionRequiredMixin, View):
             {
                 "title": "Maintenance Calendar",
                 "ical_token_placeholder": token_placeholder,
+                "max_duration_hours": MAX_DURATION_FILTER_HOURS,
             },
         )
 
