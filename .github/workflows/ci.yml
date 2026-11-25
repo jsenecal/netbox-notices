@@ -73,7 +73,7 @@ jobs:
           # renovate: datasource=github-releases depName=netbox-community/netbox
           - "4.6.10"
           # renovate: datasource=github-releases depName=netbox-community/netbox
-          - "4.7.5"
+          - "4.7.6"
     services:
       postgres:
         image: postgres:18-alpine
