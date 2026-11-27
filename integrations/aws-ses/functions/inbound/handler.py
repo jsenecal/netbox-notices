@@ -15,9 +15,13 @@ For each maintenance the parser extracts:
   4. The email is stored as an EventNotification, once: a retried invocation
      finds the notification it already stored and does not add another.
 
-NetBox errors raise, so Lambda's asynchronous retry gets another attempt;
-every step above is safe to repeat. An email that cannot be attributed to a
-provider, or yields no maintenance, is logged and skipped.
+NetBox and S3 errors raise, so Lambda's asynchronous retry gets another
+attempt; repeating an email's processing does not duplicate what it stored.
+An email that cannot be attributed to a provider, or yields no maintenance,
+is logged and skipped.
+
+Notifications are applied in arrival order, not by their DTSTAMP/SEQUENCE: a
+retried older notice can overwrite the status a newer one set.
 """
 
 import email as email_lib
@@ -47,8 +51,14 @@ HEADERS = {
 }
 
 # Field lengths enforced by the plugin's models
+MAX_NAME = 100
 MAX_SUMMARY = 200
 MAX_SUBJECT = 100
+
+# The parser's placeholder for "status unchanged"; not a status the plugin stores
+NO_CHANGE = "NO-CHANGE"
+# Used instead when a maintenance is first seen without a status
+INITIAL_UNKNOWN_STATUS = "UNKNOWN"
 
 # Maintenance statuses whose impacts the plugin no longer allows to change
 TERMINAL_STATUSES = {"COMPLETED", "CANCELLED"}
@@ -113,17 +123,18 @@ def _get_provider_map():
 
 
 def _identify_provider(from_header, provider_map):
-    """Return the parser name for the sender's domain, or for one of its parent domains."""
+    """Return the parser name for the sender's domain or its most specific mapped parent domain."""
     domain = parseaddr(from_header)[1].rpartition("@")[2].lower()
-    for map_domain, provider_name in provider_map.items():
-        map_domain = map_domain.lower()
-        if domain == map_domain or domain.endswith(f".{map_domain}"):
-            return provider_name
-    return None
+    matches = [
+        (len(map_domain), provider_name)
+        for map_domain, provider_name in provider_map.items()
+        if domain == map_domain.lower() or domain.endswith(f".{map_domain.lower()}")
+    ]
+    return max(matches)[1] if matches else None
 
 
-def _parse_email(raw_email, provider_name):
-    """Parse the raw email with circuit-maintenance-parser; return a list of maintenance dicts."""
+def _parse_email(mail, provider_name):
+    """Parse the email with circuit-maintenance-parser; return a list of maintenance dicts."""
     logger.info("Parsing email with provider: %s", provider_name)
 
     parser = init_provider(provider_name)
@@ -131,7 +142,7 @@ def _parse_email(raw_email, provider_name):
         logger.error("Unknown circuit-maintenance-parser provider: %s", provider_name)
         return []
 
-    data = NotificationData.init_from_email_bytes(raw_email)
+    data = NotificationData.init_from_emailmessage(mail)
     if data is None:
         logger.error("circuit-maintenance-parser could not read the email")
         return []
@@ -172,12 +183,13 @@ def _find_provider(parsed_name):
 
 def _upsert_maintenance(maintenance, provider_id):
     """Create the Maintenance, or update the one this provider already has under that name."""
-    name = maintenance["maintenance_id"]
+    name = maintenance["maintenance_id"][:MAX_NAME]
     fields = {
-        "status": maintenance["status"],
         "start": _format_timestamp(maintenance["start"]),
         "end": _format_timestamp(maintenance["end"]),
     }
+    if maintenance["status"] != NO_CHANGE:
+        fields["status"] = maintenance["status"]
 
     existing = _results("plugins/notices/maintenance/", name=name, provider_id=provider_id)
     if existing:
@@ -190,8 +202,9 @@ def _upsert_maintenance(maintenance, provider_id):
         "plugins/notices/maintenance/",
         json={
             "name": name,
-            "summary": (maintenance.get("summary") or name)[:MAX_SUMMARY],
+            "summary": ((maintenance.get("summary") or "").strip() or name)[:MAX_SUMMARY],
             "provider": provider_id,
+            "status": INITIAL_UNKNOWN_STATUS,
             **fields,
         },
     )
@@ -241,9 +254,20 @@ def _upsert_impacts(maintenance, nb_maintenance, provider_id):
             logger.info("Impact unchanged for circuit %s: %s", cid, circuit["impact"])
 
 
+def _body_text(mail):
+    """The email's readable text: its plain or HTML body, else its first text part (an iCal invite, say)."""
+    body = mail.get_body(preferencelist=("plain", "html"))
+    parts = [body] if body else [p for p in mail.walk() if p.get_content_maintype() == "text"]
+    for part in parts:
+        text = part.get_content().strip()
+        if text:
+            return text
+    return "(no text body)"
+
+
 def _store_notification(mail, nb_maintenance, received):
     """Attach the email to the Maintenance as an EventNotification, unless it already is."""
-    subject = (mail.get("subject") or "")[:MAX_SUBJECT]
+    subject = ((mail.get("subject") or "").strip() or "(no subject)")[:MAX_SUBJECT]
     received_at = received.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     if _results(
@@ -256,14 +280,13 @@ def _store_notification(mail, nb_maintenance, received):
         logger.info("Notification already stored for maintenance %s", nb_maintenance["name"])
         return
 
-    body = mail.get_body(preferencelist=("plain", "html"))
     _api(
         "POST",
         "plugins/notices/eventnotification/",
         json={
             "event_content_type": _object_type_id(MAINTENANCE_TYPE),
             "event_object_id": nb_maintenance["id"],
-            "email_body": body.get_content() if body else "",
+            "email_body": _body_text(mail),
             "subject": subject,
             "email_from": parseaddr(mail.get("from", ""))[1],
             "email_received": received_at,
@@ -281,7 +304,7 @@ def process_email(raw_email, received):
         logger.warning("No matching provider for sender: %s", from_header)
         return {"status": "skipped", "reason": "unknown_provider"}
 
-    maintenances = _parse_email(raw_email, provider_name)
+    maintenances = _parse_email(mail, provider_name)
     if not maintenances:
         logger.warning("No maintenances extracted from email")
         return {"status": "skipped", "reason": "no_maintenance_data"}
@@ -310,12 +333,7 @@ def lambda_handler(event, context):
     message_id = mail_meta["messageId"]
     logger.info("Processing inbound email: %s", message_id)
 
-    try:
-        s3_obj = boto3.client("s3").get_object(Bucket=S3_BUCKET_NAME, Key=message_id)
-        raw_email = s3_obj["Body"].read()
-    except Exception:
-        logger.exception("Failed to fetch email from S3: %s/%s", S3_BUCKET_NAME, message_id)
-        return {"status": "error", "reason": "s3_fetch_failed"}
+    raw_email = boto3.client("s3").get_object(Bucket=S3_BUCKET_NAME, Key=message_id)["Body"].read()
 
     received = datetime.fromisoformat(mail_meta["timestamp"].replace("Z", "+00:00"))
     return process_email(raw_email, received)

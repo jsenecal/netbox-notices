@@ -18,8 +18,17 @@ RECEIVED = datetime(2026, 1, 15, 12, 0, 1, tzinfo=UTC)
 
 OBJECT_TYPES = {("notices", "maintenance"): 71, ("circuits", "circuit"): 12}
 
+# What the plugin's serializers accept (notices/choices.py, notices/models/events.py)
+MAINTENANCE_STATUSES = {"TENTATIVE", "CONFIRMED", "CANCELLED", "IN-PROCESS", "COMPLETED", "RE-SCHEDULED", "UNKNOWN"}
+IMPACTS = {"NO-IMPACT", "REDUCED-REDUNDANCY", "DEGRADED", "OUTAGE"}
+REQUIRED_TEXT = {
+    "plugins/notices/maintenance/": {"name": 100, "summary": 200},
+    "plugins/notices/eventnotification/": {"subject": 100, "email_body": None},
+}
+
 
 def _ics(status="CONFIRMED", impact="OUTAGE", maintenance_id="WO-31415", circuit="CID-100"):
+    status_line = [f"X-MAINTNOTE-STATUS:{status}"] if status else []  # the BCOP allows omitting it
     return "\r\n".join(
         [
             "BEGIN:VCALENDAR",
@@ -37,7 +46,7 @@ def _ics(status="CONFIRMED", impact="OUTAGE", maintenance_id="WO-31415", circuit
             f"X-MAINTNOTE-MAINTENANCE-ID:{maintenance_id}",
             f"X-MAINTNOTE-OBJECT-ID;X-MAINTNOTE-OBJECT-IMPACT={impact}:{circuit}",
             f"X-MAINTNOTE-IMPACT:{impact}",
-            f"X-MAINTNOTE-STATUS:{status}",
+            *status_line,
             'ORGANIZER;CN="Example NOC":mailto:noc@carrier.example.net',
             "END:VEVENT",
             "END:VCALENDAR",
@@ -46,19 +55,32 @@ def _ics(status="CONFIRMED", impact="OUTAGE", maintenance_id="WO-31415", circuit
     )
 
 
-def _email(sender="NOC <noc@carrier.example.net>", subject="Maintenance WO-31415", **ics_kwargs):
+def _email(
+    sender="NOC <noc@carrier.example.net>",
+    subject="Maintenance WO-31415",
+    text="Please see the attached maintenance notification.",
+    **ics_kwargs,
+):
     msg = EmailMessage()
     msg["From"] = sender
     msg["To"] = "notices@example.com"
     msg["Subject"] = subject
     msg["Date"] = "Thu, 15 Jan 2026 11:59:00 +0000"
-    msg.set_content("Please see the attached maintenance notification.")
+    if text is None:  # a bare calendar invite
+        msg.set_content(_ics(**ics_kwargs), subtype="calendar")
+        return msg.as_bytes()
+    msg.set_content(text)
     msg.add_attachment(_ics(**ics_kwargs).encode(), maintype="text", subtype="calendar", filename="maint.ics")
     return msg.as_bytes()
 
 
 class FakeNetBox:
-    """In-memory stand-in for the NetBox REST endpoints the handler calls."""
+    """
+    In-memory stand-in for the NetBox REST endpoints the handler calls.
+
+    Writes are validated the way the plugin's serializers validate them, so a payload
+    real NetBox would answer with 400 fails here too.
+    """
 
     def __init__(self):
         self._ids = count(1)
@@ -116,10 +138,22 @@ class FakeNetBox:
             ]
         raise AssertionError(f"unexpected GET {path}")
 
+    @staticmethod
+    def _validate(path, body, partial=False):
+        for field, max_length in REQUIRED_TEXT.get(path, {}).items():
+            if field in body or not partial:
+                value = (body.get(field) or "").strip()
+                if not value or (max_length and len(value) > max_length):
+                    raise requests.HTTPError(f"400: {field}={body.get(field)!r}")
+        if "status" in body and body["status"] not in MAINTENANCE_STATUSES:
+            raise requests.HTTPError(f"400: status={body['status']!r}")
+        if "impact" in body and body["impact"] not in IMPACTS:
+            raise requests.HTTPError(f"400: impact={body['impact']!r}")
+
     def _create(self, path, body):
+        self._validate(path, body)
         obj = {"id": next(self._ids), **body}
         if path == "plugins/notices/maintenance/":
-            assert len(body["summary"]) <= 200
             self.maintenances.append(obj)
         elif path == "plugins/notices/impact/":
             assert body["event_content_type"] == 71 and body["target_content_type"] == 12
@@ -128,7 +162,6 @@ class FakeNetBox:
                 raise requests.HTTPError("400: You cannot alter an impact once the event has completed.")
             self.impacts.append(obj)
         elif path == "plugins/notices/eventnotification/":
-            assert len(body["subject"]) <= 100
             self.notifications.append(obj)
         else:
             raise AssertionError(f"unexpected POST {path}")
@@ -136,6 +169,7 @@ class FakeNetBox:
 
     def _update(self, path, body):
         kind, pk = path.removeprefix("plugins/notices/").strip("/").split("/")
+        self._validate(f"plugins/notices/{kind}/", body, partial=True)
         table = {"maintenance": self.maintenances, "impact": self.impacts}[kind]
         obj = next(o for o in table if o["id"] == int(pk))
         obj.update(body)
@@ -224,6 +258,57 @@ def test_new_cancelled_maintenance_is_recorded_without_impacts(netbox):
     assert len(netbox.notifications) == 1
 
 
+def test_notice_without_a_status_keeps_the_existing_one(netbox):
+    handler.process_email(_email(), RECEIVED)
+    handler.process_email(_email(subject="Reminder: WO-31415", status=None), RECEIVED.replace(hour=13))
+
+    assert netbox.maintenances[0]["status"] == "CONFIRMED"
+    assert len(netbox.notifications) == 2
+
+
+def test_first_notice_without_a_status_creates_an_unknown_maintenance(netbox):
+    result = handler.process_email(_email(status=None), RECEIVED)
+
+    assert result["status"] == "ok"
+    assert netbox.maintenances[0]["status"] == "UNKNOWN"
+
+
+def test_calendar_only_email_stores_the_invite_as_the_body(netbox):
+    result = handler.process_email(_email(text=None), RECEIVED)
+
+    assert result["status"] == "ok"
+    assert "X-MAINTNOTE-MAINTENANCE-ID:WO-31415" in netbox.notifications[0]["email_body"]
+
+
+def test_blank_subject_is_stored_as_a_placeholder(netbox):
+    # A missing Subject header is not covered: circuit-maintenance-parser cannot read such an email
+    handler.process_email(_email(subject="  "), RECEIVED)
+
+    assert netbox.notifications[0]["subject"] == "(no subject)"
+
+
+def test_non_utf8_email_is_parsed(netbox):
+    latin1 = _email(text="Travaux planifiés.").replace(
+        b"Content-Transfer-Encoding: 7bit", b"Content-Transfer-Encoding: 8bit"
+    )
+    latin1 = latin1.replace("Travaux planifiés.".encode(), "Travaux planifiés.".encode("latin-1"), 1)
+    latin1 = latin1.replace(b'charset="utf-8"', b'charset="iso-8859-1"', 1)
+
+    result = handler.process_email(latin1, RECEIVED)
+
+    assert result["status"] == "ok"
+    assert netbox.notifications[0]["email_body"] == "Travaux planifiés."
+
+
+def test_long_maintenance_id_is_truncated_consistently(netbox):
+    long_id = "WO-" + "9" * 120
+    handler.process_email(_email(maintenance_id=long_id), RECEIVED)
+    handler.process_email(_email(maintenance_id=long_id, subject="Update"), RECEIVED.replace(hour=13))
+
+    [maintenance] = netbox.maintenances
+    assert maintenance["name"] == long_id[:100]
+
+
 def test_unknown_circuit_is_skipped(netbox):
     result = handler.process_email(_email(circuit="NOT-IN-NETBOX"), RECEIVED)
 
@@ -292,6 +377,13 @@ def test_identify_provider_matches_domain_or_subdomain(sender, expected):
     assert handler._identify_provider(sender, handler.DEFAULT_PROVIDER_MAP) == expected
 
 
+def test_identify_provider_prefers_the_most_specific_domain():
+    provider_map = {"example.net": "genericprovider", "carrier.example.net": "zayo"}
+
+    assert handler._identify_provider("noc@mail.carrier.example.net", provider_map) == "zayo"
+    assert handler._identify_provider("noc@other.example.net", provider_map) == "genericprovider"
+
+
 def test_lambda_handler_reads_the_email_from_s3(monkeypatch, netbox):
     class Body:
         def read(self):
@@ -307,3 +399,15 @@ def test_lambda_handler_reads_the_email_from_s3(monkeypatch, netbox):
 
     assert handler.lambda_handler(event, None)["status"] == "ok"
     assert netbox.notifications[0]["email_received"] == "2026-01-15T12:00:01Z"
+
+
+def test_lambda_handler_raises_on_s3_errors_so_lambda_retries(monkeypatch, netbox):
+    class S3:
+        def get_object(self, Bucket, Key):  # noqa: N803 - boto3's parameter names
+            raise ConnectionError("S3 unavailable")
+
+    monkeypatch.setattr(handler.boto3, "client", lambda service: S3())
+    event = {"Records": [{"ses": {"mail": {"messageId": "abc123", "timestamp": "2026-01-15T12:00:01.000Z"}}}]}
+
+    with pytest.raises(ConnectionError):
+        handler.lambda_handler(event, None)

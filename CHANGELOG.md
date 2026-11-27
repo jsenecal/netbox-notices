@@ -12,7 +12,9 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 - AWS SES integration, inbound function: parsed emails now reach NetBox 4.x. It looked up content types at `/api/extras/content-types/`, which NetBox 4.0 moved to `/api/core/object-types/`, so every email failed after its maintenance was created and before any impact or notification was stored.
 - Inbound function: a maintenance is matched by maintenance ID *and* provider, a circuit by exact CID within that provider, and an existing impact by its event and target types, so another provider's maintenance, circuit or impact with a similar identifier is no longer updated by mistake.
-- Inbound function: a cancellation or completion notice no longer fails trying to change the impacts of a finished maintenance; an email retried by Lambda no longer stores its notification twice; every maintenance in an email is recorded, not just the first; subjects and summaries are cut to the model limits; sender domains match exactly or by subdomain (`bso.co` no longer matches `bso.com`); non-UTF-8 emails are read; parser failures are logged and skipped.
+- Inbound function: a notice without a status (the parser's `NO-CHANGE`: reminders, and every status-less BCOP or Cogent notice) no longer fails NetBox validation; it keeps the existing status, or creates the maintenance as `UNKNOWN`.
+- Inbound function: a cancellation or completion notice no longer fails trying to change the impacts of a finished maintenance; an email retried by Lambda no longer stores its notification twice; every maintenance in an email is recorded, not just the first; maintenance IDs, subjects and summaries are cut to the model limits, and a blank subject or a calendar-only body no longer fails validation; sender domains match exactly or by subdomain, most specific first (`bso.co` no longer matches `bso.com`); non-UTF-8 emails are parsed; parser failures are logged and skipped; S3 errors raise so Lambda retries them.
+- Docs: the REST API and Impact pages looked up content types at `/api/extras/content-types/`; they now use `/api/core/object-types/`.
 
 ### Removed
 
