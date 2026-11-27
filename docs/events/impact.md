@@ -98,7 +98,7 @@ The serializer requires the content-type integers, not the model name strings, o
 import requests
 
 response = requests.get(
-    "https://netbox.example.com/api/extras/content-types/?app_label=notices&model=maintenance",
+    "https://netbox.example.com/api/core/object-types/?app_label=notices&model=maintenance",
     headers={"Authorization": f"Token {token}"},
 )
 maintenance_ct = response.json()["results"][0]["id"]

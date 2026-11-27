@@ -148,8 +148,8 @@ Both ends of an `Impact` are generic foreign keys, so writes take a content type
 The write fields take numeric ContentType PKs, which differ between deployments. Look them up first:
 
 ```http
-GET /api/extras/content-types/?app_label=notices&model=maintenance
-GET /api/extras/content-types/?app_label=dcim&model=device
+GET /api/core/object-types/?app_label=notices&model=maintenance
+GET /api/core/object-types/?app_label=dcim&model=device
 ```
 
 Filters accept the dotted form instead, which is easier to use by hand. `event_content_type` and `target_content_type` are `ContentTypeFilter` fields, so this works:

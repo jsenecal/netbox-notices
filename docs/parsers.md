@@ -4,8 +4,7 @@ The high level process is simple, a parser leverages the  [circuit-maintenance-p
 
 The following parsers have been written and/or contributed by the community to assist in automating provider maintenance notifications:
 
-- [AWS SNS & Lambda](parsers_sns_lambda.md)
-- [AWS SES Integration](integrations_aws_ses.md) — Full SES integration with inbound parsing, outbound delivery, and delivery tracking via SAM
+- [AWS SES Integration](integrations_aws_ses.md) — Full SES integration with inbound parsing, outbound delivery, and delivery tracking via SAM. Its inbound function replaces the standalone AWS SNS & Lambda parser, which targeted the `netbox-circuitmaintenance` API and has been removed.
 
 - IMAP Netbox Script (Coming Soon)
 

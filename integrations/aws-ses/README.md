@@ -139,7 +139,7 @@ All Lambda functions share:
 
 ### Provider Map
 
-The inbound Lambda identifies providers by matching the sender's email domain. The default map covers major providers:
+The inbound Lambda picks a [circuit-maintenance-parser](https://github.com/networktocode/circuit-maintenance-parser) provider from the domain of the sender's address. A map entry matches that domain or any subdomain of it, case-insensitively: `zayo.com` matches `noc@zayo.com` and `noc@mail.zayo.com`, but not `noc@notzayo.com`. When several entries match, the most specific domain wins. The default map covers major providers:
 
 | Domain | Provider |
 |--------|----------|
@@ -166,6 +166,23 @@ Override by setting the `PROVIDER_MAP` environment variable to a JSON object:
   "customcarrier.com": "genericprovider"
 }
 ```
+
+### How inbound emails are recorded
+
+For every maintenance the parser extracts from an email:
+
+1. **Provider.** The parser's provider name is matched to a NetBox Provider by slug first, then by name (case-insensitive substring). A name that matches more than one Provider is refused and logged; give the intended Provider that slug.
+2. **Maintenance.** A Maintenance with the parser's maintenance ID *under that Provider* is updated (status, start, end); otherwise one is created. Two providers may reuse the same maintenance ID without colliding. A notice that carries no status (the parser's `NO-CHANGE`, e.g. a reminder) leaves the status as it is, and a maintenance first seen that way is created as `UNKNOWN`.
+3. **Impacts.** Each parsed circuit is matched by CID (case-insensitive, exact) among that Provider's circuits, and its Impact is created or updated. Circuits not found in NetBox are logged and skipped. Once a maintenance is `COMPLETED` or `CANCELLED` its impacts are left alone, since the plugin no longer allows them to change.
+4. **Notification.** The email is attached to the Maintenance as an Event Notification, with the time SES received it. Its body is the plain-text or HTML part, or for a bare calendar invite the invite itself. The maintenance ID and subject are cut to 100 characters and a new maintenance's summary to 200, the model limits; a blank subject is stored as `(no subject)`.
+
+If S3 or NetBox returns an error the function raises, and Lambda's asynchronous retry (two more attempts) processes the email again without duplicating the Maintenance, its Impacts or the notification. An email from an unmapped sender, or one the parser cannot read, is logged and skipped.
+
+Limits worth knowing:
+
+- Notices are applied in the order they are processed, not by their timestamp or sequence number. An older notice that is retried after a newer one can put back the status the newer one replaced.
+- Two notices for a maintenance NetBox does not have yet, processed at the same moment, can each create it.
+- The template configures no dead-letter queue, so an email that fails all three attempts is only visible in CloudWatch Logs (and in the S3 bucket until it expires).
 
 ### SES Event &rarr; NetBox Status Mapping
 
@@ -242,6 +259,13 @@ Create three Lambda functions (Python 3.12, 256 MB, 120s timeout) from the `func
 3. Set the rule set as active
 
 ## Local Testing with SAM
+
+The inbound function has unit tests that run real provider notifications through `circuit-maintenance-parser` against an in-memory NetBox API:
+
+```bash
+uv venv && uv pip install -r functions/inbound/requirements.txt boto3 pytest
+.venv/bin/pytest -o addopts="" tests  # addopts in the repo's pyproject.toml belong to the NetBox suite
+```
 
 Use the provided test events for local invoke:
 
@@ -522,5 +546,6 @@ New SES accounts start in sandbox mode (can only send to verified addresses). Re
 
 Ensure the NetBox API token has permission to:
 - Read/write `notices.maintenance`, `notices.impact`, `notices.eventnotification`
+- Read `circuits.provider` and `circuits.circuit` (inbound matching)
 - Read/write `notices.preparednotification`
 - Create `extras.journalentry`

@@ -41,8 +41,22 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --extra dev
-      - run: uv run ruff check notices tests
-      - run: uv run ruff format --check notices tests
+      - run: uv run ruff check notices tests integrations
+      - run: uv run ruff format --check notices tests integrations
+
+  test-integrations:
+    name: Test AWS SES integration
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.4.0
+        with:
+          python-version: "3.12"  # the Lambda runtime in integrations/aws-ses/template.yaml
+      # boto3 ships with the Lambda runtime, so it is not in requirements.txt
+      - run: uv venv && uv pip install -r integrations/aws-ses/functions/inbound/requirements.txt boto3 pytest
+      # addopts in pyproject.toml are for the NetBox suite (pytest-django, coverage of notices/)
+      - run: .venv/bin/pytest -o addopts="" integrations/aws-ses/tests
 
   test-js:
     name: Test JavaScript
