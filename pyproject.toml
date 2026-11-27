@@ -82,7 +82,7 @@ replace = '__version__ = "{new_version}"'
 [tool.ruff]
 line-length = 120
 target-version = "py312"
-extend-exclude = ["**/migrations/*.py", "parsers/"]
+extend-exclude = ["**/migrations/*.py"]
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "N", "UP", "S", "B", "A", "C4", "C90", "DJ", "PIE"]
@@ -97,7 +97,6 @@ max-complexity = 18
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
-"parsers/*" = ["E711", "E722"]
 "notices/tables.py" = ["E501"]  # Template strings in ActionsColumn can exceed line length
 ".devcontainer/load_plugin_demo.py" = ["E402", "E501", "F841", "C901"]
 "migrations/*" = ["N806", "N999"]

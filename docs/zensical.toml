@@ -30,7 +30,6 @@ nav = [
   { "REST API" = "api/rest-api.md" },
   { "Automated Parsers" = [
     { "Using a parser" = "parsers.md" },
-    { "AWS SNS and Lambda" = "parsers_sns_lambda.md" },
   ] },
   { "Integrations" = [
     { "AWS SES" = "integrations_aws_ses.md" },

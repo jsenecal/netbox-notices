@@ -22,7 +22,7 @@ import hmac
 import json
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -123,7 +123,7 @@ def _patch_status(notification_id, status, message):
         "message": message,
     }
     if status == "sent":
-        payload["timestamp"] = datetime.now(timezone.utc).isoformat()
+        payload["timestamp"] = datetime.now(UTC).isoformat()
 
     resp = requests.patch(url, json=payload, headers=HEADERS, timeout=30)
     resp.raise_for_status()

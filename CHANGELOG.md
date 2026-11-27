@@ -8,6 +8,16 @@ Releases prior to v1.1.x use the legacy `## VERSION (DATE)` heading style.
 
 ## [Unreleased]
 
+### Fixed
+
+- AWS SES integration, inbound function: parsed emails now reach NetBox 4.x. It looked up content types at `/api/extras/content-types/`, which NetBox 4.0 moved to `/api/core/object-types/`, so every email failed after its maintenance was created and before any impact or notification was stored.
+- Inbound function: a maintenance is matched by maintenance ID *and* provider, a circuit by exact CID within that provider, and an existing impact by its event and target types, so another provider's maintenance, circuit or impact with a similar identifier is no longer updated by mistake.
+- Inbound function: a cancellation or completion notice no longer fails trying to change the impacts of a finished maintenance; an email retried by Lambda no longer stores its notification twice; every maintenance in an email is recorded, not just the first; subjects and summaries are cut to the model limits; sender domains match exactly or by subdomain (`bso.co` no longer matches `bso.com`); non-UTF-8 emails are read; parser failures are logged and skipped.
+
+### Removed
+
+- `parsers/aws-sns-lambda/` and its documentation page. It called the `netbox-circuitmaintenance` API, which this plugin replaced, so it could not work with it. Use the inbound function of the [AWS SES integration](https://jsenecal.github.io/netbox-notices/integrations_aws_ses/) instead.
+
 ## [1.4.0] - 2026-10-29
 
 ### Added
